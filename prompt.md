@@ -1517,6 +1517,37 @@ Baca PRD.md bagian "4.12 Manajemen Pengepul & Penjualan Sampah (Level Pengelola 
 
 ---
 
+## FASE 15 — ALUR PERSETUJUAN PENARIKAN SALDO (APPROVAL WORKFLOW)
+
+---
+
+### PROMPT 15.1 — Otorisasi Penarikan Kas Desa & Pengajuan Mandiri Nasabah
+
+```
+Implementasikan kontrol kas desa berjenjang pada transaksi penarikan saldo:
+
+1. Database & Migrasi:
+   - Tambahkan status 'menunggu_persetujuan', 'disetujui', 'ditolak', 'void' pada tabel transaksi.
+   - Tambahkan kolom disetujui_oleh, tanggal_persetujuan, alasan_penolakan, metode_penarikan.
+
+2. Logika Saldo:
+   - Saldo nasabah tidak langsung terpotong saat diajukan, melainkan masuk ke saldo_tertahan (hold).
+   - Saldo_tersedia = saldo - saldo_tertahan.
+   - Saldo resmi terpotong saat pengelola desa menekan 'Setujui & Cairkan'.
+   - Saldo_tertahan otomatis dibebaskan kembali jika pengajuan ditolak.
+
+3. Portal Nasabah & Petugas Unit:
+   - Nasabah dapat mengajukan tarik saldo mandiri dari portal HP (/nasabah/tarik).
+   - Petugas unit dapat menginput permohonan tarik di loket unit untuk nasabah.
+   - Kedua alur masuk ke antrean approval desa.
+
+4. Portal Pengelola Desa (Admin):
+   - Menu khusus: Persetujuan Tarik (/admin/persetujuan-tarik) dengan counter badge notifikasi.
+   - Aksi Setujui & Cairkan atau Tolak dengan catatan alasan penolakan.
+```
+
+---
+
 ## RINGKASAN URUTAN PROMPT
 
 | No | Prompt | Fase | Output |
@@ -1551,6 +1582,7 @@ Baca PRD.md bagian "4.12 Manajemen Pengepul & Penjualan Sampah (Level Pengelola 
 | 14.1 | Penjualan Sampah Backend | Penjualan | Pengepul, Penjualan, Stok service |
 | 14.2 | Penjualan Sampah Frontend & Stok | Penjualan | UI form jual, surat jalan, monitor stok |
 | 14.3 | Laporan Penjualan & Laba Rugi | Laporan | PDF/Excel jual & laba rugi operasional |
+| 15.1 | Otorisasi Penarikan Saldo Desa | Otorisasi Kas | Approval workflow, nasabah tarik, hold balance |
 
 ---
 
