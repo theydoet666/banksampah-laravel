@@ -35,6 +35,7 @@
                 <div class="flex items-center gap-4 text-sm font-medium">
                     <a href="{{ route('nasabah.dashboard') }}" class="hover:text-emerald-200 transition-colors {{ request()->routeIs('nasabah.dashboard') ? 'underline underline-offset-4' : '' }}">Dashboard</a>
                     <a href="{{ route('nasabah.riwayat.index') }}" class="hover:text-emerald-200 transition-colors {{ request()->routeIs('nasabah.riwayat.*') ? 'underline underline-offset-4' : '' }}">Riwayat</a>
+                    <a href="{{ route('nasabah.tarik.index') }}" class="hover:text-emerald-200 transition-colors {{ request()->routeIs('nasabah.tarik.*') ? 'underline underline-offset-4 font-bold text-amber-200' : '' }}">Tarik Saldo</a>
                     <a href="{{ route('nasabah.profil.edit') }}" class="hover:text-emerald-200 transition-colors {{ request()->routeIs('nasabah.profil.*') ? 'underline underline-offset-4' : '' }}">Profil</a>
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf

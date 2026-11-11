@@ -25,7 +25,10 @@ class BankSampahTest extends TestCase
         $this->admin = User::where('role', 'admin')->first();
         $this->petugas = User::where('role', 'petugas')->first();
         $this->nasabahUser = User::where('role', 'nasabah')->first();
-        $this->nasabah = Nasabah::where('status', 'aktif')->first();
+        $this->nasabah = Nasabah::where('user_id', $this->nasabahUser?->id)->first() ?? Nasabah::where('status', 'aktif')->first();
+        if ($this->nasabah && $this->nasabahUser && $this->nasabah->user_id !== $this->nasabahUser->id) {
+            $this->nasabah->update(['user_id' => $this->nasabahUser->id]);
+        }
     }
 
     public function test_login_post_redirects_per_role(): void
@@ -141,7 +144,8 @@ class BankSampahTest extends TestCase
         $this->nasabah->saldo = 50000;
         $this->nasabah->save();
 
-        $response = $this->actingAs($this->petugas)->post(route('petugas.transaksi.tarik.store'), [
+        // Admin pengelola desa mencatat dan mencairkan penarikan tunai secara langsung
+        $response = $this->actingAs($this->admin)->post(route('admin.transaksi.tarik.store'), [
             'nasabah_id' => $this->nasabah->id,
             'nominal' => 20000,
             'tanggal_transaksi' => now()->toDateString(),
@@ -315,5 +319,90 @@ class BankSampahTest extends TestCase
         $logoPath = \App\Models\AppSetting::get('logo');
         $this->assertNotEmpty($logoPath);
         \Illuminate\Support\Facades\Storage::disk('public')->assertExists($logoPath);
+    }
+
+    public function test_nasabah_pengajuan_tarik_and_admin_approval_workflow(): void
+    {
+        // 1. Pastikan nasabah punya saldo
+        $this->nasabah->update(['saldo' => 100000]);
+        $saldoAwal = (float) $this->nasabah->fresh()->saldo;
+        $this->assertEquals(100000, $saldoAwal);
+
+        // 2. Nasabah login dan mengajukan tarik Rp 30.000
+        $response = $this->actingAs($this->nasabahUser)->post(route('nasabah.tarik.store'), [
+            'nominal' => 30000,
+            'metode_penarikan' => 'tunai_desa',
+            'catatan' => 'Untuk keperluan belanja',
+        ]);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Verifikasi saldo: saldo utama belum berkurang, tetapi saldo_tertahan = 30000 dan saldo_tersedia = 70000
+        $nasabahRefreshed = $this->nasabah->fresh();
+        $this->assertEquals(100000, (float) $nasabahRefreshed->saldo);
+        $this->assertEquals(30000, $nasabahRefreshed->saldo_tertahan);
+        $this->assertEquals(70000, $nasabahRefreshed->saldo_tersedia);
+
+        // Cari transaksi pengajuan
+        $transaksiPengajuan = Transaksi::where('nasabah_id', $this->nasabah->id)
+            ->where('status', 'menunggu_persetujuan')
+            ->first();
+        $this->assertNotNull($transaksiPengajuan);
+        $this->assertEquals(30000, (float) $transaksiPengajuan->total_nilai);
+
+        // 3. Nasabah mencoba mengajukan lebih dari saldo_tersedia (misal Rp 80.000) -> Gagal validasi
+        $responseFailed = $this->actingAs($this->nasabahUser)->post(route('nasabah.tarik.store'), [
+            'nominal' => 80000,
+            'metode_penarikan' => 'tunai_desa',
+        ]);
+        $responseFailed->assertSessionHasErrors('nominal');
+
+        // 4. Admin melihat antrean approval
+        $responseAntrean = $this->actingAs($this->admin)->get(route('admin.persetujuan-tarik.index'));
+        $responseAntrean->assertStatus(200);
+        $responseAntrean->assertSee($transaksiPengajuan->kode_transaksi);
+
+        // 5. Admin menyetujui penarikan
+        $responseApprove = $this->actingAs($this->admin)->post(route('admin.persetujuan-tarik.setujui', $transaksiPengajuan));
+        $responseApprove->assertRedirect();
+        $responseApprove->assertSessionHas('success');
+
+        // Saldo nasabah resmi berkurang
+        $nasabahAfterApprove = $this->nasabah->fresh();
+        $this->assertEquals(70000, (float) $nasabahAfterApprove->saldo);
+        $this->assertEquals(0, $nasabahAfterApprove->saldo_tertahan);
+        $this->assertEquals(70000, $nasabahAfterApprove->saldo_tersedia);
+        $this->assertEquals('disetujui', $transaksiPengajuan->fresh()->status);
+        $this->assertEquals($this->admin->id, $transaksiPengajuan->fresh()->disetujui_oleh);
+
+        // 6. Test penolakan: Petugas unit mengajukan tarik Rp 20.000 untuk nasabah
+        $responsePetugas = $this->actingAs($this->petugas)->post(route('petugas.transaksi.tarik.store'), [
+            'nasabah_id' => $this->nasabah->id,
+            'nominal' => 20000,
+            'metode_penarikan' => 'tunai',
+            'tanggal_transaksi' => now()->toDateString(),
+            'catatan' => 'Diajukan di loket unit',
+        ]);
+        $responsePetugas->assertRedirect();
+
+        $pengajuanPetugas = Transaksi::where('nasabah_id', $this->nasabah->id)
+            ->where('status', 'menunggu_persetujuan')
+            ->first();
+        $this->assertNotNull($pengajuanPetugas);
+
+        // Admin menolak pengajuan petugas
+        $responseReject = $this->actingAs($this->admin)->post(route('admin.persetujuan-tarik.tolak', $pengajuanPetugas), [
+            'alasan_penolakan' => 'Kas tunai hari ini belum siap, silakan ambil besok.',
+        ]);
+        $responseReject->assertRedirect();
+        $responseReject->assertSessionHas('success');
+
+        $this->assertEquals('ditolak', $pengajuanPetugas->fresh()->status);
+        $this->assertEquals('Kas tunai hari ini belum siap, silakan ambil besok.', $pengajuanPetugas->fresh()->alasan_penolakan);
+
+        // Saldo tidak berkurang setelah ditolak
+        $nasabahAfterReject = $this->nasabah->fresh();
+        $this->assertEquals(70000, (float) $nasabahAfterReject->saldo);
+        $this->assertEquals(0, $nasabahAfterReject->saldo_tertahan);
     }
 }

@@ -21,6 +21,7 @@
                     <th class="py-3.5 px-6">Jenis</th>
                     <th class="py-3.5 px-6">Berat</th>
                     <th class="py-3.5 px-6">Nilai (Rp)</th>
+                    <th class="py-3.5 px-6">Status</th>
                     <th class="py-3.5 px-6 text-right">Detail</th>
                 </tr>
             </thead>
@@ -38,13 +39,16 @@
                         <td class="py-3.5 px-6 font-bold {{ $trx->jenis === 'setor' ? 'text-emerald-600' : 'text-rose-600' }}">
                             {{ $trx->jenis === 'setor' ? '+' : '-' }}{{ formatRupiah($trx->total_nilai) }}
                         </td>
+                        <td class="py-3.5 px-6">
+                            {!! $trx->status_badge !!}
+                        </td>
                         <td class="py-3.5 px-6 text-right">
                             <a href="{{ route('nasabah.riwayat.show', $trx) }}" class="text-xs text-emerald-600 font-semibold hover:underline">Lihat Rincian</a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-8 text-slate-400 text-xs">Belum ada catatan mutasi tabungan</td>
+                        <td colspan="7" class="text-center py-8 text-slate-400 text-xs">Belum ada catatan mutasi tabungan</td>
                     </tr>
                 @endforelse
             </tbody>

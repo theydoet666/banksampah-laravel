@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->belongsTo(Unit::class, 'unit_id');
     }
 
+    public function nasabah(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Nasabah::class, 'user_id');
+    }
+
     public function nasabahTerdaftar(): HasMany
     {
         return $this->hasMany(Nasabah::class, 'registered_by');

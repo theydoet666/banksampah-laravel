@@ -81,5 +81,28 @@ class Nasabah extends Model
     {
         return 'Rp ' . number_format((float) $this->saldo, 0, ',', '.');
     }
+
+    public function getSaldoTertahanAttribute(): float
+    {
+        return (float) $this->transaksi()
+            ->where('jenis', 'tarik')
+            ->where('status', 'menunggu_persetujuan')
+            ->sum('total_nilai');
+    }
+
+    public function getSaldoTersediaAttribute(): float
+    {
+        return max(0, (float) $this->saldo - $this->saldo_tertahan);
+    }
+
+    public function getFormattedSaldoTertahanAttribute(): string
+    {
+        return 'Rp ' . number_format($this->saldo_tertahan, 0, ',', '.');
+    }
+
+    public function getFormattedSaldoTersediaAttribute(): string
+    {
+        return 'Rp ' . number_format($this->saldo_tersedia, 0, ',', '.');
+    }
 }
 

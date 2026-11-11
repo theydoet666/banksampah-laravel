@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\PengaturanController as AdminPengaturanController
 use App\Http\Controllers\Admin\UnitController as AdminUnitController;
 use App\Http\Controllers\Admin\PengepulController as AdminPengepulController;
 use App\Http\Controllers\Admin\PenjualanSampahController as AdminPenjualanSampahController;
+use App\Http\Controllers\Admin\PersetujuanPenarikanController;
 
 // Petugas Controllers
 use App\Http\Controllers\Petugas\DashboardController as PetugasDashboardController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Petugas\DashboardController as PetugasDashboardControll
 use App\Http\Controllers\Nasabah\DashboardController as NasabahDashboardController;
 use App\Http\Controllers\Nasabah\RiwayatController as NasabahRiwayatController;
 use App\Http\Controllers\Nasabah\ProfilController as NasabahProfilController;
+use App\Http\Controllers\Nasabah\NasabahTarikController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -79,6 +81,11 @@ Route::middleware(['auth', 'role:admin', 'check.active'])
         Route::get('/transaksi/{transaksi}', [AdminTransaksiController::class, 'show'])->name('transaksi.show');
         Route::get('/transaksi/{transaksi}/struk', [AdminTransaksiController::class, 'struk'])->name('transaksi.struk');
         Route::post('/transaksi/{transaksi}/void', [AdminTransaksiController::class, 'void'])->name('transaksi.void');
+
+        // Persetujuan Penarikan Saldo (Admin / Pengelola Desa)
+        Route::get('/persetujuan-tarik', [PersetujuanPenarikanController::class, 'index'])->name('persetujuan-tarik.index');
+        Route::post('/persetujuan-tarik/{transaksi}/setujui', [PersetujuanPenarikanController::class, 'setujui'])->name('persetujuan-tarik.setujui');
+        Route::post('/persetujuan-tarik/{transaksi}/tolak', [PersetujuanPenarikanController::class, 'tolak'])->name('persetujuan-tarik.tolak');
 
         // Mitra Pengepul
         Route::resource('/pengepul', AdminPengepulController::class)->except(['show']);
@@ -143,6 +150,8 @@ Route::middleware(['auth', 'role:nasabah', 'check.active'])
         Route::get('/dashboard', [NasabahDashboardController::class, 'index'])->name('dashboard');
         Route::get('/riwayat', [NasabahRiwayatController::class, 'index'])->name('riwayat.index');
         Route::get('/riwayat/{transaksi}', [NasabahRiwayatController::class, 'show'])->name('riwayat.show');
+        Route::get('/tarik', [NasabahTarikController::class, 'index'])->name('tarik.index');
+        Route::post('/tarik', [NasabahTarikController::class, 'store'])->name('tarik.store');
         Route::get('/profil', [NasabahProfilController::class, 'edit'])->name('profil.edit');
         Route::put('/profil', [NasabahProfilController::class, 'update'])->name('profil.update');
         Route::put('/profil/password', [NasabahProfilController::class, 'password'])->name('profil.password');

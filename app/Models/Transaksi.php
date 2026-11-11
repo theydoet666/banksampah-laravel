@@ -22,7 +22,11 @@ class Transaksi extends Model
         'total_nilai',
         'catatan',
         'status',
+        'metode_penarikan',
         'petugas_id',
+        'disetujui_oleh',
+        'tanggal_persetujuan',
+        'alasan_penolakan',
         'tanggal_transaksi',
     ];
 
@@ -30,6 +34,7 @@ class Transaksi extends Model
         'total_berat' => 'decimal:3',
         'total_nilai' => 'decimal:2',
         'tanggal_transaksi' => 'date',
+        'tanggal_persetujuan' => 'datetime',
     ];
 
     public function nasabah(): BelongsTo
@@ -45,6 +50,11 @@ class Transaksi extends Model
     public function petugas(): BelongsTo
     {
         return $this->belongsTo(User::class, 'petugas_id');
+    }
+
+    public function disetujuiOleh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'disetujui_oleh');
     }
 
     public function details(): HasMany
@@ -79,7 +89,49 @@ class Transaksi extends Model
 
     public function scopeAktif($query)
     {
-        return $query->where('status', 'aktif');
+        return $query->whereIn('status', ['aktif', 'disetujui']);
+    }
+
+    public function scopeMenungguPersetujuan($query)
+    {
+        return $query->where('status', 'menunggu_persetujuan');
+    }
+
+    public function scopeDisetujui($query)
+    {
+        return $query->whereIn('status', ['aktif', 'disetujui']);
+    }
+
+    public function scopeDitolak($query)
+    {
+        return $query->where('status', 'ditolak');
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->status === 'menunggu_persetujuan';
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match($this->status) {
+            'menunggu_persetujuan' => 'Menunggu Persetujuan',
+            'disetujui', 'aktif' => 'Disetujui',
+            'ditolak' => 'Ditolak',
+            'void' => 'Dibatalkan (Void)',
+            default => ucfirst($this->status),
+        };
+    }
+
+    public function getStatusBadgeAttribute(): string
+    {
+        return match($this->status) {
+            'menunggu_persetujuan' => '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Menunggu</span>',
+            'disetujui', 'aktif' => '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Disetujui</span>',
+            'ditolak' => '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">Ditolak</span>',
+            'void' => '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 line-through">Void</span>',
+            default => '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800">' . e($this->status) . '</span>',
+        };
     }
 }
 

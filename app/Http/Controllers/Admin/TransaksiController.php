@@ -122,7 +122,12 @@ class TransaksiController extends Controller
 
         try {
             $transaksi = $this->transaksiService->prosesPenarikan($validated);
-            return redirect()->route('admin.transaksi.show', $transaksi)->with('success', 'Penarikan saldo tabungan berhasil diproses.');
+            $msg = $transaksi->status === 'menunggu_persetujuan'
+                ? 'Pengajuan penarikan saldo berhasil dikirim dan sedang menunggu persetujuan pengelola desa.'
+                : 'Penarikan saldo tabungan berhasil diproses & dicairkan.';
+
+            $routePrefix = auth()->user()->isAdmin() ? 'admin.' : 'petugas.';
+            return redirect()->route($routePrefix . 'transaksi.show', $transaksi)->with('success', $msg);
         } catch (Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }

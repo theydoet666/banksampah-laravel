@@ -9,20 +9,29 @@
         <div>
             <div class="flex items-center gap-2">
                 <h2 class="text-xl font-bold text-slate-800">{{ $transaksi->kode_transaksi }}</h2>
-                <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $transaksi->status === 'aktif' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
-                    {{ ucfirst($transaksi->status) }}
-                </span>
+                {!! $transaksi->status_badge !!}
             </div>
-            <p class="text-xs text-slate-400">Dicatat pada {{ $transaksi->tanggal_transaksi->format('d M Y') }} oleh {{ $transaksi->petugas->name ?? '-' }}</p>
+            <p class="text-xs text-slate-400">Dicatat pada {{ $transaksi->tanggal_transaksi->format('d M Y') }} oleh {{ $transaksi->petugas->name ?? '-' }} ({{ $transaksi->unit->nama ?? 'Unit Umum' }})</p>
         </div>
 
         <div class="flex items-center gap-2">
-            <a href="{{ route('admin.transaksi.struk', $transaksi) }}" target="_blank" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Cetak Struk
-            </a>
+            @if(in_array($transaksi->status, ['aktif', 'disetujui']))
+                <a href="{{ route('admin.transaksi.struk', $transaksi) }}" target="_blank" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Cetak Struk
+                </a>
+            @endif
 
-            @if(auth()->user()->role === 'admin' && $transaksi->status === 'aktif')
+            @if(auth()->user()->role === 'admin' && $transaksi->status === 'menunggu_persetujuan')
+                <form method="POST" action="{{ route('admin.persetujuan-tarik.setujui', $transaksi) }}" onsubmit="return confirm('Setujui dan cairkan dana sebesar {{ formatRupiah($transaksi->total_nilai) }}?');">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs">
+                        Setujui Penarikan
+                    </button>
+                </form>
+            @endif
+
+            @if(auth()->user()->role === 'admin' && in_array($transaksi->status, ['aktif', 'disetujui']))
                 <button type="button" 
                         @click="$dispatch('open-confirm-modal', {
                             action: '{{ route('admin.transaksi.void', $transaksi) }}',
@@ -95,10 +104,27 @@
         </x-card>
     @else
         <x-card title="Rincian Penarikan">
-            <div class="p-6 bg-slate-50 rounded-xl text-center space-y-2">
-                <span class="text-xs text-slate-400 uppercase font-semibold">Nominal Yang Ditarik Tunai</span>
+            <div class="p-6 bg-slate-50 rounded-xl text-center space-y-3">
+                <span class="text-xs text-slate-400 uppercase font-semibold">Nominal Penarikan Saldo</span>
                 <h3 class="text-3xl font-extrabold text-rose-600">{{ formatRupiah($transaksi->total_nilai) }}</h3>
+                <div class="inline-flex items-center gap-2 text-xs text-slate-600">
+                    <span class="font-semibold">Metode:</span>
+                    <span class="px-2 py-0.5 rounded bg-white border border-slate-200 uppercase font-bold">{{ str_replace('_', ' ', $transaksi->metode_penarikan ?? 'tunai') }}</span>
+                </div>
                 <p class="text-xs text-slate-500">Catatan: {{ $transaksi->catatan ?: '-' }}</p>
+
+                @if($transaksi->disetujuiOleh)
+                    <div class="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-600">
+                        Disetujui & dicairkan oleh <strong class="text-slate-800">{{ $transaksi->disetujuiOleh->name }}</strong> 
+                        pada {{ $transaksi->tanggal_persetujuan?->translatedFormat('d F Y, H:i') }} WIB
+                    </div>
+                @endif
+
+                @if($transaksi->alasan_penolakan)
+                    <div class="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 text-left">
+                        <strong>Alasan Penolakan:</strong> {{ $transaksi->alasan_penolakan }}
+                    </div>
+                @endif
             </div>
         </x-card>
     @endif

@@ -106,6 +106,19 @@
                     Tarik Saldo
                 </a>
 
+                @php
+                    $pendingTarikCount = \App\Models\Transaksi::where('jenis', 'tarik')->where('status', 'menunggu_persetujuan')->count();
+                @endphp
+                <a href="{{ route('admin.persetujuan-tarik.index') }}" class="flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors {{ request()->routeIs('admin.persetujuan-tarik.*') ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Persetujuan Tarik</span>
+                    </div>
+                    @if($pendingTarikCount > 0)
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-900 animate-pulse">{{ $pendingTarikCount }}</span>
+                    @endif
+                </a>
+
                 <a href="{{ route('admin.transaksi.index') }}" class="flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors {{ request()->routeIs('admin.transaksi.index') || request()->routeIs('admin.transaksi.show') ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Riwayat Transaksi
@@ -148,7 +161,7 @@
 
                 <a href="{{ route('petugas.transaksi.tarik.create') }}" class="flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors {{ request()->routeIs('petugas.transaksi.tarik.*') ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                     <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                    Tarik Saldo
+                    Ajukan Tarik Saldo
                 </a>
 
                 <a href="{{ route('petugas.transaksi.index') }}" class="flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors {{ request()->routeIs('petugas.transaksi.index') ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">

@@ -96,9 +96,7 @@
                             </td>
                             <td class="py-3.5 px-6 text-xs text-slate-500">{{ $trx->petugas->name ?? '-' }}</td>
                             <td class="py-3.5 px-6">
-                                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium {{ $trx->status === 'aktif' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400 line-through' }}">
-                                    {{ ucfirst($trx->status) }}
-                                </span>
+                                {!! $trx->status_badge !!}
                             </td>
                             <td class="py-3.5 px-6 text-right">
                                 <div class="inline-flex items-center gap-1.5">

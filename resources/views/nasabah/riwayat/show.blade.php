@@ -6,7 +6,10 @@
 <div class="max-w-2xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-xl font-bold text-slate-800">Detail Transaksi</h2>
+            <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold text-slate-800">Detail Transaksi</h2>
+                {!! $transaksi->status_badge !!}
+            </div>
             <p class="text-xs font-mono text-slate-400">{{ $transaksi->kode_transaksi }}</p>
         </div>
         <a href="{{ route('nasabah.riwayat.index') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">&larr; Kembali ke Riwayat</a>
@@ -52,9 +55,24 @@
             </div>
         @else
             <div class="text-center py-6 bg-slate-50 rounded-xl space-y-2">
-                <span class="text-xs text-slate-400 uppercase font-semibold">Jumlah Penarikan Tunai</span>
+                <span class="text-xs text-slate-400 uppercase font-semibold">Jumlah Penarikan Saldo</span>
                 <h3 class="text-3xl font-extrabold text-rose-600">{{ formatRupiah($transaksi->total_nilai) }}</h3>
+                <p class="text-xs text-slate-600 font-medium">Metode: <span class="uppercase font-bold">{{ str_replace('_', ' ', $transaksi->metode_penarikan ?? 'tunai') }}</span></p>
                 <p class="text-xs text-slate-500">Catatan: {{ $transaksi->catatan ?: '-' }}</p>
+
+                @if($transaksi->status === 'disetujui')
+                    <div class="mt-3 pt-3 border-t border-slate-200 text-xs text-emerald-700">
+                        Disetujui & dicairkan pada {{ $transaksi->tanggal_persetujuan?->translatedFormat('d F Y, H:i') }} WIB
+                    </div>
+                @elseif($transaksi->status === 'menunggu_persetujuan')
+                    <div class="mt-3 pt-3 border-t border-slate-200 text-xs text-amber-700 font-medium">
+                        Pengajuan ini sedang menunggu verifikasi kas dari Pengelola Desa
+                    </div>
+                @elseif($transaksi->status === 'ditolak')
+                    <div class="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 text-left">
+                        <strong>Alasan Penolakan:</strong> {{ $transaksi->alasan_penolakan }}
+                    </div>
+                @endif
             </div>
         @endif
     </div>
