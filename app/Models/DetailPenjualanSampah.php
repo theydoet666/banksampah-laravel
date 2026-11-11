@@ -36,3 +36,4 @@ class DetailPenjualanSampah extends Model
         return $this->belongsTo(JenisSampah::class, 'jenis_sampah_id');
     }
 }
+

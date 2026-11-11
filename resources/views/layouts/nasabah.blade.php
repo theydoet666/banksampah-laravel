@@ -19,12 +19,16 @@
         <header class="bg-emerald-700 text-white shadow-md">
             <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-800 flex items-center justify-center text-white font-bold">
-                        BS
-                    </div>
+                    @if(appSetting('logo'))
+                        <img src="{{ asset('storage/' . appSetting('logo')) }}" alt="Logo" class="w-9 h-9 object-contain rounded-lg bg-white/10 p-1">
+                    @else
+                        <div class="w-9 h-9 rounded-lg bg-emerald-800 flex items-center justify-center text-white font-bold">
+                            BS
+                        </div>
+                    @endif
                     <div>
                         <h1 class="text-sm font-bold tracking-tight">{{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</h1>
-                        <span class="text-xs text-emerald-200">Buku Tabungan Digital</span>
+                        <span class="text-xs text-emerald-200">{{ appSetting('tagline', 'Buku Tabungan Digital') }}</span>
                     </div>
                 </div>
 

@@ -245,3 +245,4 @@ function penjualanForm() {
 </script>
 @endpush
 @endsection
+

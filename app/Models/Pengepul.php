@@ -30,3 +30,4 @@ class Pengepul extends Model
         return $query->where('status', 'aktif');
     }
 }
+

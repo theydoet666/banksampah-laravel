@@ -101,3 +101,4 @@ class PenjualanSampahController extends Controller
         return view('admin.penjualan.surat-jalan', compact('penjualan'));
     }
 }
+

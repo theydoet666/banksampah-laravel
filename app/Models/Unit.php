@@ -41,3 +41,4 @@ class Unit extends Model
         return $query->where('status', 'aktif');
     }
 }
+

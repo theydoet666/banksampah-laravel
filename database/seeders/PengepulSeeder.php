@@ -102,3 +102,4 @@ class PengepulSeeder extends Seeder
         }
     }
 }
+

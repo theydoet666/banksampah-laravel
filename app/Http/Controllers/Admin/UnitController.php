@@ -80,3 +80,4 @@ class UnitController extends Controller
         return back()->with('success', "Status unit '{$unit->nama}' berhasil diubah menjadi {$newStatus}.");
     }
 }
+

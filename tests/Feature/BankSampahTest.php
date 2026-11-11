@@ -289,4 +289,31 @@ class BankSampahTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_admin_can_update_bank_sampah_branding_and_upload_logo(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $logoFile = \Illuminate\Http\UploadedFile::fake()->image('bank_logo.png', 200, 200);
+
+        $response = $this->actingAs($this->admin)->put(route('admin.pengaturan.update'), [
+            'nama_bank_sampah' => 'Bank Sampah Berkah Mandiri',
+            'tagline' => 'Bersih Lingkunganku, Sejahtera Wargaku',
+            'no_telp' => '081234567890',
+            'email' => 'admin@berkahmandiri.test',
+            'alamat' => 'Jl. Hijau Lestari No. 10',
+            'tahun_berdiri' => '2024',
+            'logo' => $logoFile,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals('Bank Sampah Berkah Mandiri', \App\Models\AppSetting::get('nama_bank_sampah'));
+        $this->assertEquals('Bersih Lingkunganku, Sejahtera Wargaku', \App\Models\AppSetting::get('tagline'));
+        
+        $logoPath = \App\Models\AppSetting::get('logo');
+        $this->assertNotEmpty($logoPath);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($logoPath);
+    }
 }

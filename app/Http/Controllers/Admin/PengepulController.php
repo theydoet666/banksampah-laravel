@@ -80,3 +80,4 @@ class PengepulController extends Controller
         return back()->with('success', "Status mitra '{$pengepul->nama_perusahaan}' diubah menjadi {$newStatus}.");
     }
 }
+

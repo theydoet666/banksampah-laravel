@@ -60,3 +60,4 @@ class PenjualanSampah extends Model
         return sprintf('JUAL-%s-%05d', $date, $sequence);
     }
 }
+
