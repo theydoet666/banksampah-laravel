@@ -25,6 +25,17 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::get('/dashboard', function () {
+    $user = auth()->user();
+    if ($user->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    }
+    if ($user->isPetugas()) {
+        return redirect()->route('petugas.dashboard');
+    }
+    return redirect()->route('nasabah.dashboard');
+})->middleware(['auth', 'check.active'])->name('dashboard');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

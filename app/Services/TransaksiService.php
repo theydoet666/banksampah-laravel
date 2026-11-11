@@ -6,6 +6,7 @@ use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
 use App\Models\Nasabah;
 use App\Models\JenisSampah;
+use App\Exceptions\InsufficientBalanceException;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -65,7 +66,7 @@ class TransaksiService
             $nominal = (float) $data['nominal'];
 
             if ($nasabah->saldo < $nominal) {
-                throw new Exception('Saldo nasabah tidak mencukupi untuk penarikan ini.');
+                throw new InsufficientBalanceException('Saldo nasabah tidak mencukupi untuk penarikan ini.');
             }
 
             $transaksi = Transaksi::create([

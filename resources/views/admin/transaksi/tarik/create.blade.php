@@ -14,7 +14,7 @@
     </div>
 
     <x-card>
-        <form method="POST" action="{{ route('admin.transaksi.tarik.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('admin.transaksi.tarik.store') }}" class="space-y-5" @submit="submitting = true">
             @csrf
 
             <div>
@@ -58,8 +58,12 @@
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <a href="{{ route('admin.transaksi.index') }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
-                <button type="submit" :disabled="!selectedNasabahId || nominal <= 0 || nominal > saldoAktif" class="px-6 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50">
-                    Proses Tarik Tunai
+                <button type="submit" :disabled="!selectedNasabahId || nominal <= 0 || nominal > saldoAktif || submitting" class="px-6 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50 inline-flex items-center gap-2">
+                    <svg x-show="submitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span x-text="submitting ? 'Memproses...' : 'Proses Tarik Tunai'"></span>
                 </button>
             </div>
         </form>
@@ -74,6 +78,7 @@ function tarikForm() {
         selectedNasabahId: '{{ $selectedNasabahId ?? "" }}',
         saldoAktif: 0,
         nominal: '',
+        submitting: false,
 
         init() {
             if (this.selectedNasabahId) {

@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Dashboard') - {{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</title>
+    <meta name="description" content="{{ appSetting('deskripsi', 'Sistem Informasi Manajemen Bank Sampah BAA Terpadu dan Berkelanjutan.') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -39,6 +40,9 @@
             </footer>
         </div>
     </div>
+
+    <!-- Global Confirmation Modal -->
+    <x-confirm-modal />
 
     @stack('scripts')
 </body>

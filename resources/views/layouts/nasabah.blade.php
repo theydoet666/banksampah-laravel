@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Portal Nasabah') - {{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</title>
+    <meta name="description" content="{{ appSetting('deskripsi', 'Portal Buku Tabungan Digital Nasabah Bank Sampah BAA.') }}">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
@@ -52,6 +53,9 @@
             &copy; {{ date('Y') }} {{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }} &bull; Pilah Sampah Menjadi Berkah
         </footer>
     </div>
+
+    <!-- Global Confirmation Modal -->
+    <x-confirm-modal />
 </body>
 </html>
 

@@ -14,7 +14,7 @@
     </div>
 
     <x-card>
-        <form method="POST" action="{{ route('admin.nasabah.update', $nasabah) }}" enctype="multipart/form-data" class="space-y-5">
+        <form method="POST" action="{{ route('admin.nasabah.update', $nasabah) }}" enctype="multipart/form-data" class="space-y-5" x-data="{ submitting: false }" @submit="submitting = true">
             @csrf
             @method('PUT')
 
@@ -82,7 +82,13 @@
 
             <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <a href="{{ route('admin.nasabah.show', $nasabah) }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
-                <button type="submit" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm">Simpan Perubahan</button>
+                <button type="submit" :disabled="submitting" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm inline-flex items-center gap-2 disabled:opacity-60">
+                    <svg x-show="submitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span x-text="submitting ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
+                </button>
             </div>
         </form>
     </x-card>

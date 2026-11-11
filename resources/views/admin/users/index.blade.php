@@ -48,21 +48,34 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
 
-                                <form method="POST" action="{{ route('admin.users.reset-password', $user) }}" onsubmit="return confirm('Reset password akun ini menjadi password123?')">
-                                    @csrf
-                                    <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50" title="Reset Password">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        @click="$dispatch('open-confirm-modal', {
+                                            action: '{{ route('admin.users.reset-password', $user) }}',
+                                            method: 'POST',
+                                            title: 'Reset Password Pengguna',
+                                            message: 'Reset kata sandi akun {{ $user->name }} menjadi \'password123\'?',
+                                            confirmText: 'Reset Password',
+                                            confirmClass: 'bg-amber-600 hover:bg-amber-700 text-white'
+                                        })"
+                                        class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50" 
+                                        title="Reset Password">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                                </button>
 
                                 @if($user->id !== auth()->id())
-                                    <form method="POST" action="{{ route('admin.users.toggle', $user) }}">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Aktif/Nonaktif">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                            @click="$dispatch('open-confirm-modal', {
+                                                action: '{{ route('admin.users.toggle', $user) }}',
+                                                method: 'PATCH',
+                                                title: 'Ubah Status Akun',
+                                                message: 'Apakah Anda yakin ingin {{ $user->is_active ? 'menonaktifkan' : 'mengaktifkan' }} akun {{ $user->name }}?',
+                                                confirmText: '{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}',
+                                                confirmClass: '{{ $user->is_active ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}'
+                                            })"
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" 
+                                            title="Aktif/Nonaktif">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                    </button>
                                 @endif
                             </div>
                         </td>

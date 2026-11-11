@@ -1,58 +1,164 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Informasi Manajemen Bank Sampah BAA
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web modern berbasis **Laravel 11**, **MySQL**, **Tailwind CSS**, dan **Alpine.js** yang dirancang untuk mengelola operasional bank sampah secara transparan, akuntabel, dan terintegrasi dari pencatatan setoran, penarikan saldo, histori transaksi, buku tabungan nasabah digital, hingga ekspor laporan akuntansi (PDF & Excel).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 1. Multi-Role Authentication & Access Control
+- **Administrator**: Memiliki hak akses menyeluruh ke seluruh modul (Master Data, Pengaturan Sistem, Manajemen Pengguna, Transaksi, Laporan, dan Void).
+- **Petugas (Operator)**: Mengoperasikan transaksi harian penimbangan (setor sampah) dan pencairan saldo nasabah (tarik saldo), pendaftaran nasabah, dan pencetakan struk.
+- **Nasabah**: Portal mandiri (*self-service*) untuk memantau saldo tabungan, mutasi kredit/debit, dan unduh riwayat secara *real-time*.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 2. Modul Master Data Sampah
+- Pengelompokan kategori sampah (Organik, Anorganik, B3, Residu, dll).
+- Manajemen jenis sampah dengan satuan (kg, liter, pcs) dan harga per satuan dinamis.
+- Pencatatan riwayat audit perubahan harga (*price history log*).
 
-## Learning Laravel
+### 3. Modul Manajemen Nasabah
+- Pembuatan nomor rekening otomatis dengan format `BS-YYYY-XXXXX`.
+- Perekaman biodata lengkap: NIK (16 digit), No HP, alamat domisili, jenis kelamin, tanggal lahir, dan foto profil.
+- Dukungan *Soft Deletes* dan fitur aktivasi/nonaktifasi status rekening.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 4. Transaksi & Kalkulasi Saldo
+- **Setor Sampah (Multi-Item)**: Input dinamis berbagai jenis sampah sekaligus dengan kalkulasi otomatis subtotal dan bobot total (*real-time* via Alpine.js).
+- **Snapshot Harga**: Setiap detail transaksi mengunci harga satuan saat transaksi terjadi sehingga laporan historis tetap akurat meski harga master sampah berubah.
+- **Tarik Saldo**: Proteksi saldo minimum & saldo tidak mencukupi melalui `InsufficientBalanceException`.
+- **Cetak Struk Transaksi**: Cetak nota transaksi termal / A4 dengan format resmi.
+- **Fitur Void Transaksi**: Pembatalan transaksi salah input oleh Administrator dengan pengembalian (*rollback*) saldo otomatis ke rekening nasabah.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 5. Pelaporan & Export
+- Filter transaksi berdasarkan rentang tanggal, jenis transaksi, dan status.
+- Ekspor laporan berformat **PDF** (Barryvdh DomPDF) siap cetak.
+- Ekspor rekapitulasi data berformat **Microsoft Excel** (Maatwebsite Excel).
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 6. Desain Responsif & UX Modern
+- Desain antarmuka bersih menggunakan **Tailwind CSS** dan komponen **DaisyUI**.
+- Interaktivitas dinamis tanpa reload halaman penuh menggunakan **Alpine.js**.
+- Konfirmasi aksi sensitif via Modal Konfirmasi Global reusable.
+- Indikator loading interaktif saat submit formulir.
 
-## Agentic Development
+---
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## 🛠️ Tech Stack
 
+- **Backend Framework**: Laravel 11.x
+- **Bahasa Pemrograman**: PHP 8.2+
+- **Database**: MySQL 8.x / MariaDB
+- **Frontend Stack**: Vite, Tailwind CSS v3, DaisyUI v4, Alpine.js, Chart.js
+- **Libraries**:
+  - `barryvdh/laravel-dompdf` (PDF Generation)
+  - `maatwebsite/excel` (Excel Spreadsheet Export)
+  - `fakerphp/faker` (Data Dummy Generator)
+
+---
+
+## 📋 Akun Default & Demo
+
+Semua akun menggunakan password standar: `password`
+
+| Role | Email | Password | Akses Dashboard |
+|------|-------|----------|-----------------|
+| **Admin** | `admin@banksampah.test` | `password` | `/admin/dashboard` |
+| **Petugas** | `petugas@banksampah.test` | `password` | `/petugas/dashboard` |
+| **Nasabah** | `nasabah@banksampah.test` | `password` | `/nasabah/dashboard` |
+
+> *Catatan: Terdapat 25 nasabah demo realistis dan 65 transaksi historis (50 setor, 15 tarik, 2 void) yang digenerate oleh `DemoSeeder`.*
+
+---
+
+## 💻 Panduan Instalasi & Menjalankan
+
+### 1. Prasyarat Sistem
+- PHP >= 8.2 (dengan ekstensi `pdo_mysql`, `mbstring`, `openssl`, `gd`)
+- Composer
+- Node.js & NPM
+- MySQL Server (Laragon, XAMPP, atau Docker)
+
+### 2. Kloning & Pengaturan Lingkungan
 ```bash
-composer require laravel/boost --dev
+# Clone repositori
+git clone https://github.com/theydoet666/banksampah.git Bank-Sampah-BAA
+cd Bank-Sampah-BAA
 
-php artisan boost:install
+# Salin file konfigurasi environment
+cp .env.example .env
+
+# Generate APP_KEY
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 3. Konfigurasi Database
+Sesuaikan parameter database di file `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=bank_sampah_baa
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## Contributing
+### 4. Instal Dependensi & Migrasi
+```bash
+# Install package PHP
+composer install
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Install dependensi frontend
+npm install
 
-## Code of Conduct
+# Buat symbolic link ke folder storage
+php artisan storage:link
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Jalankan migrasi dan seeding database lengkap
+php artisan migrate:fresh --seed
+```
 
-## Security Vulnerabilities
+### 5. Kompilasi Aset & Jalankan Server
+```bash
+# Build frontend assets
+npm run build
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Jalankan development server
+php artisan serve
+```
+Akses aplikasi melalui browser di `http://127.0.0.1:8000`.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 🧪 Menjalankan Automated Tests
+
+Aplikasi dilengkapi dengan test suite otomatis (Feature & Unit Tests) yang menguji otentikasi peran, pembatasan hak akses, pembuatan nomor rekening, penambahan/pengurangan saldo, pencegahan saldo minus, void transaksi, serta ekspor PDF/Excel:
+
+```bash
+php artisan test --filter=BankSampahTest
+```
+
+---
+
+## 🗄️ Skema Database
+
+```
+users
+  ├── id, name, email, password, role ('admin'|'petugas'|'nasabah'), is_active
+nasabah
+  ├── id, user_id (FK), no_rekening, nama, nik, saldo, status ('aktif'|'nonaktif'), registered_by (FK)
+kategori_sampah
+  ├── id, nama, deskripsi
+jenis_sampah
+  ├── id, kategori_id (FK), nama, satuan, harga_per_satuan, is_active
+harga_sampah_log
+  ├── id, jenis_sampah_id (FK), harga_lama, harga_baru, diubah_oleh (FK)
+transaksi
+  ├── id, kode_transaksi, nasabah_id (FK), jenis ('setor'|'tarik'), total_berat, total_nilai, status ('aktif'|'void'), petugas_id (FK), tanggal_transaksi
+detail_transaksi
+  ├── id, transaksi_id (FK), jenis_sampah_id (FK), berat, harga_satuan (snapshot), subtotal
+app_settings
+  ├── id, key, value, label, group
+```
+
+---
+
+## 📄 Lisensi
+Hak Cipta Dilindungi &copy; 2026 **Bank Sampah BAA**. Dikembangkan untuk tata kelola sampah yang ramah lingkungan dan bernilai ekonomis.

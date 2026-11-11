@@ -13,7 +13,7 @@
         <a href="{{ route('admin.transaksi.index') }}" class="text-sm font-semibold text-slate-600 hover:text-slate-800">Kembali</a>
     </div>
 
-    <form method="POST" action="{{ route('admin.transaksi.setor.store') }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.transaksi.setor.store') }}" class="space-y-6" @submit="submitting = true">
         @csrf
 
         <!-- Informasi Nasabah & Transaksi -->
@@ -107,8 +107,12 @@
 
         <div class="flex items-center justify-end gap-3">
             <a href="{{ route('admin.transaksi.index') }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
-            <button type="submit" :disabled="!selectedNasabahId || totalNilai <= 0" class="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50">
-                Simpan & Tambah Saldo
+            <button type="submit" :disabled="!selectedNasabahId || totalNilai <= 0 || submitting" class="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50 inline-flex items-center gap-2">
+                <svg x-show="submitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span x-text="submitting ? 'Menyimpan...' : 'Simpan & Tambah Saldo'"></span>
             </button>
         </div>
     </form>
@@ -127,6 +131,7 @@ function setoranForm() {
         ],
         totalBerat: 0,
         totalNilai: 0,
+        submitting: false,
 
         init() {
             if (this.selectedNasabahId) {

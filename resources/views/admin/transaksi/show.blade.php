@@ -23,12 +23,18 @@
             </a>
 
             @if(auth()->user()->role === 'admin' && $transaksi->status === 'aktif')
-                <form method="POST" action="{{ route('admin.transaksi.void', $transaksi) }}" onsubmit="return confirm('PERINGATAN: Membatalkan transaksi ini akan mengoreksi kembali saldo nasabah. Lanjutkan?')">
-                    @csrf
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold">
-                        Void Transaksi
-                    </button>
-                </form>
+                <button type="button" 
+                        @click="$dispatch('open-confirm-modal', {
+                            action: '{{ route('admin.transaksi.void', $transaksi) }}',
+                            method: 'POST',
+                            title: 'Batalkan (Void) Transaksi',
+                            message: 'PERINGATAN: Membatalkan transaksi {{ $transaksi->kode_transaksi }} akan mengoreksi dan mengembalikan saldo nasabah terkait. Lanjutkan?',
+                            confirmText: 'Ya, Void Transaksi',
+                            confirmClass: 'bg-rose-600 hover:bg-rose-700 text-white'
+                        })"
+                        class="px-4 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold">
+                    Void Transaksi
+                </button>
             @endif
         </div>
     </div>

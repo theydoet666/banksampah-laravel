@@ -38,22 +38,35 @@
                         </td>
                         <td class="py-4 px-6 text-right">
                             <div class="inline-flex items-center gap-2">
-                                <a href="{{ route('admin.kategori-sampah.edit', $kategori) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50">
+                                <a href="{{ route('admin.kategori-sampah.edit', $kategori) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
-                                <form method="POST" action="{{ route('admin.kategori-sampah.destroy', $kategori) }}" onsubmit="return confirm('Hapus kategori ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        @click="$dispatch('open-confirm-modal', {
+                                            action: '{{ route('admin.kategori-sampah.destroy', $kategori) }}',
+                                            method: 'DELETE',
+                                            title: 'Hapus Kategori Sampah',
+                                            message: 'Apakah Anda yakin ingin menghapus kategori {{ $kategori->nama }}? Tindakan ini tidak dapat dibatalkan.',
+                                            confirmText: 'Hapus Kategori',
+                                            confirmClass: 'bg-rose-600 hover:bg-rose-700 text-white'
+                                        })"
+                                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" 
+                                        title="Hapus">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center py-8 text-slate-400">Belum ada kategori sampah</td>
+                        <td colspan="4" class="p-0">
+                            <x-empty-state 
+                                message="Belum ada kategori sampah" 
+                                submessage="Kategori membantu mengelompokkan berbagai jenis sampah (misal: Plastik, Kertas, Logam)." 
+                                actionText="Tambah Kategori Baru" 
+                                :actionUrl="route('admin.kategori-sampah.create')" 
+                            />
+                        </td>
                     </tr>
                 @endforelse
             </tbody>

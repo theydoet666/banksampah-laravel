@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             JenisSampahSeeder::class,
             NasabahSeeder::class,
             AppSettingSeeder::class,
+            DemoSeeder::class,
         ]);
     }
 }
