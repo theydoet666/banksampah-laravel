@@ -12,6 +12,9 @@ use App\Http\Controllers\Admin\TransaksiController as AdminTransaksiController;
 use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\PengaturanController as AdminPengaturanController;
+use App\Http\Controllers\Admin\UnitController as AdminUnitController;
+use App\Http\Controllers\Admin\PengepulController as AdminPengepulController;
+use App\Http\Controllers\Admin\PenjualanSampahController as AdminPenjualanSampahController;
 
 // Petugas Controllers
 use App\Http\Controllers\Petugas\DashboardController as PetugasDashboardController;
@@ -53,6 +56,10 @@ Route::middleware(['auth', 'role:admin', 'check.active'])
     ->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+        // Master Data Unit Bank Sampah
+        Route::resource('/units', AdminUnitController::class);
+        Route::patch('/units/{unit}/toggle', [AdminUnitController::class, 'toggle'])->name('units.toggle');
+
         // Master Data Nasabah
         Route::resource('/nasabah', AdminNasabahController::class);
         Route::patch('/nasabah/{nasabah}/toggle-status', [AdminNasabahController::class, 'toggleStatus'])->name('nasabah.toggle-status');
@@ -63,7 +70,7 @@ Route::middleware(['auth', 'role:admin', 'check.active'])
         Route::patch('/jenis-sampah/{jenisSampah}/toggle', [AdminJenisSampahController::class, 'toggle'])->name('jenis-sampah.toggle');
         Route::get('/jenis-sampah/{jenisSampah}/harga-log', [AdminJenisSampahController::class, 'hargaLog'])->name('jenis-sampah.harga-log');
 
-        // Transaksi
+        // Transaksi Warga
         Route::get('/transaksi', [AdminTransaksiController::class, 'index'])->name('transaksi.index');
         Route::get('/transaksi/setor/create', [AdminTransaksiController::class, 'createSetor'])->name('transaksi.setor.create');
         Route::post('/transaksi/setor', [AdminTransaksiController::class, 'storeSetor'])->name('transaksi.setor.store');
@@ -73,10 +80,21 @@ Route::middleware(['auth', 'role:admin', 'check.active'])
         Route::get('/transaksi/{transaksi}/struk', [AdminTransaksiController::class, 'struk'])->name('transaksi.struk');
         Route::post('/transaksi/{transaksi}/void', [AdminTransaksiController::class, 'void'])->name('transaksi.void');
 
+        // Mitra Pengepul
+        Route::resource('/pengepul', AdminPengepulController::class)->except(['show']);
+        Route::patch('/pengepul/{pengepul}/toggle', [AdminPengepulController::class, 'toggle'])->name('pengepul.toggle');
+
+        // Penjualan Sampah ke Pengepul & Gudang Desa
+        Route::get('/penjualan/stok', [AdminPenjualanSampahController::class, 'stok'])->name('penjualan.stok');
+        Route::resource('/penjualan', AdminPenjualanSampahController::class)->only(['index', 'create', 'store', 'show']);
+        Route::get('/penjualan/{penjualan}/surat-jalan', [AdminPenjualanSampahController::class, 'suratJalan'])->name('penjualan.surat-jalan');
+
         // Laporan
         Route::get('/laporan', [AdminLaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export/excel', [AdminLaporanController::class, 'exportExcel'])->name('laporan.excel');
         Route::get('/laporan/export/pdf', [AdminLaporanController::class, 'exportPdf'])->name('laporan.pdf');
+        Route::get('/laporan/laba-rugi', [AdminLaporanController::class, 'labaRugi'])->name('laporan.laba-rugi');
+        Route::get('/laporan/laba-rugi/pdf', [AdminLaporanController::class, 'exportLabaRugiPdf'])->name('laporan.laba-rugi.pdf');
 
         // Manajemen Pengguna
         Route::resource('/users', AdminUserController::class)->except(['show', 'destroy']);

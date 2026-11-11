@@ -39,19 +39,25 @@
 ## Struktur Peran & Akses
 
 ```
-Admin
- ├── Semua fitur
- ├── Manajemen pengguna
+Admin / Pengelola Desa (Bank Sampah Induk)
+ ├── Semua fitur & lintas unit
+ ├── Manajemen Unit Bank Sampah (Dusun/RW)
+ ├── Manajemen Pengepul & Transaksi Penjualan Sampah (Gudang Desa)
+ ├── Monitoring Stok Fisik Sampah Desa
+ ├── Laporan Laba/Rugi Operasional Desa
+ ├── Manajemen pengguna (penugasan unit petugas)
  ├── Void/batalkan transaksi
  └── Pengaturan sistem
 
-Petugas
- ├── Input transaksi (setor & tarik)
- ├── Lihat & tambah data nasabah
- ├── Lihat riwayat transaksi
- └── Cetak struk
+Petugas Unit (Bank Sampah Unit Dusun/RW)
+ ├── Khusus mengelola unit tempat ditugaskan (unit_id)
+ ├── Input transaksi warga unit (setor sampah & tarik saldo)
+ ├── Lihat & tambah data nasabah di unitnya
+ ├── Lihat riwayat transaksi unitnya
+ └── Cetak struk kasir
 
 Nasabah
+ ├── Terdaftar pada unit domisilinya
  ├── Lihat saldo sendiri
  ├── Lihat riwayat transaksi sendiri
  └── Edit profil sendiri
@@ -100,7 +106,7 @@ Nasabah
 
 | Komponen | Konvensi | Contoh |
 |----------|----------|--------|
-| Model | PascalCase, singular | `Nasabah`, `JenisSampah` |
+| Model | PascalCase, singular | `Unit`, `Nasabah`, `JenisSampah`, `Pengepul`, `PenjualanSampah`, `DetailPenjualanSampah` |
 | Controller | PascalCase + Controller | `NasabahController` |
 | Migration | snake_case + timestamp | `create_nasabah_table` |
 | Table | snake_case, plural | `nasabah`, `jenis_sampah` |

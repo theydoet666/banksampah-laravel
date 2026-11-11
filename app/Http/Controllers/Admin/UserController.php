@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Unit;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
@@ -12,13 +13,14 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::whereIn('role', ['admin', 'petugas'])->orderBy('name')->get();
+        $users = User::with('unit')->whereIn('role', ['admin', 'petugas'])->orderBy('name')->get();
         return view('admin.users.index', compact('users'));
     }
 
     public function create()
     {
-        return view('admin.users.create');
+        $units = Unit::aktif()->orderBy('nama')->get();
+        return view('admin.users.create', compact('units'));
     }
 
     public function store(Request $request)
@@ -28,11 +30,15 @@ class UserController extends Controller
             'email' => 'required|string|email|max:100|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => 'required|in:admin,petugas',
+            'unit_id' => 'nullable|exists:units,id',
             'is_active' => 'boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
+        if ($validated['role'] === 'admin') {
+            $validated['unit_id'] = null; // Admin adalah level desa lintas unit
+        }
 
         User::create($validated);
 
@@ -41,7 +47,8 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $units = Unit::aktif()->orderBy('nama')->get();
+        return view('admin.users.edit', compact('user', 'units'));
     }
 
     public function update(Request $request, User $user)
@@ -50,6 +57,7 @@ class UserController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
             'role' => 'required|in:admin,petugas',
+            'unit_id' => 'nullable|exists:units,id',
             'is_active' => 'boolean',
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);
@@ -61,6 +69,9 @@ class UserController extends Controller
         }
 
         $validated['is_active'] = $request->has('is_active');
+        if ($validated['role'] === 'admin') {
+            $validated['unit_id'] = null;
+        }
 
         $user->update($validated);
 

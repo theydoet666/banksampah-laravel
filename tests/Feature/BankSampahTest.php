@@ -199,4 +199,94 @@ class BankSampahTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.laporan.excel'));
         $response->assertStatus(200);
     }
+
+    public function test_multi_unit_management_and_scoping(): void
+    {
+        // 1. Admin membuat unit baru
+        $response = $this->actingAs($this->admin)->post(route('admin.units.store'), [
+            'kode_unit' => 'U-99',
+            'nama' => 'Unit Uji Coba RW 99',
+            'nama_ketua' => 'Bpk. Penguji',
+            'no_hp' => '08999999999',
+            'status' => 'aktif',
+        ]);
+        $response->assertRedirect(route('admin.units.index'));
+        $this->assertDatabaseHas('units', ['kode_unit' => 'U-99']);
+
+        $unit = \App\Models\Unit::where('kode_unit', 'U-99')->first();
+
+        // 2. Petugas yang ditugaskan ke Unit U-99
+        $petugasKhusus = User::create([
+            'name' => 'Petugas Khusus U99',
+            'email' => 'petugas99@banksampah.test',
+            'password' => bcrypt('password'),
+            'role' => 'petugas',
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        // 3. Nasabah didaftarkan di Unit U-99
+        $nasabahU99 = Nasabah::create([
+            'unit_id' => $unit->id,
+            'no_rekening' => 'BS-2026-99999',
+            'nama' => 'Warga Unit 99',
+            'jenis_kelamin' => 'L',
+            'alamat' => 'RT 01 RW 99',
+            'no_hp' => '089988776655',
+            'saldo' => 0,
+            'status' => 'aktif',
+            'registered_by' => $petugasKhusus->id,
+        ]);
+
+        // Petugas U-99 hanya melihat nasabah di unitnya
+        $response = $this->actingAs($petugasKhusus)->get(route('petugas.nasabah.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Warga Unit 99');
+    }
+
+    public function test_penjualan_sampah_ke_pengepul_and_laba_rugi(): void
+    {
+        $pengepul = \App\Models\Pengepul::first();
+        $this->assertNotNull($pengepul);
+
+        // Ambil stok yang ada
+        $penjualanService = app(\App\Services\PenjualanService::class);
+        $stokGudang = $penjualanService->getStokSampahGudang();
+        $available = $stokGudang->filter(fn($j) => $j['sisa_stok'] >= 1.0)->first();
+
+        if ($available) {
+            $beratJual = 0.5; // jual setengah kg
+            $hargaJual = $available['harga_beli'] + 1000;
+
+            // Catat penjualan
+            $response = $this->actingAs($this->admin)->post(route('admin.penjualan.store'), [
+                'pengepul_id' => $pengepul->id,
+                'tanggal_penjualan' => now()->toDateString(),
+                'status_pembayaran' => 'lunas',
+                'details' => [
+                    [
+                        'jenis_sampah_id' => $available['id'],
+                        'berat' => $beratJual,
+                        'harga_jual_satuan' => $hargaJual,
+                    ],
+                ],
+            ]);
+
+            $response->assertRedirect();
+            $this->assertDatabaseHas('penjualan_sampah', ['pengepul_id' => $pengepul->id]);
+        }
+
+        // Test monitoring stok gudang
+        $response = $this->actingAs($this->admin)->get(route('admin.penjualan.stok'));
+        $response->assertStatus(200);
+
+        // Test Laporan Laba/Rugi
+        $response = $this->actingAs($this->admin)->get(route('admin.laporan.laba-rugi'));
+        $response->assertStatus(200);
+
+        // Test Laporan Laba/Rugi PDF
+        $response = $this->actingAs($this->admin)->get(route('admin.laporan.laba-rugi.pdf'));
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
 }

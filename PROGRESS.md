@@ -1,49 +1,55 @@
 # Ringkasan Progres Pengembangan Project Bank Sampah BAA
 Tanggal: 11 November 2026
 
-## 📌 Status Terakhir: SELESAI 100% (Fase 0 s.d. Fase 12)
+## 📌 Status Terakhir: SELESAI 100% (Fase 0 s.d. Fase 14)
 Semua fase pengembangan dan prompt dari `prompt.md` telah berhasil dieksekusi, diuji, dan lolos seluruh acceptance criteria.
 
 ---
 
-## 🛠️ Ringkasan Eksekusi Fase 12 (Polish, Testing & Optimization):
+## 🛠️ Ringkasan Eksekusi Fase Terbaru:
 
-### 1. Prompt 12.1 — Error Handling & UX Polish
-- **Custom Error Pages**:
-  - `resources/views/errors/403.blade.php` (Akses Ditolak dengan branding dan navigasi balik).
-  - `resources/views/errors/404.blade.php` (Halaman Tidak Ditemukan).
-  - `resources/views/errors/500.blade.php` (Kesalahan Server).
-- **Global Exception Handling**:
-  - `App\Exceptions\InsufficientBalanceException`: Menangkap saldo tidak cukup dan redirect back dengan flash error bersahabat.
-  - Penanganan `ModelNotFoundException` otomatis ke 404 kustom.
-- **Enhanced UI/UX**:
-  - Flash message interaktif Alpine.js (auto-dismiss 5 detik + tombol close manual + animasi slide-in).
-  - Reusable Confirm Modal (`components/confirm-modal.blade.php`) untuk delete, void, dan toggle status akun/data.
-  - Reusable Empty State (`components/empty-state.blade.php`) dengan ilustrasi dan tombol aksi cepat.
-  - Form loading indicator & button disable state saat submit formulir.
+### 1. Fase 13 — Multi-Unit Bank Sampah (Dusun/RW)
+- **Database & Model**:
+  - Migrasi `2026_11_10_000010_create_units_and_add_unit_id_to_tables.php`:
+    - Membuat tabel `units` (`kode_unit`, `nama`, `alamat`, `nama_ketua`, `no_hp`, `status`).
+    - Menambahkan relasi foreign key `unit_id` ke tabel `users` (penugasan petugas), `nasabah` (unit domisili), dan `transaksi` (unit pencatat).
+  - Model `Unit.php` dengan relasi `users`, `nasabah`, `transaksi`.
+- **Hak Akses & Scoping**:
+  - Petugas Unit otomatis ter-scope hanya melihat, menambah nasabah, dan mencatat transaksi di unitnya.
+  - Admin / Pengelola Desa memiliki kontrol lintas unit dan filter dropdown unit di seluruh daftar data.
+- **CRUD & UI**:
+  - Controller `Admin\UnitController` & Form Requests `StoreUnitRequest`, `UpdateUnitRequest`.
+  - Halaman `admin/units/index`, `create`, `edit`, dan `show` (detail unit dengan statistik nasabah, transaksi, dan daftar petugas).
+  - Seeder `UnitSeeder` dengan 3 unit percontohan dusun/RW.
 
-### 2. Prompt 12.2 — Seed Data Demo & Automated Testing
-- **DemoSeeder.php**:
-  - 20 nasabah realistis (Faker `id_ID`).
-  - 50 transaksi setor didistribusikan dalam 3 bulan terakhir (multi-item detail, berat 0.5 - 10 kg).
-  - 15 transaksi penarikan tunai sesuai saldo nasabah.
-  - 2 transaksi voided untuk pengujian tampilan badge dan strikethrough.
-- **Automated Feature Test Suite** (`tests/Feature/BankSampahTest.php`):
-  - 9 automated test methods, 31 assertions, 100% PASSED (Login redirect per role, 403 access control, nomor rekening unik, kalkulasi saldo setor, pencegahan over-tarik, pengembalian saldo void, ekspor PDF & Excel).
+### 2. Fase 14 — Manajemen Pengepul, Penjualan Sampah Desa & Stok Gudang
+- **Database & Model**:
+  - Migrasi `2026_11_10_000011_create_pengepul_and_penjualan_sampah_tables.php`:
+    - Tabel `pengepul` (mitra off-taker/pabrik daur ulang).
+    - Tabel `penjualan_sampah` (header transaksi penjualan dari gudang desa).
+    - Tabel `detail_penjualan_sampah` (rincian item, berat, harga jual grosir).
+  - Models: `Pengepul.php`, `PenjualanSampah.php`, `DetailPenjualanSampah.php`.
+- **Manajemen Stok Fisik Gudang**:
+  - `PenjualanService`: Menghitung stok akumulasi sampah masuk dari setoran warga aktif dikurangi volume yang sudah terjual ke pengepul.
+  - Validasi ketat: Penjualan ditolak jika melebihi sisa stok fisik di gudang desa.
+- **Transaksi & Nota Pengiriman**:
+  - Controller `Admin\PengepulController` (CRUD Mitra).
+  - Controller `Admin\PenjualanSampahController`: Monitoring stok gudang, input penjualan dinamis Alpine.js, dan cetak Surat Jalan / Nota pengiriman resmi.
+  - Seeder `PengepulSeeder` dengan data mitra dan transaksi penjualan perdana.
+- **Laporan Laba/Rugi Operasional Bank Sampah Desa**:
+  - Halaman `admin/laporan/laba-rugi` membandingkan Pendapatan Penjualan ke Pengepul (Kredit) vs Beban Pembayaran Setoran Warga (Debit) dan Marjin Keuntungan Desa (%).
+  - Ekspor PDF Laporan Laba/Rugi (`admin.laporan.laba-rugi.pdf`).
 
-### 3. Prompt 12.3 — Optimasi & Keamanan Final
-- **Database Indexing**:
-  - Migrasi `2026_11_10_000009_add_indexes_to_tables.php` menambahkan indeks performa pada tabel `nasabah` (`status`, `registered_by`, `status+created_at`) dan `transaksi` (`jenis`, `status`, `tanggal_transaksi`, `nasabah_id+tanggal_transaksi`).
-- **Audit Keamanan & Query**:
-  - Validasi ketat file upload, CSRF protection, mass-assignment fillable protection, pencegahan nasabah mengintip transaksi orang lain, dan proteksi admin menonaktifkan akun sendiri.
-- **Dokumentasi & Konfigurasi**:
-  - `README.md` diperbarui lengkap dengan diagram alur, fitur, panduan instalasi, dan ERD.
-  - `.env.example` disesuaikan dengan konfigurasi aplikasi terbaru.
-  - Cache dibersihkan (`optimize:clear`) dan aset frontend dikompilasi ulang (`npm run build`).
+---
+
+## 🧪 Hasil Automated Feature Testing
+File: `tests/Feature/BankSampahTest.php`
+- **Total Tests**: 11 passed (44 assertions)
+- **Status**: 100% SUCCESS (Login redirect, 403 authorization, no rekening, kalkulasi saldo setor, over-tarik validation, void rollback, laporan export, multi-unit scoping, penjualan pengepul & stok).
 
 ---
 
 ## 🔑 Kredensial Akun Pengujian (Password: `password`):
-- **Admin**: `admin@banksampah.test`
-- **Petugas**: `petugas@banksampah.test`
-- **Nasabah**: `nasabah@banksampah.test`
+- **Admin**: `admin@banksampah.test` (Pengelola Desa - Akses Penuh Lintas Unit)
+- **Petugas**: `petugas@banksampah.test` (Petugas Unit Melati Dusun 1)
+- **Nasabah**: `nasabah@banksampah.test` (Nasabah Terdaftar di Unit Melati)

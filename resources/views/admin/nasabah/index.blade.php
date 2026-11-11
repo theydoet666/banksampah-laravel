@@ -18,11 +18,21 @@
 
     <!-- Filter & Search -->
     <x-card>
-        <form method="GET" action="{{ route('admin.nasabah.index') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <form method="GET" action="{{ route('admin.nasabah.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div class="sm:col-span-2">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, nomor rekening, atau no. HP..." class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
             </div>
-            <div class="flex items-center gap-2">
+            @if(auth()->user()->isAdmin())
+                <div>
+                    <select name="unit_id" class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">Semua Unit</option>
+                        @foreach($units as $u)
+                            <option value="{{ $u->id }}" {{ request('unit_id') == $u->id ? 'selected' : '' }}>{{ $u->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+            <div class="flex items-center gap-2 {{ auth()->user()->isPetugas() ? 'sm:col-span-2' : '' }}">
                 <select name="status" class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
                     <option value="">Semua Status</option>
                     <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -41,6 +51,7 @@
                     <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider">
                         <th class="py-3.5 px-6">No. Rekening</th>
                         <th class="py-3.5 px-6">Nama & NIK</th>
+                        <th class="py-3.5 px-6">Unit</th>
                         <th class="py-3.5 px-6">No. HP</th>
                         <th class="py-3.5 px-6">Saldo</th>
                         <th class="py-3.5 px-6">Status</th>
@@ -54,6 +65,15 @@
                             <td class="py-4 px-6">
                                 <div class="font-semibold text-slate-800">{{ $nasabah->nama }}</div>
                                 <div class="text-xs text-slate-400">NIK: {{ $nasabah->nik ?? '-' }}</div>
+                            </td>
+                            <td class="py-4 px-6">
+                                @if($nasabah->unit)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                        {{ $nasabah->unit->nama }}
+                                    </span>
+                                @else
+                                    <span class="text-xs text-slate-400 italic">Pusat / Tanpa Unit</span>
+                                @endif
                             </td>
                             <td class="py-4 px-6 text-slate-600">{{ $nasabah->no_hp }}</td>
                             <td class="py-4 px-6 font-semibold text-emerald-600">{{ $nasabah->formatted_saldo }}</td>
@@ -88,7 +108,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="p-0">
+                            <td colspan="7" class="p-0">
                                 <x-empty-state 
                                     message="Tidak ada nasabah yang ditemukan" 
                                     submessage="Silakan periksa kata kunci pencarian Anda atau tambahkan nasabah baru." 

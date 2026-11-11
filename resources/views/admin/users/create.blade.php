@@ -25,12 +25,27 @@
                 @error('email') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Peran (Role) *</label>
-                <select name="role" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="petugas" {{ old('role') === 'petugas' ? 'selected' : '' }}>Petugas Loket (Operator)</option>
-                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Administrator (Akses Penuh)</option>
-                </select>
+            <div x-data="{ role: '{{ old('role', 'petugas') }}' }" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Peran (Role) *</label>
+                    <select name="role" x-model="role" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="petugas">Petugas Unit (Operator Dusun/RW)</option>
+                        <option value="admin">Administrator / Pengelola Desa (Akses Penuh)</option>
+                    </select>
+                </div>
+
+                <div x-show="role === 'petugas'">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Penugasan Unit Bank Sampah</label>
+                    <select name="unit_id" class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">Pilih Unit Penugasan...</option>
+                        @foreach($units as $u)
+                            <option value="{{ $u->id }}" {{ old('unit_id') == $u->id ? 'selected' : '' }}>
+                                {{ $u->nama }} ({{ $u->kode_unit }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="text-[11px] text-slate-400 mt-1">Petugas hanya dapat mencatat transaksi dan nasabah di unit yang ditugaskan.</p>
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">

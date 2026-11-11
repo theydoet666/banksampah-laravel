@@ -16,6 +16,7 @@ class Transaksi extends Model
     protected $fillable = [
         'kode_transaksi',
         'nasabah_id',
+        'unit_id',
         'jenis',
         'total_berat',
         'total_nilai',
@@ -34,6 +35,11 @@ class Transaksi extends Model
     public function nasabah(): BelongsTo
     {
         return $this->belongsTo(Nasabah::class, 'nasabah_id');
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     public function petugas(): BelongsTo

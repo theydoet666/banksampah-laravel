@@ -68,6 +68,27 @@
             </div>
 
             <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unit Bank Sampah (Dusun/RW) *</label>
+                @if(auth()->user()->isPetugas() && auth()->user()->unit_id)
+                    <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center justify-between">
+                        <span>{{ auth()->user()->unit->nama }} ({{ auth()->user()->unit->kode_unit }})</span>
+                        <span class="text-xs font-normal text-emerald-600">Unit Anda</span>
+                    </div>
+                    <input type="hidden" name="unit_id" value="{{ auth()->user()->unit_id }}">
+                @else
+                    <select name="unit_id" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">Pilih Unit Domisili Nasabah...</option>
+                        @foreach($units as $u)
+                            <option value="{{ $u->id }}" {{ old('unit_id') == $u->id ? 'selected' : '' }}>
+                                {{ $u->nama }} ({{ $u->kode_unit }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('unit_id') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+                @endif
+            </div>
+
+            <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Alamat Lengkap *</label>
                 <textarea name="alamat" rows="3" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('alamat') }}</textarea>
                 @error('alamat') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror

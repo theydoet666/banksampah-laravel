@@ -6,6 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Models\Nasabah;
+use App\Models\Unit;
+use App\Models\PenjualanSampah;
+use App\Models\DetailTransaksi;
+use App\Models\DetailPenjualanSampah;
+use App\Models\KategoriSampah;
 use App\Exports\TransaksiExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -36,6 +41,10 @@ class LaporanController extends Controller
             $query->where('nasabah_id', $request->nasabah_id);
         }
 
+        if ($request->filled('unit_id')) {
+            $query->where('unit_id', $request->unit_id);
+        }
+
         $transaksiList = (clone $query)->orderBy('tanggal_transaksi', 'desc')->paginate(25)->withQueryString();
 
         $totalSetor = (clone $query)->where('jenis', 'setor')->where('status', 'aktif')->sum('total_nilai');
@@ -43,8 +52,76 @@ class LaporanController extends Controller
         $totalBerat = (clone $query)->where('jenis', 'setor')->where('status', 'aktif')->sum('total_berat');
 
         $nasabahList = Nasabah::orderBy('nama')->get();
+        $units = Unit::aktif()->orderBy('nama')->get();
 
-        return view('admin.laporan.index', compact('transaksiList', 'totalSetor', 'totalTarik', 'totalBerat', 'nasabahList'));
+        return view('admin.laporan.index', compact('transaksiList', 'totalSetor', 'totalTarik', 'totalBerat', 'nasabahList', 'units'));
+    }
+
+    public function labaRugi(Request $request)
+    {
+        $tanggalDari = $request->input('tanggal_dari', now()->startOfMonth()->toDateString());
+        $tanggalSampai = $request->input('tanggal_sampai', now()->endOfMonth()->toDateString());
+
+        // Pendapatan dari Penjualan ke Pengepul
+        $penjualanQuery = PenjualanSampah::whereBetween('tanggal_penjualan', [$tanggalDari, $tanggalSampai]);
+        $totalPendapatanJual = (clone $penjualanQuery)->sum('total_pendapatan');
+        $totalBeratJual = (clone $penjualanQuery)->sum('total_berat');
+        $penjualanList = (clone $penjualanQuery)->with('pengepul', 'details.jenisSampah')->latest('tanggal_penjualan')->get();
+
+        // Beban dari Pembelian Sampah Setoran Warga (Status Aktif)
+        $setoranQuery = Transaksi::where('jenis', 'setor')->where('status', 'aktif')
+            ->whereBetween('tanggal_transaksi', [$tanggalDari, $tanggalSampai]);
+        $totalBebanBeli = (clone $setoranQuery)->sum('total_nilai');
+        $totalBeratBeli = (clone $setoranQuery)->sum('total_berat');
+
+        // Laba Kotor Operasional Desa
+        $labaKotor = $totalPendapatanJual - $totalBebanBeli;
+        $marginPersen = $totalPendapatanJual > 0 ? round(($labaKotor / $totalPendapatanJual) * 100, 1) : 0;
+
+        return view('admin.laporan.laba-rugi', compact(
+            'tanggalDari',
+            'tanggalSampai',
+            'totalPendapatanJual',
+            'totalBeratJual',
+            'totalBebanBeli',
+            'totalBeratBeli',
+            'labaKotor',
+            'marginPersen',
+            'penjualanList'
+        ));
+    }
+
+    public function exportLabaRugiPdf(Request $request)
+    {
+        $tanggalDari = $request->input('tanggal_dari', now()->startOfMonth()->toDateString());
+        $tanggalSampai = $request->input('tanggal_sampai', now()->endOfMonth()->toDateString());
+
+        $penjualanQuery = PenjualanSampah::whereBetween('tanggal_penjualan', [$tanggalDari, $tanggalSampai]);
+        $totalPendapatanJual = (clone $penjualanQuery)->sum('total_pendapatan');
+        $totalBeratJual = (clone $penjualanQuery)->sum('total_berat');
+        $penjualanList = (clone $penjualanQuery)->with('pengepul', 'details.jenisSampah')->latest('tanggal_penjualan')->get();
+
+        $setoranQuery = Transaksi::where('jenis', 'setor')->where('status', 'aktif')
+            ->whereBetween('tanggal_transaksi', [$tanggalDari, $tanggalSampai]);
+        $totalBebanBeli = (clone $setoranQuery)->sum('total_nilai');
+        $totalBeratBeli = (clone $setoranQuery)->sum('total_berat');
+
+        $labaKotor = $totalPendapatanJual - $totalBebanBeli;
+        $marginPersen = $totalPendapatanJual > 0 ? round(($labaKotor / $totalPendapatanJual) * 100, 1) : 0;
+
+        $pdf = Pdf::loadView('admin.laporan.laba-rugi-pdf', compact(
+            'tanggalDari',
+            'tanggalSampai',
+            'totalPendapatanJual',
+            'totalBeratJual',
+            'totalBebanBeli',
+            'totalBeratBeli',
+            'labaKotor',
+            'marginPersen',
+            'penjualanList'
+        ));
+
+        return $pdf->download("laporan-laba-rugi-desa-{$tanggalDari}-sd-{$tanggalSampai}.pdf");
     }
 
     public function exportExcel(Request $request)

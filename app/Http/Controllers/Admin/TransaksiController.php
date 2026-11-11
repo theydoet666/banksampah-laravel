@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Models\Nasabah;
 use App\Models\JenisSampah;
+use App\Models\Unit;
 use App\Services\TransaksiService;
 use Exception;
 
@@ -21,7 +22,15 @@ class TransaksiController extends Controller
 
     public function index(Request $request)
     {
-        $query = Transaksi::with(['nasabah', 'petugas']);
+        $user = auth()->user();
+        $query = Transaksi::with(['nasabah', 'petugas', 'unit']);
+
+        // Scope Petugas ke Unit-nya
+        if ($user && $user->isPetugas() && $user->unit_id) {
+            $query->where('unit_id', $user->unit_id);
+        } elseif ($request->filled('unit_id')) {
+            $query->where('unit_id', $request->unit_id);
+        }
 
         if ($request->filled('jenis')) {
             $query->where('jenis', $request->jenis);
@@ -51,13 +60,19 @@ class TransaksiController extends Controller
         }
 
         $transaksiList = $query->orderBy('id', 'desc')->paginate(20)->withQueryString();
+        $units = Unit::aktif()->orderBy('nama')->get();
 
-        return view('admin.transaksi.index', compact('transaksiList'));
+        return view('admin.transaksi.index', compact('transaksiList', 'units'));
     }
 
     public function createSetor(Request $request)
     {
-        $nasabahList = Nasabah::aktif()->orderBy('nama')->get();
+        $nasabahQuery = Nasabah::aktif()->orderBy('nama');
+        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id) {
+            $nasabahQuery->where('unit_id', auth()->user()->unit_id);
+        }
+        $nasabahList = $nasabahQuery->get();
+
         $jenisSampahList = JenisSampah::active()->with('kategori')->orderBy('nama')->get();
         $selectedNasabahId = $request->nasabah_id;
 
@@ -85,7 +100,12 @@ class TransaksiController extends Controller
 
     public function createTarik(Request $request)
     {
-        $nasabahList = Nasabah::aktif()->orderBy('nama')->get();
+        $nasabahQuery = Nasabah::aktif()->orderBy('nama');
+        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id) {
+            $nasabahQuery->where('unit_id', auth()->user()->unit_id);
+        }
+        $nasabahList = $nasabahQuery->get();
+
         $selectedNasabahId = $request->nasabah_id;
 
         return view('admin.transaksi.tarik.create', compact('nasabahList', 'selectedNasabahId'));
@@ -110,7 +130,7 @@ class TransaksiController extends Controller
 
     public function show(Transaksi $transaksi)
     {
-        $transaksi->load(['nasabah', 'petugas', 'details.jenisSampah.kategori']);
+        $transaksi->load(['nasabah.unit', 'petugas', 'unit', 'details.jenisSampah.kategori']);
         return view('admin.transaksi.show', compact('transaksi'));
     }
 

@@ -16,6 +16,7 @@ class Nasabah extends Model
 
     protected $fillable = [
         'user_id',
+        'unit_id',
         'no_rekening',
         'nama',
         'nik',
@@ -38,6 +39,11 @@ class Nasabah extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     public function petugasPendaftar(): BelongsTo

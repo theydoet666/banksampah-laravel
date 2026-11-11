@@ -1347,6 +1347,176 @@ Lakukan pengecekan keamanan dan optimasi performa:
 
 ---
 
+## FASE 13 — MULTI-UNIT BANK SAMPAH (DUSUN/RW)
+
+---
+
+### PROMPT 13.1 — Migration & Backend Manajemen Unit
+
+```
+Baca PRD.md bagian "4.11 Manajemen Unit Bank Sampah" dan "5. Desain Database".
+Baca Agent.md bagian "Struktur Peran & Akses".
+
+Buat sistem multi-unit bank sampah:
+
+1. Buat migration untuk tabel units dan relasi unit_id:
+   php artisan make:migration create_units_and_add_unit_id_to_tables
+   - Buat tabel `units`:
+     * id, kode_unit (varchar 20, unique), nama (varchar 100), alamat (text nullable),
+       nama_ketua (varchar 100 nullable), no_hp (varchar 20 nullable),
+       status (enum: aktif, nonaktif default aktif), timestamps
+   - Tambah kolom `unit_id` ke tabel:
+     * `users`: foreignId('unit_id')->nullable()->constrained('units')->nullOnDelete()
+     * `nasabah`: foreignId('unit_id')->nullable()->constrained('units')->cascadeOnDelete()
+     * `transaksi`: foreignId('unit_id')->nullable()->constrained('units')->cascadeOnDelete()
+
+2. Buat Model app/Models/Unit.php:
+   - $fillable: kode_unit, nama, alamat, nama_ketua, no_hp, status
+   - Relasi:
+     * users(): HasMany
+     * nasabah(): HasMany
+     * transaksi(): HasMany
+     * scopeAktif($query)
+
+3. Update Model eksisting:
+   - User: relasi unit(): BelongsTo
+   - Nasabah: relasi unit(): BelongsTo
+   - Transaksi: relasi unit(): BelongsTo
+
+4. Buat app/Http/Requests/StoreUnitRequest.php & UpdateUnitRequest.php:
+   - kode_unit: required, string, max:20, unique:units,kode_unit
+   - nama: required, string, max:100
+   - alamat: nullable, string
+   - nama_ketua: nullable, string, max:100
+   - no_hp: nullable, string, max:20
+   - status: required, in:aktif,nonaktif
+
+5. Update User Management:
+   - Form create/edit user petugas dapat memilih penugasan Unit (`unit_id`).
+
+6. Update TransaksiService & NasabahService:
+   - Saat nasabah didaftarkan oleh petugas, otomatis terikat pada `unit_id` petugas (atau pilihan unit jika didaftarkan admin).
+   - Saat transaksi setor/tarik dicatat, `unit_id` transaksi otomatis diisi sesuai unit nasabah / petugas.
+
+7. Daftarkan routes di routes/web.php (grup admin):
+   - Route::resource('/units', UnitController::class);
+   - Route::patch('/units/{unit}/toggle', [UnitController::class, 'toggle'])->name('units.toggle');
+```
+
+---
+
+### PROMPT 13.2 — Frontend Manajemen Unit & Scope Filtering Petugas
+
+```
+1. Buat view Admin untuk Master Data Unit:
+   - resources/views/admin/units/index.blade.php (tabel daftar unit, jumlah nasabah, jumlah transaksi, status, aksi)
+   - resources/views/admin/units/create.blade.php (form tambah unit)
+   - resources/views/admin/units/edit.blade.php (form edit unit)
+
+2. Tambahkan menu "Unit Bank Sampah" di sidebar navigasi Admin (resources/views/layouts/partials/sidebar.blade.php).
+
+3. Penerapan Scope Filtering Data:
+   - Jika login sebagai Petugas Unit (memiliki unit_id):
+     * Daftar Nasabah otomatis terfilter hanya nasabah unitnya.
+     * Daftar Transaksi otomatis terfilter hanya transaksi unitnya.
+     * Dashboard Petugas menampilkan statistik unit yang bersangkutan.
+   - Jika login sebagai Admin / Pengelola Desa:
+     * Tampilkan dropdown filter unit di halaman Daftar Nasabah, Daftar Transaksi, dan Laporan.
+     * Tampilkan label/badge Unit pada setiap baris data nasabah dan transaksi.
+```
+
+---
+
+## FASE 14 — MANAJEMEN PENGEPUL, PENJUALAN SAMPAH DESA & STOK GUDANG
+
+---
+
+### PROMPT 14.1 — Backend Pengepul & Penjualan Sampah ke Pengepul
+
+```
+Baca PRD.md bagian "4.12 Manajemen Pengepul & Penjualan Sampah (Level Pengelola Desa)".
+
+1. Buat migration:
+   php artisan make:migration create_pengepul_and_penjualan_sampah_tables
+   - Tabel `pengepul`:
+     * id, nama_perusahaan (varchar 100), penanggung_jawab (varchar 100), no_hp (varchar 20),
+       alamat (text nullable), status (enum: aktif, nonaktif default aktif), timestamps
+   - Tabel `penjualan_sampah`:
+     * id, kode_penjualan (varchar 30 unique), pengepul_id (FK ke pengepul),
+       tanggal_penjualan (date), total_berat (decimal 10,3), total_pendapatan (decimal 15,2),
+       status_pembayaran (enum: lunas, piutang default lunas),
+       pengelola_id (FK ke users), catatan (text nullable), timestamps
+   - Tabel `detail_penjualan_sampah`:
+     * id, penjualan_id (FK cascade), jenis_sampah_id (FK),
+       berat (decimal 10,3), harga_jual_satuan (decimal 10,2), subtotal (decimal 15,2), timestamps
+
+2. Buat Models & Relationships:
+   - app/Models/Pengepul.php (relasi penjualan(): HasMany)
+   - app/Models/PenjualanSampah.php (relasi pengepul(), pengelola(), details(): HasMany)
+   - app/Models/DetailPenjualanSampah.php (relasi penjualan(), jenisSampah())
+
+3. Buat Service app/Services/PenjualanService.php:
+   - Method getStokSampahGudang():
+     * Hitung total berat masuk dari setoran warga (status aktif) dikurangi total berat yang telah terjual ke pengepul per jenis sampah.
+   - Method simpanPenjualan(array $data): PenjualanSampah:
+     * DB::transaction:
+     * Validasi berat yang dijual tidak boleh melebihi sisa stok di gudang desa.
+     * Generate kode_penjualan (format: JUAL-YYYYMMDD-XXXXX).
+     * Simpan master penjualan_sampah & detail_penjualan_sampah.
+
+4. Controller & Form Requests:
+   - Admin/PengepulController.php (CRUD mitra pengepul)
+   - Admin/PenjualanSampahController.php (index, create, store, show, suratJalan)
+```
+
+---
+
+### PROMPT 14.2 — Frontend Penjualan Sampah & Monitoring Stok Gudang
+
+```
+1. Buat view Admin untuk Master Pengepul:
+   - resources/views/admin/pengepul/index.blade.php
+   - resources/views/admin/pengepul/create.blade.php
+   - resources/views/admin/pengepul/edit.blade.php
+
+2. Buat view Monitoring Stok Gudang Desa:
+   - resources/views/admin/penjualan/stok.blade.php
+   - Tampilkan kartu indikator: Total Berat Sampah Masuk, Total Berat Terjual, Sisa Stok Tersedia (kg).
+   - Tabel stok per jenis sampah: Nama Kategori, Nama Jenis, Total Masuk (kg), Total Terjual (kg), Stok Siap Jual (kg), Estimasi Nilai Jual.
+
+3. Buat view Transaksi Penjualan Sampah:
+   - resources/views/admin/penjualan/index.blade.php (riwayat penjualan ke pengepul)
+   - resources/views/admin/penjualan/create.blade.php:
+     * Formulir dinamis (Alpine.js): Pilih Pengepul, Tanggal, dan Baris Item Sampah yang dijual.
+     * Tampilkan batas stok saat memilih jenis sampah.
+     * Auto-kalkulasi total bobot dan total pendapatan kotor.
+   - resources/views/admin/penjualan/show.blade.php (detail penjualan)
+   - resources/views/admin/penjualan/surat-jalan.blade.php (nota/surat jalan print-friendly)
+
+4. Tambahkan menu di sidebar admin:
+   - "Mitra Pengepul" & "Penjualan (Gudang Desa)"
+```
+
+---
+
+### PROMPT 14.3 — Laporan Penjualan & Laba/Rugi Operasional Desa
+
+```
+1. Buat fitur Laporan Penjualan Sampah ke Pengepul:
+   - Filter tanggal, pengepul, status pembayaran.
+   - Ekspor PDF & Excel laporan penjualan.
+
+2. Buat Laporan Laba/Rugi Operasional Bank Sampah Desa:
+   - Komponen Laba Kotor:
+     * Total Pendapatan Penjualan ke Pengepul (Kredit Kas Operasional).
+     * Total Beban Pembelian dari Nasabah (Debit Kas Operasional).
+     * Laba/Margin Operasional Bersih (Pendapatan - Beban).
+   - View: resources/views/admin/laporan/laba-rugi.blade.php
+   - Tombol Ekspor PDF & Excel untuk Laporan Laba/Rugi Desa.
+```
+
+---
+
 ## RINGKASAN URUTAN PROMPT
 
 | No | Prompt | Fase | Output |
@@ -1376,6 +1546,11 @@ Lakukan pengecekan keamanan dan optimasi performa:
 | 12.1 | Error Handling & Polish | Polish | UX polish, error pages |
 | 12.2 | Seed Demo & Testing | Testing | Data demo + test checklist |
 | 12.3 | Optimasi & Keamanan | Final | Security + performance |
+| 13.1 | Multi-Unit Backend & Migration | Multi-Unit | Tabel units, relasi unit_id, controller |
+| 13.2 | Multi-Unit Frontend & Scope | Multi-Unit | UI unit, role scope filtering, sidebar |
+| 14.1 | Penjualan Sampah Backend | Penjualan | Pengepul, Penjualan, Stok service |
+| 14.2 | Penjualan Sampah Frontend & Stok | Penjualan | UI form jual, surat jalan, monitor stok |
+| 14.3 | Laporan Penjualan & Laba Rugi | Laporan | PDF/Excel jual & laba rugi operasional |
 
 ---
 

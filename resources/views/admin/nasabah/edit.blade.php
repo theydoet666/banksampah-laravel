@@ -69,6 +69,25 @@
             </div>
 
             <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unit Bank Sampah (Dusun/RW) *</label>
+                @if(auth()->user()->isAdmin())
+                    <select name="unit_id" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">Pilih Unit...</option>
+                        @foreach($units as $u)
+                            <option value="{{ $u->id }}" {{ old('unit_id', $nasabah->unit_id) == $u->id ? 'selected' : '' }}>
+                                {{ $u->nama }} ({{ $u->kode_unit }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('unit_id') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+                @else
+                    <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold">
+                        {{ $nasabah->unit ? $nasabah->unit->nama : 'Pusat / Tanpa Unit' }}
+                    </div>
+                @endif
+            </div>
+
+            <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Alamat Lengkap *</label>
                 <textarea name="alamat" rows="3" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('alamat', $nasabah->alamat) }}</textarea>
                 @error('alamat') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror

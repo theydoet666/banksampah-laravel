@@ -1,22 +1,23 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.0.0  
-> Tanggal: 10 November 2026  
+> Versi: 1.1.0  
+> Tanggal: 11 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
-> Tech Stack Baru: **Laravel 11 + MySQL + Blade + TailwindCSS**
+> Tech Stack Baru: **Laravel 11 + MySQL + Blade + TailwindCSS + Alpine.js**
 
 ---
 
 ## 1. Latar Belakang & Tujuan
 
-Bank Sampah BAA adalah sistem pengelolaan sampah berbasis tabungan yang memungkinkan masyarakat (nasabah) menyetorkan sampah dan menukarnya menjadi saldo rupiah. Sistem ini sebelumnya dibangun menggunakan PHP Native. Versi baru ini dibangun ulang menggunakan **Laravel** agar lebih terstruktur, aman, dan mudah dikembangkan.
+Bank Sampah BAA adalah sistem pengelolaan sampah berbasis tabungan yang memungkinkan masyarakat (nasabah) menyetorkan sampah dan menukarnya menjadi saldo rupiah. Pada versi 1.1.0 ini, sistem diperluas untuk mendukung **Multi-Unit Bank Sampah** di tingkat Dusun/RW dan **Transaksi Penjualan Sampah ke Pengepul** di tingkat pengelola desa (Bank Sampah Induk/BUMDes) untuk tata kelola stok gudang dan pelaporan laba/rugi usaha desa.
 
 ### Tujuan Utama
-- Mendigitalisasi pencatatan transaksi setoran dan penarikan sampah
-- Mempermudah pengelolaan data nasabah oleh petugas
-- Menyediakan laporan keuangan dan operasional yang akurat
-- Meningkatkan transparansi saldo tabungan nasabah
+- Mendigitalisasi pencatatan transaksi setoran dan penarikan sampah di setiap unit dusun/RW
+- Mendukung struktur operasional berjenjang (Pengelola Desa vs Petugas Unit)
+- Menyediakan pencatatan stok sampah fisik dan penjualan sampah ke pengepul/industri daur ulang
+- Menyediakan kalkulasi laba/rugi operasional bank sampah desa secara transparan
+- Meningkatkan transparansi saldo tabungan nasabah di setiap unit
 
 ---
 
@@ -24,29 +25,31 @@ Bank Sampah BAA adalah sistem pengelolaan sampah berbasis tabungan yang memungki
 
 | Role | Deskripsi |
 |------|-----------|
-| **Admin** | Superadmin sistem — kelola semua data termasuk user, harga sampah, dan laporan |
-| **Petugas** | Operator lapangan — input transaksi setoran dan penarikan |
-| **Nasabah** | Anggota/warga — lihat saldo dan riwayat transaksi pribadi |
+| **Admin / Pengelola Desa** | Koordinator Bank Sampah Induk di tingkat desa — mengelola seluruh unit, stok gudang desa, transaksi penjualan ke pengepul, penetapan harga master, manajemen pengguna, dan laporan laba/rugi |
+| **Petugas Unit** | Operator di masing-masing unit dusun/RW — menginput data nasabah unitnya, mencatat setoran sampah warga, melayani penarikan saldo, dan mencetak struk transaksi |
+| **Nasabah** | Anggota/warga desa yang terdaftar di unit tertentu — memantau saldo tabungan, mutasi kredit/debit, dan unduh riwayat secara mandiri |
 
 ---
 
 ## 3. Ruang Lingkup (Scope)
 
 ### Dalam Lingkup (In Scope)
-- Autentikasi & manajemen pengguna (multi-role)
-- Manajemen data nasabah
-- Manajemen jenis & kategori sampah + harga
-- Transaksi setoran sampah (dengan detail multi-item)
-- Transaksi penarikan saldo
-- Dashboard dengan statistik real-time
-- Laporan dengan ekspor PDF & Excel
+- Autentikasi & manajemen pengguna (Admin Desa, Petugas Unit, Nasabah)
+- Manajemen Unit Bank Sampah (Multi-Unit Dusun/RW)
+- Manajemen data nasabah berbasis unit domisili
+- Manajemen jenis & kategori sampah + harga beli & harga acuan jual
+- Transaksi setoran sampah warga (multi-item detail)
+- Transaksi penarikan saldo tabungan nasabah
+- Manajemen Pengepul / Mitra Off-taker Daur Ulang
+- Transaksi Penjualan Sampah ke Pengepul (Gudang Desa) & Pengurangan Stok
+- Dashboard analitik real-time (level desa dan level unit)
+- Laporan Keuangan, Operasional, Stok Sampah, dan Laba/Rugi (PDF & Excel)
 - Profil & pengaturan sistem
 
 ### Di Luar Lingkup (Out of Scope)
-- Integrasi pembayaran digital (e-wallet, transfer bank)
-- Aplikasi mobile native (Android/iOS)
-- Sistem notifikasi SMS/WhatsApp (fase berikutnya)
-- Penjualan sampah ke pengepul (fase berikutnya)
+- Integrasi gateway pembayaran perbankan otomatis (transfer host-to-host bank)
+- Aplikasi mobile native (Android/iOS terpisah di Google Play Store)
+- Notifikasi gateway WhatsApp berbayar pihak ketiga (fase berikutnya)
 
 ---
 
@@ -147,31 +150,106 @@ Bank Sampah BAA adalah sistem pengelolaan sampah berbasis tabungan yang memungki
 | PNS-02 | Riwayat setoran & penarikan sendiri | P0 |
 | PNS-03 | Edit profil nasabah sendiri | P1 |
 
+### 4.11 Manajemen Unit Bank Sampah (Multi-Unit)
+| ID | Fitur | Prioritas |
+|----|-------|-----------|
+| UNT-01 | Daftar unit bank sampah (Dusun/RW) | P0 |
+| UNT-02 | Tambah unit bank sampah baru (kode unit, nama, penanggung jawab, alamat) | P0 |
+| UNT-03 | Edit informasi unit bank sampah | P0 |
+| UNT-04 | Nonaktifkan / aktifkan unit bank sampah | P0 |
+| UNT-05 | Penugasan (*assignment*) petugas ke unit tertentu | P0 |
+| UNT-06 | Filter data (nasabah, transaksi, laporan) berdasarkan unit | P0 |
+
+### 4.12 Manajemen Pengepul & Penjualan Sampah (Level Pengelola Desa)
+| ID | Fitur | Prioritas |
+|----|-------|-----------|
+| JUA-01 | Master data pengepul/mitra daur ulang (nama, kontak, alamat, jenis sampah yang ditampung) | P0 |
+| JUA-02 | Monitoring stok fisik sampah gudang desa yang terkumpul siap jual | P0 |
+| JUA-03 | Form input penjualan sampah ke pengepul (multi-item: jenis sampah, berat jual, harga jual/kg) | P0 |
+| JUA-04 | Pemotongan stok otomatis saat penjualan diverifikasi | P0 |
+| JUA-05 | Cetak invoice/surat jalan penjualan sampah ke pengepul | P1 |
+| JUA-06 | Laporan rekapitulasi penjualan sampah ke pengepul (PDF & Excel) | P0 |
+| JUA-07 | Laporan Laba/Rugi Operasional Bank Sampah (Pendapatan Jual - Beban Beli Nasabah) | P0 |
+
 ---
 
 ## 5. Desain Database
 
-### ERD Overview
+### ERD Overview (v1.1.0 Multi-Unit & Penjualan Desa)
 
 ```
-users ─────────────────────── nasabah
-  |                              |
-  | (petugas_id)                 | (nasabah_id)
-  |                              |
-  └──────── transaksi ──────────┘
-                 |
-                 | (transaksi_id)
-                 |
-           detail_transaksi
-                 |
-                 | (jenis_sampah_id)
-                 |
-           jenis_sampah ──── kategori_sampah
-                 |
-           harga_sampah_log
+units (Dusun/RW)
+  ├── 1:N ── users (petugas unit / pengelola desa)
+  ├── 1:N ── nasabah
+  └── 1:N ── transaksi (setor & tarik warga)
+                  │
+                  ├── detail_transaksi ── jenis_sampah ── kategori_sampah
+                                               │
+pengepul (Off-taker)                           │
+  │                                            │
+  └── 1:N ── penjualan_sampah                  │
+                  │                            │
+                  └── detail_penjualan_sampah ─┘ (stok keluar)
 ```
 
-### Skema Tabel
+### Skema Tabel Baru & Tambahan Kolom
+
+#### `units`
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | BIGINT UNSIGNED AI PK | |
+| kode_unit | VARCHAR(20) UNIQUE | Contoh: U-01, U-02 |
+| nama | VARCHAR(100) | Contoh: Unit Melati RW 02 |
+| alamat | TEXT NULL | |
+| nama_ketua | VARCHAR(100) NULL | |
+| no_hp | VARCHAR(20) NULL | |
+| status | ENUM('aktif','nonaktif') DEFAULT 'aktif' | |
+| created_at / updated_at | TIMESTAMP | |
+
+#### Perubahan pada Tabel `users`
+- Tambah kolom `unit_id`: `BIGINT NULL FK → units(id)` (NULL untuk Admin/Pengelola Desa, terisi untuk Petugas Unit).
+
+#### Perubahan pada Tabel `nasabah`
+- Tambah kolom `unit_id`: `BIGINT NOT NULL FK → units(id)` (menandakan unit domisili nasabah).
+
+#### Perubahan pada Tabel `transaksi`
+- Tambah kolom `unit_id`: `BIGINT NOT NULL FK → units(id)` (lokasi unit tempat transaksi dicatat).
+
+#### `pengepul`
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | BIGINT UNSIGNED AI PK | |
+| nama_perusahaan | VARCHAR(100) | Nama PT/CV/Lapak Pengepul |
+| penanggung_jawab | VARCHAR(100) | Nama kontak person |
+| no_hp | VARCHAR(20) | |
+| alamat | TEXT NULL | |
+| status | ENUM('aktif','nonaktif') DEFAULT 'aktif' | |
+| created_at / updated_at | TIMESTAMP | |
+
+#### `penjualan_sampah` (Level Desa)
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | BIGINT UNSIGNED AI PK | |
+| kode_penjualan | VARCHAR(30) UNIQUE | Contoh: JUAL-YYYYMMDD-XXXXX |
+| pengepul_id | BIGINT FK → pengepul | |
+| tanggal_penjualan | DATE | |
+| total_berat | DECIMAL(10,3) | Total bobot sampah yang dijual (kg) |
+| total_pendapatan | DECIMAL(15,2) | Total nilai penjualan rupiah |
+| status_pembayaran | ENUM('lunas','piutang') DEFAULT 'lunas' | |
+| pengelola_id | BIGINT FK → users | User pengelola desa yang mencatat |
+| catatan | TEXT NULL | |
+| created_at / updated_at | TIMESTAMP | |
+
+#### `detail_penjualan_sampah`
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | BIGINT UNSIGNED AI PK | |
+| penjualan_id | BIGINT FK → penjualan_sampah (cascade) | |
+| jenis_sampah_id | BIGINT FK → jenis_sampah | |
+| berat | DECIMAL(10,3) | Berat yang dijual ke pengepul |
+| harga_jual_satuan | DECIMAL(10,2) | Harga per kg yang dibeli pengepul |
+| subtotal | DECIMAL(15,2) | berat x harga_jual_satuan |
+| created_at / updated_at | TIMESTAMP | |
 
 #### `users`
 | Kolom | Tipe | Keterangan |

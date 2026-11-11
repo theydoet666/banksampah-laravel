@@ -26,9 +26,13 @@ class TransaksiService
                 $totalBerat += (float) $item['berat'];
             }
 
+            $nasabah = Nasabah::findOrFail($data['nasabah_id']);
+            $unitId = $nasabah->unit_id ?? auth()->user()?->unit_id;
+
             $transaksi = Transaksi::create([
                 'kode_transaksi' => Transaksi::generateKodeTransaksi(),
                 'nasabah_id' => $data['nasabah_id'],
+                'unit_id' => $unitId,
                 'jenis' => 'setor',
                 'total_berat' => $totalBerat,
                 'total_nilai' => $totalNilai,
@@ -69,9 +73,12 @@ class TransaksiService
                 throw new InsufficientBalanceException('Saldo nasabah tidak mencukupi untuk penarikan ini.');
             }
 
+            $unitId = $nasabah->unit_id ?? auth()->user()?->unit_id;
+
             $transaksi = Transaksi::create([
                 'kode_transaksi' => Transaksi::generateKodeTransaksi(),
                 'nasabah_id' => $nasabah->id,
+                'unit_id' => $unitId,
                 'jenis' => 'tarik',
                 'total_berat' => null,
                 'total_nilai' => $nominal,
