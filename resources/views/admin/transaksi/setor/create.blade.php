@@ -30,9 +30,9 @@
                         @endforeach
                     </select>
 
-                    <div x-show="selectedNasabahInfo" class="mt-3 p-3 bg-slate-50 rounded-lg text-xs space-y-1">
-                        <p class="text-slate-500">No. Rekening: <span class="font-mono font-bold text-slate-800" x-text="selectedNasabahInfo.rekening"></span></p>
-                        <p class="text-slate-500">Saldo Saat Ini: <span class="font-bold text-emerald-600" x-text="formatRupiah(selectedNasabahInfo.saldo)"></span></p>
+                    <div x-show="selectedNasabahId && selectedNasabahInfo && selectedNasabahInfo.rekening" class="mt-3 p-3 bg-slate-50 rounded-lg text-xs space-y-1">
+                        <p class="text-slate-500">No. Rekening: <span class="font-mono font-bold text-slate-800" x-text="selectedNasabahInfo?.rekening || '-'"></span></p>
+                        <p class="text-slate-500">Saldo Saat Ini: <span class="font-bold text-emerald-600" x-text="formatRupiah(selectedNasabahInfo?.saldo || 0)"></span></p>
                     </div>
                 </div>
 
@@ -124,7 +124,7 @@
 function setoranForm() {
     return {
         selectedNasabahId: '{{ $selectedNasabahId ?? "" }}',
-        selectedNasabahInfo: null,
+        selectedNasabahInfo: { rekening: '', saldo: 0 },
         jenisSampahList: @json($jenisSampahList),
         rows: [
             { jenis_sampah_id: '', berat: '', harga_satuan: 0, satuan: 'kg', subtotal: 0 }
@@ -141,14 +141,15 @@ function setoranForm() {
 
         updateNasabahInfo() {
             const select = document.querySelector('select[name="nasabah_id"]');
+            if (!select) return;
             const selectedOption = select.options[select.selectedIndex];
             if (selectedOption && selectedOption.value) {
                 this.selectedNasabahInfo = {
-                    rekening: selectedOption.dataset.rekening,
+                    rekening: selectedOption.dataset.rekening || '-',
                     saldo: parseFloat(selectedOption.dataset.saldo || 0)
                 };
             } else {
-                this.selectedNasabahInfo = null;
+                this.selectedNasabahInfo = { rekening: '', saldo: 0 };
             }
         },
 
