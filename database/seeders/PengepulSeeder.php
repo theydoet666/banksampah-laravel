@@ -67,38 +67,43 @@ class PengepulSeeder extends Seeder
 
             $tgl = Carbon::now()->subDays(5);
 
-            $penjualan = PenjualanSampah::create([
-                'kode_penjualan' => 'JUAL-' . $tgl->format('Ymd') . '-00001',
-                'pengepul_id' => $pengepul->id,
-                'tanggal_penjualan' => $tgl->toDateString(),
-                'total_berat' => $totalBerat,
-                'total_pendapatan' => $totalNilai,
-                'status_pembayaran' => 'lunas',
-                'pengelola_id' => $admin->id,
-                'catatan' => 'Pengiriman perdana hasil sortir gudang desa. Truk B 9123 KDA.',
-                'created_at' => $tgl,
-                'updated_at' => $tgl,
-            ]);
+            $kodeJual = 'JUAL-' . $tgl->format('Ymd') . '-00001';
+            $penjualan = PenjualanSampah::where('kode_penjualan', $kodeJual)->first();
 
-            DetailPenjualanSampah::create([
-                'penjualan_id' => $penjualan->id,
-                'jenis_sampah_id' => $item1['id'],
-                'berat' => $beratJual1,
-                'harga_jual_satuan' => $hargaJual1,
-                'subtotal' => $subtotal1,
-                'created_at' => $tgl,
-                'updated_at' => $tgl,
-            ]);
+            if (! $penjualan) {
+                $penjualan = PenjualanSampah::create([
+                    'kode_penjualan' => $kodeJual,
+                    'pengepul_id' => $pengepul->id,
+                    'tanggal_penjualan' => $tgl->toDateString(),
+                    'total_berat' => $totalBerat,
+                    'total_pendapatan' => $totalNilai,
+                    'status_pembayaran' => 'lunas',
+                    'pengelola_id' => $admin->id,
+                    'catatan' => 'Pengiriman perdana hasil sortir gudang desa. Truk B 9123 KDA.',
+                    'created_at' => $tgl,
+                    'updated_at' => $tgl,
+                ]);
 
-            DetailPenjualanSampah::create([
-                'penjualan_id' => $penjualan->id,
-                'jenis_sampah_id' => $item2['id'],
-                'berat' => $beratJual2,
-                'harga_jual_satuan' => $hargaJual2,
-                'subtotal' => $subtotal2,
-                'created_at' => $tgl,
-                'updated_at' => $tgl,
-            ]);
+                DetailPenjualanSampah::create([
+                    'penjualan_id' => $penjualan->id,
+                    'jenis_sampah_id' => $item1['id'],
+                    'berat' => $beratJual1,
+                    'harga_jual_satuan' => $hargaJual1,
+                    'subtotal' => $subtotal1,
+                    'created_at' => $tgl,
+                    'updated_at' => $tgl,
+                ]);
+
+                DetailPenjualanSampah::create([
+                    'penjualan_id' => $penjualan->id,
+                    'jenis_sampah_id' => $item2['id'],
+                    'berat' => $beratJual2,
+                    'harga_jual_satuan' => $hargaJual2,
+                    'subtotal' => $subtotal2,
+                    'created_at' => $tgl,
+                    'updated_at' => $tgl,
+                ]);
+            }
         }
     }
 }

@@ -47,8 +47,21 @@ class LoginRequest extends FormRequest
         $loginInput = trim($this->input('email', ''));
         $password = $this->input('password');
 
-        // Cari user melalui Email, No Rekening, atau No HP
-        $user = User::where('email', $loginInput)->first();
+        // Cari user melalui Email, Username/Nama, Shorthand Role, No Rekening, atau No HP
+        $user = User::where('email', $loginInput)
+            ->orWhere('name', $loginInput)
+            ->first();
+
+        // Shorthand username jika admin mengetik 'admin', 'pengelola', 'petugas'
+        if (! $user) {
+            $normalized = strtolower($loginInput);
+            if (in_array($normalized, ['admin', 'administrator', 'pengelola', 'petugas', 'nasabah'])) {
+                $roleSearch = $normalized === 'administrator' ? 'admin' : $normalized;
+                $user = User::where('email', "{$roleSearch}@banksampah.test")
+                    ->orWhere('role', $roleSearch)
+                    ->first();
+            }
+        }
 
         if (! $user) {
             $nasabah = Nasabah::where('no_rekening', $loginInput)->first();
