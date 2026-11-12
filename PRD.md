@@ -1,307 +1,169 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.1.0  
-> Tanggal: 11 November 2026  
+> Versi: 1.2.0  
+> Tanggal: 12 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
-> Tech Stack Baru: **Laravel 11 + MySQL + Blade + TailwindCSS + Alpine.js**
+> Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js**
 
 ---
 
 ## 1. Latar Belakang & Tujuan
 
-Bank Sampah BAA adalah sistem pengelolaan sampah berbasis tabungan yang memungkinkan masyarakat (nasabah) menyetorkan sampah dan menukarnya menjadi saldo rupiah. Pada versi 1.1.0 ini, sistem diperluas untuk mendukung **Multi-Unit Bank Sampah** di tingkat Dusun/RW dan **Transaksi Penjualan Sampah ke Pengepul** di tingkat pengelola desa (Bank Sampah Induk/BUMDes) untuk tata kelola stok gudang dan pelaporan laba/rugi usaha desa.
+Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.2.0 ini, sistem telah diperluas mencakup:
+1. **Multi-Unit Bank Sampah** di tingkat Dusun/RW.
+2. **Role Berjenjang 4 Tingkat** (`admin`, `pengelola`, `petugas`, `nasabah`).
+3. **Mekanisme Multi-Identifier Login & Auto Onboarding Nasabah** yang fleksibel dan ramah warga desa.
+4. **Struktur Dua Harga Komoditas** (Harga Beli Nasabah & Harga Jual Pengepul) dengan kalkulasi margin keuntungan desa secara *real-time*.
+5. **Manajemen Penjualan Sampah Gudang Induk ke Pengepul** serta laporan laba/rugi usaha desa terpadu.
 
 ### Tujuan Utama
-- Mendigitalisasi pencatatan transaksi setoran dan penarikan sampah di setiap unit dusun/RW
-- Mendukung struktur operasional berjenjang (Pengelola Desa vs Petugas Unit)
-- Menyediakan pencatatan stok sampah fisik dan penjualan sampah ke pengepul/industri daur ulang
-- Menyediakan kalkulasi laba/rugi operasional bank sampah desa secara transparan
-- Meningkatkan transparansi saldo tabungan nasabah di setiap unit
+- Mendigitalisasi pencatatan setoran dan penarikan tabungan sampah di setiap pos dusun/RW.
+- Mengakomodasi operasional berjenjang (Admin Desa, Pengelola/Bendahara Gudang Induk, Petugas Pos Dusun, dan Nasabah Warga).
+- Menyediakan transparansi penetapan harga komoditas (harga beli dari warga vs harga jual ke industri/pengepul).
+- Memberikan kemudahan akses login bagi warga desa (menggunakan No. Rekening, No. HP/WhatsApp, atau Email).
+- Menyediakan pengawasan stok fisik sampah gudang desa dan akuntabilitas laba/rugi operasional.
 
 ---
 
-## 2. Pemangku Kepentingan (Stakeholders)
+## 2. Pemangku Kepentingan (Stakeholders & Roles)
 
-| Role | Deskripsi |
-|------|-----------|
-| **Admin Desa / Administrator Sistem** (`admin`) | Administrator sistem di tingkat desa — mengelola pembentukan unit bank sampah (Dusun/RW), manajemen pengguna (admin & petugas), penetapan konfigurasi sistem, dan identitas/branding bank sampah |
-| **Pengelola Bank Sampah / Bendahara** (`pengelola`) | Pengelola operasional & bendahara Bank Sampah Induk — bertanggung jawab atas sirkulasi keuangan dan gudang: otorisasi/approval penarikan saldo nasabah, transaksi penjualan sampah ke pengepul, monitoring stok gudang desa, serta laporan laba/rugi operasional |
-| **Petugas Unit** (`petugas`) | Operator di masing-masing unit dusun/RW — menginput data nasabah unitnya, mencatat timbangan setoran sampah warga, melayani pengajuan penarikan saldo ke desa, dan mencetak struk transaksi |
-| **Nasabah** (`nasabah`) | Anggota/warga desa yang terdaftar di unit tertentu — memantau saldo tabungan, mengajukan tarik saldo mandiri via portal HP, mutasi kredit/debit, dan unduh riwayat secara mandiri |
+| Role | Deskripsi & Batasan Akses |
+|------|---------------------------|
+| **Admin Desa / Administrator Sistem** (`admin`) | Administrator penuh tingkat desa — berwenang mengelola pembentukan unit dusun/RW, manajemen akun seluruh pengguna sistem (admin, pengelola, petugas), identitas branding/logo, dan konfigurasi master sistem. |
+| **Pengelola Bank Sampah / Bendahara** (`pengelola`) | Koordinator operasional & bendahara Bank Sampah Induk — berwenang mengelola transaksi penjualan sampah ke pengepul, otorisasi/approval penarikan saldo nasabah, monitoring stok fisik gudang desa, serta laporan laba/rugi operasional. *(Dibatasi: 403 Forbidden untuk manajemen user sistem, unit dusun, dan branding logo)*. |
+| **Petugas Unit** (`petugas`) | Operator di pos dusun/RW — mencatat timbangan setoran sampah warga, melayani pengajuan tarik saldo ke pengelola desa, mendaftarkan nasabah unitnya, dan mencetak struk transaksi. |
+| **Nasabah** (`nasabah`) | Warga desa pemilik buku tabungan digital — memantau saldo tabungan, mutasi kredit/debit secara mandiri, mengajukan penarikan saldo online, serta melihat katalog harga beli sampah. |
 
 ---
 
 ## 3. Ruang Lingkup (Scope)
 
 ### Dalam Lingkup (In Scope)
-- Autentikasi & manajemen pengguna (Admin Desa, Petugas Unit, Nasabah)
-- Manajemen Unit Bank Sampah (Multi-Unit Dusun/RW)
-- Manajemen data nasabah berbasis unit domisili
-- Manajemen jenis & kategori sampah + harga beli & harga acuan jual
-- Transaksi setoran sampah warga (multi-item detail)
-- Transaksi penarikan saldo tabungan nasabah
-- Manajemen Pengepul / Mitra Off-taker Daur Ulang
-- Transaksi Penjualan Sampah ke Pengepul (Gudang Desa) & Pengurangan Stok
-- Dashboard analitik real-time (level desa dan level unit)
-- Laporan Keuangan, Operasional, Stok Sampah, dan Laba/Rugi (PDF & Excel)
-- Profil & pengaturan sistem
+- Autentikasi multi-identifier (Email / No. Rekening / No. HP / Username) & toggle show/hide password.
+- Auto-account onboarding nasabah (password default 6 digit No. HP) & form registrasi mandiri warga online (`/register-nasabah`).
+- Manajemen Unit Dusun/RW (Multi-Unit scoping).
+- Master Kategori & Jenis Sampah dengan **Struktur Dua Harga** (Harga Beli & Harga Jual) serta dukungan satuan `kg`, `gram`, `unit`, `buah`, `pcs`, `liter`.
+- Transaksi setoran sampah warga di pos unit (multi-item detail).
+- Transaksi penarikan saldo dengan alur persetujuan (*approval workflow*) oleh Pengelola Desa.
+- Monitoring stok gudang induk dan transaksi penjualan ke pengepul (dengan fitur auto-fill harga jual standar).
+- Laporan Keuangan, Operasional, Stok Gudang, dan Laba/Rugi (PDF & Excel).
+- Pengaturan identitas bank sampah, logo, dan profil desa.
+- Tool pemeliharaan data: command artisan `bank-sampah:reset-data` untuk pengujian bersih dari nol.
 
 ### Di Luar Lingkup (Out of Scope)
-- Integrasi gateway pembayaran perbankan otomatis (transfer host-to-host bank)
-- Aplikasi mobile native (Android/iOS terpisah di Google Play Store)
-- Notifikasi gateway WhatsApp berbayar pihak ketiga (fase berikutnya)
+- Integrasi transfer host-to-host bank otomatis (penarikan saldo tetap diserahterimakan tunai di pos loket/kantor).
+- Aplikasi native Android/iOS khusus (sistem sepenuhnya responsif web mobile PWA-ready).
+- SMS/WhatsApp gateway pihak ketiga berbayar (fase berikutnya).
 
 ---
 
 ## 4. Fitur & Modul
 
-### 4.1 Autentikasi
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| AUTH-01 | Login dengan email & password | P0 |
-| AUTH-02 | Logout | P0 |
-| AUTH-03 | Remember me (session persisten) | P1 |
-| AUTH-04 | Reset password via email | P1 |
-| AUTH-05 | Role-based access control (Admin, Petugas, Nasabah) | P0 |
+### 4.1 Autentikasi & Onboarding Warga
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| AUTH-01 | Login multi-identifier (Email, No. Rekening `BS-YYYY-xxxxx`, No. HP/WhatsApp, atau Shorthand Username `admin`/`pengelola`/`petugas`) | P0 | Selesai |
+| AUTH-02 | Fitur intip kata sandi (Show/Hide Password toggle dengan ikon mata) | P0 | Selesai |
+| AUTH-03 | Desain Form Login modern split-screen 50:50 (Fintech style & responsif) | P0 | Selesai |
+| AUTH-04 | Auto user onboarding: akun login otomatis terbit saat nasabah didaftarkan petugas pos (password default 6 digit No. HP) | P0 | Selesai |
+| AUTH-05 | Registrasi mandiri nasabah online melalui portal publik (`/register-nasabah`) | P0 | Selesai |
+| AUTH-06 | Reset password nasabah ke default oleh Admin/Petugas di menu profil nasabah | P0 | Selesai |
+| AUTH-07 | Role-based access control (Admin, Pengelola, Petugas, Nasabah) | P0 | Selesai |
 
-### 4.2 Dashboard
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| DASH-01 | Total nasabah aktif | P0 |
-| DASH-02 | Total sampah masuk (kg) bulan ini | P0 |
-| DASH-03 | Total nilai setoran & penarikan bulan ini | P0 |
-| DASH-04 | Grafik transaksi 7 hari terakhir (Chart.js) | P1 |
-| DASH-05 | Daftar 5 transaksi terbaru | P1 |
-| DASH-06 | Jumlah jenis sampah aktif | P1 |
+### 4.2 Dashboard Analitik
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| DASH-01 | Ringkasan nasabah aktif, total sampah masuk (kg), dan saldo tabungan | P0 | Selesai |
+| DASH-02 | Grafik statistik setoran 7 hari terakhir (Chart.js) | P1 | Selesai |
+| DASH-03 | Scoping dashboard khusus per role (Admin, Pengelola, Petugas, Nasabah) | P0 | Selesai |
 
 ### 4.3 Manajemen Nasabah
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| NAS-01 | Daftar nasabah (paginated, searchable) | P0 |
-| NAS-02 | Tambah nasabah baru (dengan auto-generate nomor rekening) | P0 |
-| NAS-03 | Edit data nasabah | P0 |
-| NAS-04 | Nonaktifkan / aktifkan nasabah (soft delete) | P0 |
-| NAS-05 | Detail nasabah (saldo + riwayat transaksi) | P0 |
-| NAS-06 | Cetak kartu nasabah (PDF) | P2 |
-| NAS-07 | Import nasabah dari Excel | P2 |
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| NAS-01 | Daftar nasabah (searchable, filter per unit dusun, paginated) | P0 | Selesai |
+| NAS-02 | Tambah nasabah baru + auto-generate No. Rekening unik format `BS-YYYY-xxxxx` | P0 | Selesai |
+| NAS-03 | Kartu info kredensial login mandiri & tombol Reset Password nasabah | P0 | Selesai |
+| NAS-04 | Detail buku tabungan (saldo riil + riwayat transaksi debit/kredit) | P0 | Selesai |
+| NAS-05 | Cetak kartu anggota nasabah (PDF) | P1 | Selesai |
 
-### 4.4 Manajemen Jenis Sampah
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| SAM-01 | Daftar jenis sampah (dengan kategori & harga saat ini) | P0 |
-| SAM-02 | Tambah jenis sampah baru | P0 |
-| SAM-03 | Edit jenis sampah & update harga | P0 |
-| SAM-04 | Nonaktifkan jenis sampah | P0 |
-| SAM-05 | Riwayat perubahan harga per jenis sampah | P1 |
-| SAM-06 | Kategori sampah (Plastik, Kertas, Logam, Kaca, Organik, dll.) | P0 |
+### 4.4 Manajemen Komoditas & Struktur Dua Harga
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| SAM-01 | Master jenis sampah dengan **Struktur Dua Harga**: Harga Beli (Nasabah) & Harga Jual (Pengepul) | P0 | Selesai |
+| SAM-02 | Kalkulator margin keuntungan kas desa interaktif secara live di form tambah/edit | P0 | Selesai |
+| SAM-03 | Pilihan satuan ukur luas: `kg`, `gram`, `unit`, `buah`, `pcs`, `liter` | P0 | Selesai |
+| SAM-04 | Riwayat fluktuasi harga komoditas (`harga_sampah_log`) untuk harga beli dan harga jual | P1 | Selesai |
+| SAM-05 | Manajemen Kategori Sampah (Plastik, Kertas, Logam, Kaca, Organik, Elektronik) | P0 | Selesai |
 
-### 4.5 Transaksi Setoran Sampah
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| SET-01 | Form input setoran (pilih nasabah, tanggal, detail sampah) | P0 |
-| SET-02 | Multi-item dalam satu transaksi (tambah/hapus baris) | P0 |
-| SET-03 | Auto-kalkulasi nilai berdasarkan berat x harga saat ini | P0 |
-| SET-04 | Konfirmasi & simpan transaksi (saldo nasabah bertambah) | P0 |
-| SET-05 | Cetak struk transaksi setoran (print-friendly / PDF) | P1 |
-| SET-06 | Daftar riwayat seluruh setoran (filter tanggal, nasabah) | P0 |
-| SET-07 | Detail transaksi setoran | P0 |
-| SET-08 | Batalkan / void transaksi (admin only) | P1 |
+### 4.5 Transaksi Setoran Sampah (Pos Unit Dusun)
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| SET-01 | Form penimbangan setoran (pilih nasabah, multi-baris item sampah) | P0 | Selesai |
+| SET-02 | Auto-kalkulasi nilai rupiah setoran (berat x harga beli nasabah) | P0 | Selesai |
+| SET-03 | Update otomatis saldo tabungan nasabah secara instan | P0 | Selesai |
+| SET-04 | Cetak struk transaksi setoran (print-friendly) | P1 | Selesai |
+| SET-05 | Pembatalan / void transaksi setoran oleh Admin (saldo ditarik kembali) | P1 | Selesai |
 
-### 4.6 Transaksi Penarikan Saldo
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| TAR-01 | Form input penarikan (pilih nasabah, nominal) | P0 |
-| TAR-02 | Validasi saldo tidak boleh minus | P0 |
-| TAR-03 | Konfirmasi & simpan (saldo nasabah berkurang) | P0 |
-| TAR-04 | Cetak bukti penarikan (print-friendly / PDF) | P1 |
-| TAR-05 | Daftar riwayat seluruh penarikan | P0 |
-| TAR-06 | Batalkan / void penarikan (admin only) | P1 |
+### 4.6 Transaksi Penarikan Saldo & Alur Persetujuan
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| TAR-01 | Pengajuan penarikan saldo oleh nasabah atau petugas pos unit | P0 | Selesai |
+| TAR-02 | Validasi saldo cukup (tidak boleh minus) | P0 | Selesai |
+| TAR-03 | Alur persetujuan (*approval workflow*) penarikan oleh Pengelola/Admin Desa | P0 | Selesai |
+| TAR-04 | Pemotongan saldo nasabah saat penarikan disetujui (status: disetujui/ditolak) | P0 | Selesai |
+| TAR-05 | Cetak bukti penarikan saldo | P1 | Selesai |
 
-### 4.7 Laporan
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| LAP-01 | Laporan transaksi (filter: tanggal, jenis, nasabah) | P0 |
-| LAP-02 | Laporan rekap per periode (harian, bulanan, tahunan) | P0 |
-| LAP-03 | Laporan saldo seluruh nasabah | P0 |
-| LAP-04 | Ekspor PDF (DomPDF / Barryvdh) | P1 |
-| LAP-05 | Ekspor Excel (Maatwebsite/Excel) | P1 |
-| LAP-06 | Laporan jenis sampah (total berat & nilai per jenis) | P1 |
+### 4.7 Penjualan Sampah ke Pengepul & Gudang Induk
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| JUA-01 | Master data rekanan pengepul / industri off-taker daur ulang | P0 | Selesai |
+| JUA-02 | Monitoring stok fisik sampah gudang desa siap angkut | P0 | Selesai |
+| JUA-03 | Form penjualan sampah ke pengepul dengan **Auto-Fill Harga Jual Standar** dari master | P0 | Selesai |
+| JUA-04 | Validasi kuantitas jual tidak melebihi stok gudang yang tersedia | P0 | Selesai |
+| JUA-05 | Pengurangan stok gudang otomatis saat transaksi penjualan disimpan | P0 | Selesai |
+| JUA-06 | Laporan Laba/Rugi Desa: Pendapatan Jual vs Beban Setoran Nasabah | P0 | Selesai |
 
-### 4.8 Manajemen Pengguna (Admin)
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| USR-01 | Daftar pengguna sistem | P0 |
-| USR-02 | Tambah pengguna (admin/petugas) | P0 |
-| USR-03 | Edit pengguna | P0 |
-| USR-04 | Nonaktifkan pengguna | P0 |
-| USR-05 | Reset password pengguna | P1 |
-
-### 4.9 Profil & Pengaturan
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| PROF-01 | Edit profil sendiri (nama, email, foto) | P1 |
-| PROF-02 | Ganti password | P1 |
-| PROF-03 | Pengaturan umum sistem (nama bank sampah, alamat, logo) | P1 |
-
-### 4.10 Panel Nasabah (Self-service)
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| PNS-01 | Lihat saldo tabungan sendiri | P0 |
-| PNS-02 | Riwayat setoran & penarikan sendiri | P0 |
-| PNS-03 | Edit profil nasabah sendiri | P1 |
-
-### 4.11 Manajemen Unit Bank Sampah (Multi-Unit)
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| UNT-01 | Daftar unit bank sampah (Dusun/RW) | P0 |
-| UNT-02 | Tambah unit bank sampah baru (kode unit, nama, penanggung jawab, alamat) | P0 |
-| UNT-03 | Edit informasi unit bank sampah | P0 |
-| UNT-04 | Nonaktifkan / aktifkan unit bank sampah | P0 |
-| UNT-05 | Penugasan (*assignment*) petugas ke unit tertentu | P0 |
-| UNT-06 | Filter data (nasabah, transaksi, laporan) berdasarkan unit | P0 |
-
-### 4.12 Manajemen Pengepul & Penjualan Sampah (Level Pengelola Desa)
-| ID | Fitur | Prioritas |
-|----|-------|-----------|
-| JUA-01 | Master data pengepul/mitra daur ulang (nama, kontak, alamat, jenis sampah yang ditampung) | P0 |
-| JUA-02 | Monitoring stok fisik sampah gudang desa yang terkumpul siap jual | P0 |
-| JUA-03 | Form input penjualan sampah ke pengepul (multi-item: jenis sampah, berat jual, harga jual/kg) | P0 |
-| JUA-04 | Pemotongan stok otomatis saat penjualan diverifikasi | P0 |
-| JUA-05 | Cetak invoice/surat jalan penjualan sampah ke pengepul | P1 |
-| JUA-06 | Laporan rekapitulasi penjualan sampah ke pengepul (PDF & Excel) | P0 |
-| JUA-07 | Laporan Laba/Rugi Operasional Bank Sampah (Pendapatan Jual - Beban Beli Nasabah) | P0 |
+### 4.8 Laporan & Rekapitulasi
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| LAP-01 | Laporan transaksi setor/tarik (filter periode, jenis, unit dusun) | P0 | Selesai |
+| LAP-02 | Laporan laba/rugi penjualan sampah ke pengepul (filter tanggal) | P0 | Selesai |
+| LAP-03 | Laporan valuasi stok gudang (modal beli vs potensi jual) | P0 | Selesai |
+| LAP-04 | Ekspor laporan format PDF (DomPDF) dan Excel (Maatwebsite) | P1 | Selesai |
 
 ---
 
-## 5. Desain Database
+## 5. Desain Database & Skema Terkini
 
-### ERD Overview (v1.1.0 Multi-Unit & Penjualan Desa)
-
+### ERD Overview (v1.2.0)
 ```
 units (Dusun/RW)
-  ├── 1:N ── users (petugas unit / pengelola desa)
+  ├── 1:N ── users (admin, pengelola, petugas, nasabah)
   ├── 1:N ── nasabah
   └── 1:N ── transaksi (setor & tarik warga)
                   │
                   ├── detail_transaksi ── jenis_sampah ── kategori_sampah
-                                               │
-pengepul (Off-taker)                           │
+                                               │               │
+pengepul (Off-taker)                           │       harga_sampah_log
   │                                            │
   └── 1:N ── penjualan_sampah                  │
                   │                            │
                   └── detail_penjualan_sampah ─┘ (stok keluar)
 ```
 
-### Skema Tabel Baru & Tambahan Kolom
-
-#### `units`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| kode_unit | VARCHAR(20) UNIQUE | Contoh: U-01, U-02 |
-| nama | VARCHAR(100) | Contoh: Unit Melati RW 02 |
-| alamat | TEXT NULL | |
-| nama_ketua | VARCHAR(100) NULL | |
-| no_hp | VARCHAR(20) NULL | |
-| status | ENUM('aktif','nonaktif') DEFAULT 'aktif' | |
-| created_at / updated_at | TIMESTAMP | |
-
-#### Perubahan pada Tabel `users`
-- Tambah kolom `unit_id`: `BIGINT NULL FK → units(id)` (NULL untuk Admin & Pengelola Desa, terisi untuk Petugas Unit).
-- Nilai kolom `role`: `VARCHAR(30)` (`admin`, `pengelola`, `petugas`, `nasabah`).
-
-#### Perubahan pada Tabel `nasabah`
-- Tambah kolom `unit_id`: `BIGINT NOT NULL FK → units(id)` (menandakan unit domisili nasabah).
-
-#### Perubahan pada Tabel `transaksi`
-- Tambah kolom `unit_id`: `BIGINT NOT NULL FK → units(id)` (lokasi unit tempat transaksi dicatat).
-
-#### `pengepul`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| nama_perusahaan | VARCHAR(100) | Nama PT/CV/Lapak Pengepul |
-| penanggung_jawab | VARCHAR(100) | Nama kontak person |
-| no_hp | VARCHAR(20) | |
-| alamat | TEXT NULL | |
-| status | ENUM('aktif','nonaktif') DEFAULT 'aktif' | |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `penjualan_sampah` (Level Desa)
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| kode_penjualan | VARCHAR(30) UNIQUE | Contoh: JUAL-YYYYMMDD-XXXXX |
-| pengepul_id | BIGINT FK → pengepul | |
-| tanggal_penjualan | DATE | |
-| total_berat | DECIMAL(10,3) | Total bobot sampah yang dijual (kg) |
-| total_pendapatan | DECIMAL(15,2) | Total nilai penjualan rupiah |
-| status_pembayaran | ENUM('lunas','piutang') DEFAULT 'lunas' | |
-| pengelola_id | BIGINT FK → users | User pengelola desa yang mencatat |
-| catatan | TEXT NULL | |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `detail_penjualan_sampah`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| penjualan_id | BIGINT FK → penjualan_sampah (cascade) | |
-| jenis_sampah_id | BIGINT FK → jenis_sampah | |
-| berat | DECIMAL(10,3) | Berat yang dijual ke pengepul |
-| harga_jual_satuan | DECIMAL(10,2) | Harga per kg yang dibeli pengepul |
-| subtotal | DECIMAL(15,2) | berat x harga_jual_satuan |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `users`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| name | VARCHAR(100) | |
-| email | VARCHAR(100) UNIQUE | |
-| password | VARCHAR(255) | bcrypt |
-| role | ENUM('admin','petugas','nasabah') | |
-| is_active | BOOLEAN DEFAULT 1 | |
-| email_verified_at | TIMESTAMP NULL | |
-| remember_token | VARCHAR(100) NULL | |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `nasabah`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| user_id | BIGINT FK → users (nullable) | Jika punya akun login |
-| no_rekening | VARCHAR(20) UNIQUE | Auto-generated |
-| nama | VARCHAR(100) | |
-| nik | VARCHAR(16) UNIQUE NULL | |
-| tempat_lahir | VARCHAR(100) NULL | |
-| tanggal_lahir | DATE NULL | |
-| jenis_kelamin | ENUM('L','P') | |
-| alamat | TEXT | |
-| no_hp | VARCHAR(20) | |
-| foto | VARCHAR(255) NULL | |
-| saldo | DECIMAL(15,2) DEFAULT 0 | Saldo tabungan saat ini |
-| status | ENUM('aktif','nonaktif') DEFAULT 'aktif' | |
-| registered_by | BIGINT FK → users | Petugas yang daftar |
-| created_at / updated_at | TIMESTAMP | |
-| deleted_at | TIMESTAMP NULL | Soft delete |
-
-#### `kategori_sampah`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| nama | VARCHAR(100) | Plastik, Kertas, Logam, dll |
-| deskripsi | TEXT NULL | |
-| created_at / updated_at | TIMESTAMP | |
+### Rincian Tabel Utama
 
 #### `jenis_sampah`
 | Kolom | Tipe | Keterangan |
 |-------|------|-----------|
 | id | BIGINT UNSIGNED AI PK | |
 | kategori_id | BIGINT FK → kategori_sampah | |
-| nama | VARCHAR(100) | Misal: Botol PET, Kardus, dll |
-| satuan | ENUM('kg','gram') DEFAULT 'kg' | |
-| harga_per_satuan | DECIMAL(10,2) | Harga beli saat ini |
+| nama | VARCHAR(100) | Misal: Botol PET Bening, Kardus Box |
+| satuan | VARCHAR(20) DEFAULT 'kg' | Mendukung: kg, gram, unit, buah, pcs, liter |
+| harga_beli | DECIMAL(10,2) | Harga tebus setoran nasabah |
+| harga_jual | DECIMAL(10,2) | Harga jual standar ke pengepul |
+| harga_per_satuan | DECIMAL(10,2) | Alias backward compatibility (mengacu ke harga_beli) |
 | deskripsi | TEXT NULL | |
 | is_active | BOOLEAN DEFAULT 1 | |
 | created_at / updated_at | TIMESTAMP | |
@@ -311,220 +173,69 @@ pengepul (Off-taker)                           │
 |-------|------|-----------|
 | id | BIGINT UNSIGNED AI PK | |
 | jenis_sampah_id | BIGINT FK → jenis_sampah | |
-| harga_lama | DECIMAL(10,2) | |
-| harga_baru | DECIMAL(10,2) | |
-| changed_by | BIGINT FK → users | |
+| tipe_perubahan | VARCHAR(20) | 'beli', 'jual', 'keduanya' |
+| harga_beli_lama / harga_beli_baru | DECIMAL(10,2) NULL | Riwayat harga beli |
+| harga_jual_lama / harga_jual_baru | DECIMAL(10,2) NULL | Riwayat harga jual |
+| changed_by | BIGINT FK → users | Pengguna yang mengubah harga |
 | created_at | TIMESTAMP | |
+
+#### `users`
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | BIGINT UNSIGNED AI PK | |
+| unit_id | BIGINT NULL FK → units | Lokasi penugasan petugas unit |
+| name | VARCHAR(100) | |
+| email | VARCHAR(100) UNIQUE | |
+| password | VARCHAR(255) | Hash bcrypt |
+| role | VARCHAR(30) | 'admin', 'pengelola', 'petugas', 'nasabah' |
+| is_active | BOOLEAN DEFAULT 1 | |
+
+#### `nasabah`
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | BIGINT UNSIGNED AI PK | |
+| user_id | BIGINT NULL FK → users | Akun pengguna untuk login mandiri |
+| unit_id | BIGINT FK → units | Dusun domisili nasabah |
+| no_rekening | VARCHAR(20) UNIQUE | Format `BS-YYYY-xxxxx` |
+| nama | VARCHAR(100) | Nama lengkap warga |
+| no_hp | VARCHAR(20) | Nomor WhatsApp/telepon |
+| saldo | DECIMAL(15,2) DEFAULT 0 | Saldo riil tabungan sampah |
+| registered_by | BIGINT NULL FK → users | Petugas pendaftar (NULL jika daftar mandiri online) |
+| status | ENUM('aktif','nonaktif') | |
 
 #### `transaksi`
 | Kolom | Tipe | Keterangan |
 |-------|------|-----------|
 | id | BIGINT UNSIGNED AI PK | |
-| kode_transaksi | VARCHAR(30) UNIQUE | Auto: TRX-YYYYMMDD-XXXXX |
+| kode_transaksi | VARCHAR(30) UNIQUE | Format `TRX-YYYYMMDD-xxxxx` |
+| unit_id | BIGINT FK → units | Lokasi unit transaksi |
 | nasabah_id | BIGINT FK → nasabah | |
 | jenis | ENUM('setor','tarik') | |
-| total_berat | DECIMAL(10,3) NULL | Hanya untuk setoran |
-| total_nilai | DECIMAL(15,2) | Total rupiah |
-| catatan | TEXT NULL | |
-| status | ENUM('aktif','void') DEFAULT 'aktif' | |
-| petugas_id | BIGINT FK → users | |
-| tanggal_transaksi | DATE | |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `detail_transaksi`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| transaksi_id | BIGINT FK → transaksi | |
-| jenis_sampah_id | BIGINT FK → jenis_sampah | |
-| berat | DECIMAL(10,3) | Dalam satuan sesuai jenis_sampah.satuan |
-| harga_satuan | DECIMAL(10,2) | Harga snapshot saat transaksi |
-| subtotal | DECIMAL(15,2) | berat x harga_satuan |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `app_settings`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| key | VARCHAR(100) UNIQUE | |
-| value | TEXT | |
-| created_at / updated_at | TIMESTAMP | |
+| total_berat | DECIMAL(10,3) NULL | Khusus transaksi setoran |
+| total_nilai | DECIMAL(15,2) | Total nilai rupiah |
+| status | ENUM('aktif','void','pending','disetujui','ditolak') | Status persetujuan tarik saldo |
+| disetujui_oleh | BIGINT NULL FK → users | Pengelola/Admin yang meng-approve penarikan |
 
 ---
 
-## 6. Arsitektur Teknis
+## 6. Fitur Pemeliharaan & Testing
 
-### Tech Stack
-| Layer | Teknologi |
-|-------|-----------|
-| Framework | Laravel 11 |
-| Database | MySQL 8.x |
-| Template Engine | Blade |
-| CSS Framework | TailwindCSS v3 + DaisyUI |
-| JS Library | Alpine.js (interaktivitas ringan), Chart.js |
-| Authentication | Laravel Breeze |
-| PDF Export | barryvdh/laravel-dompdf |
-| Excel Export | maatwebsite/excel (PhpSpreadsheet) |
-| File Storage | Laravel Storage (local disk) |
-| Authorization | Laravel Gates & Policies (RBAC) |
-
-### Struktur Direktori (Laravel)
-```
-app/
-├── Http/
-│   ├── Controllers/
-│   │   ├── Auth/
-│   │   ├── Admin/
-│   │   │   ├── DashboardController.php
-│   │   │   ├── NasabahController.php
-│   │   │   ├── JenisSampahController.php
-│   │   │   ├── KategoriSampahController.php
-│   │   │   ├── TransaksiController.php
-│   │   │   ├── LaporanController.php
-│   │   │   └── UserController.php
-│   │   └── Nasabah/
-│   │       └── DashboardController.php
-│   ├── Middleware/
-│   │   └── RoleMiddleware.php
-│   └── Requests/
-│       ├── NasabahRequest.php
-│       ├── JenisSampahRequest.php
-│       └── TransaksiRequest.php
-├── Models/
-│   ├── User.php
-│   ├── Nasabah.php
-│   ├── KategoriSampah.php
-│   ├── JenisSampah.php
-│   ├── HargaSampahLog.php
-│   ├── Transaksi.php
-│   ├── DetailTransaksi.php
-│   └── AppSetting.php
-├── Policies/
-│   ├── NasabahPolicy.php
-│   └── TransaksiPolicy.php
-└── Services/
-    ├── TransaksiService.php
-    ├── LaporanService.php
-    └── NasabahService.php
-
-database/
-├── migrations/
-│   ├── create_users_table.php
-│   ├── create_nasabah_table.php
-│   ├── create_kategori_sampah_table.php
-│   ├── create_jenis_sampah_table.php
-│   ├── create_harga_sampah_log_table.php
-│   ├── create_transaksi_table.php
-│   ├── create_detail_transaksi_table.php
-│   └── create_app_settings_table.php
-└── seeders/
-    ├── DatabaseSeeder.php
-    ├── UserSeeder.php
-    ├── KategoriSampahSeeder.php
-    └── JenisSampahSeeder.php
-```
+- **Perintah Reset Data Transaksi**:
+  ```bash
+  php artisan bank-sampah:reset-data
+  ```
+  Menghapus seluruh transaksi setor, tarik, penjualan pengepul, dan nasabah dummy, mengembalikan auto-increment ke nomor 1, serta mempertahankan akun master, unit dusun, kategori/jenis sampah, dan konfigurasi logo desa.
+- **Automated Feature Tests**:
+  Seluruh alur logika bisnis dilindungi oleh 41 skenario pengujian otomatis di `tests/Feature/BankSampahTest.php` berbasis `DatabaseTransactions` tanpa mengganggu database development.
 
 ---
 
-## 7. Alur Proses Bisnis
+## 7. Status Pengujian & Kesiapan Produksi
 
-### 7.1 Alur Setoran Sampah
-```
-Nasabah datang
-      |
-      v
-Petugas buka Form Setoran
-      |
-      v
-Pilih Nasabah (cari by nama / no_rekening)
-      |
-      v
-Input Detail Sampah (jenis, berat) → sistem auto-hitung subtotal
-      |
-      v
-Tambah baris sampah lain? --YES--> Ulangi input
-      |NO
-      v
-Konfirmasi Total Nilai
-      |
-      v
-Simpan → Saldo Nasabah BERTAMBAH → Log Transaksi
-      |
-      v
-Cetak Struk (opsional)
-```
-
-### 7.2 Alur Penarikan Saldo
-```
-Nasabah minta tarik saldo
-      |
-      v
-Petugas buka Form Penarikan
-      |
-      v
-Pilih Nasabah → Tampil saldo aktif
-      |
-      v
-Input nominal penarikan
-      |
-      v
-Validasi: nominal <= saldo? --NO--> Tampil error
-      |YES
-      v
-Konfirmasi & Simpan → Saldo BERKURANG → Log Transaksi
-      |
-      v
-Cetak Bukti Penarikan
-```
-
----
-
-## 8. Keamanan
-
-| Aspek | Implementasi |
-|-------|-------------|
-| Autentikasi | Laravel session-based auth + CSRF protection |
-| Otorisasi | Middleware role + Laravel Policies |
-| SQL Injection | Eloquent ORM (parameterized queries) |
-| XSS | Blade `{{ }}` auto-escape |
-| Mass Assignment | `$fillable` atau `$guarded` di setiap Model |
-| Password | bcrypt hashing via `Hash::make()` |
-| File Upload | Validasi MIME type + ukuran, simpan di storage private |
-| Rate Limiting | Laravel throttle middleware pada auth routes |
-
----
-
-## 9. UI/UX Guidelines
-
-- **Responsive** — mobile-first dengan TailwindCSS
-- **Sidebar navigation** — menu terpisah per role
-- **Konfirmasi modal** — untuk aksi delete / void transaksi
-- **Flash messages** — sukses/error/warning setelah aksi
-- **Datatables** — tabel dengan search, sort, paginasi
-- **Print-friendly** — struk transaksi dengan CSS `@media print`
-- **Loading state** — spinner/skeleton saat kalkulasi & submit
-
----
-
-## 10. Prioritas Pengembangan (Roadmap)
-
-| Fase | Fitur | Estimasi |
-|------|-------|----------|
-| **Fase 1 — Core** | Setup Laravel, Auth, Dashboard, Nasabah, Jenis Sampah | Sprint 1 |
-| **Fase 2 — Transaksi** | Setoran, Penarikan, Riwayat Transaksi | Sprint 2 |
-| **Fase 3 — Laporan** | Laporan PDF & Excel, Statistik | Sprint 3 |
-| **Fase 4 — Polish** | Panel Nasabah, Pengaturan, Notifikasi | Sprint 4 |
-
----
-
-## 11. Kriteria Penerimaan (Acceptance Criteria)
-
-- [ ] Admin dapat login dan mengakses semua fitur
-- [ ] Petugas hanya dapat input transaksi dan lihat data nasabah
-- [ ] Nasabah hanya dapat lihat saldo dan riwayat sendiri
-- [ ] Setoran berhasil menambah saldo nasabah secara akurat
-- [ ] Penarikan melebihi saldo ditolak dengan pesan error
-- [ ] Semua transaksi tercatat dengan kode unik dan timestamped
-- [ ] Laporan dapat diunduh sebagai PDF dan Excel
-- [ ] Aplikasi berjalan responsif di mobile dan desktop
-
+- [x] Admin dapat login dan mengelola seluruh konfigurasi desa.
+- [x] Pengelola dapat mengontrol stok gudang, menjual sampah ke pengepul, dan menyetujui penarikan saldo nasabah.
+- [x] Petugas unit terisolasi dalam lingkup unit dusunnya masing-masing.
+- [x] Nasabah dapat login mandiri via No. Rekening / No. HP dengan password aman.
+- [x] Master komoditas sampah mendukung harga beli nasabah, harga jual pengepul, dan satuan `unit` / `buah`.
+- [x] Laporan laba/rugi otomatis mengkalkulasi selisih penjualan pengepul dikurangi beban setoran nasabah.
+- [x] Antarmuka login profesional, elegan, responsif, dan dilengkapi toggle lihat kata sandi.

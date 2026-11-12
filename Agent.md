@@ -313,7 +313,7 @@ php artisan make:middleware RoleMiddleware
 php artisan route:list --name=nasabah   # Cek routes
 php artisan tinker                       # REPL untuk test query
 php artisan optimize:clear               # Clear semua cache
-```
+php artisan bank-sampah:reset-data       # Reset seluruh data transaksi & nasabah dummy untuk testing bersih
 
 ---
 
@@ -336,10 +336,19 @@ php artisan optimize:clear               # Clear semua cache
 > Selalu update melalui `increment()` / `decrement()` di dalam DB transaction.  
 > Jangan hitung ulang dari transaksi di setiap request untuk performa.
 
+> **PENTING**: Struktur harga komoditas terbagi dua di tabel `jenis_sampah`:  
+> - `harga_beli`: Harga tebus saat warga menyetor (menambah saldo nasabah).  
+> - `harga_jual`: Harga standar saat dijual ke pabrik/pengepul (memberi margin keuntungan kas desa).  
+> Satuan ukur mendukung: `kg`, `gram`, `unit`, `buah`, `pcs`, `liter`.
+
 > **PENTING**: Harga sampah di `detail_transaksi.harga_satuan` adalah snapshot harga  
 > saat transaksi terjadi — BUKAN foreign key ke harga yang bisa berubah.  
 > Ini memastikan laporan historis tetap akurat.
 
 > **INFO**: Gunakan `DB::transaction()` untuk semua operasi yang mengubah saldo  
 > dan menyimpan transaksi secara bersamaan (atomic operation).
+
+> **LOGIN NASABAH & SHORTHAND**: `LoginRequest` mendukung login fleksibel via Email,  
+> Nomor Rekening (`BS-YYYY-xxxxx`), Nomor HP/WhatsApp, dan Shorthand Role (`admin`, `pengelola`, `petugas`).  
+> Password default nasabah yang didaftarkan di loket pos adalah 6 digit terakhir No. HP.
 
