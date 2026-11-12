@@ -22,6 +22,10 @@ class BankSampahTest extends TestCase
     {
         parent::setUp();
 
+        if (!User::where('role', 'admin')->exists()) {
+            $this->artisan('db:seed');
+        }
+
         $this->admin = User::where('role', 'admin')->first();
         $this->petugas = User::where('role', 'petugas')->first();
         $this->nasabahUser = User::where('role', 'nasabah')->first();
@@ -455,5 +459,95 @@ class BankSampahTest extends TestCase
         // 7. RESTRICTIONS: Pengelola DILARANG mengakses Pengaturan Identitas/Logo (403)
         $response = $this->actingAs($pengelola)->get(route('admin.pengaturan.index'));
         $response->assertStatus(403);
+    }
+
+    public function test_multi_identifier_login_and_auto_account_onboarding(): void
+    {
+        $nasabah = $this->nasabah;
+        $this->assertNotNull($nasabah);
+        $this->assertNotNull($nasabah->user);
+
+        // Pastikan password nasabah diketahui
+        $nasabah->user->update(['password' => \Illuminate\Support\Facades\Hash::make('password')]);
+
+        // 1. Login nasabah via Nomor Rekening
+        $this->post('/logout');
+        $responseRekening = $this->post('/login', [
+            'email' => $nasabah->no_rekening,
+            'password' => 'password',
+        ]);
+        $responseRekening->assertRedirect(route('nasabah.dashboard'));
+        $this->assertAuthenticatedAs($nasabah->user);
+
+        // 2. Login nasabah via Nomor HP
+        $this->post('/logout');
+        $responseHp = $this->post('/login', [
+            'email' => $nasabah->no_hp,
+            'password' => 'password',
+        ]);
+        $responseHp->assertRedirect(route('nasabah.dashboard'));
+        $this->assertAuthenticatedAs($nasabah->user);
+
+        // 3. Petugas mendaftarkan nasabah baru di loket pos -> user otomatis terbuat
+        $unit = \App\Models\Unit::first();
+        $uniquePhone = '0898' . rand(10000000, 99999999);
+        $expectedDefaultPassword = substr($uniquePhone, -6);
+
+        $responseDaftar = $this->actingAs($this->admin)->post(route('admin.nasabah.store'), [
+            'nama' => 'Warga Baru Auto Account',
+            'no_hp' => $uniquePhone,
+            'jenis_kelamin' => 'L',
+            'alamat' => 'Dusun Percontohan RT 01',
+            'unit_id' => $unit->id,
+            'status' => 'aktif',
+        ]);
+        $responseDaftar->assertRedirect(route('admin.nasabah.index'));
+        $responseDaftar->assertSessionHas('success');
+
+        $newNasabah = Nasabah::where('no_hp', $uniquePhone)->first();
+        $this->assertNotNull($newNasabah);
+        $this->assertNotNull($newNasabah->user_id);
+        $this->assertEquals('nasabah', $newNasabah->user->role);
+
+        // Nasabah baru langsung bisa login menggunakan No. Rekening & Password Default 6 Digit No. HP
+        $this->post('/logout');
+        $responseLoginNew = $this->post('/login', [
+            'email' => $newNasabah->no_rekening,
+            'password' => $expectedDefaultPassword,
+        ]);
+        $responseLoginNew->assertRedirect(route('nasabah.dashboard'));
+        $this->assertAuthenticatedAs($newNasabah->user);
+
+        // 4. Warga melakukan registrasi mandiri via web (/register-nasabah)
+        $this->post('/logout');
+        $selfRegisterPhone = '0877' . rand(10000000, 99999999);
+        $responseSelfReg = $this->post('/register-nasabah', [
+            'nama' => 'Warga Mandiri Online',
+            'no_hp' => $selfRegisterPhone,
+            'jenis_kelamin' => 'P',
+            'alamat' => 'Dusun Melati RT 05',
+            'unit_id' => $unit->id,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+        $responseSelfReg->assertRedirect(route('nasabah.dashboard'));
+
+        $selfNasabah = Nasabah::where('no_hp', $selfRegisterPhone)->first();
+        $this->assertNotNull($selfNasabah);
+        $this->assertNotNull($selfNasabah->no_rekening);
+        $this->assertAuthenticatedAs($selfNasabah->user);
+
+        // 5. Fitur Reset Password Nasabah ke Default oleh Admin/Petugas
+        $responseReset = $this->actingAs($this->admin)->post(route('admin.nasabah.reset-password', $selfNasabah));
+        $responseReset->assertRedirect();
+        $responseReset->assertSessionHas('success');
+
+        $expectedResetPassword = substr($selfRegisterPhone, -6);
+        $this->post('/logout');
+        $responseLoginReset = $this->post('/login', [
+            'email' => $selfNasabah->no_rekening,
+            'password' => $expectedResetPassword,
+        ]);
+        $responseLoginReset->assertRedirect(route('nasabah.dashboard'));
     }
 }

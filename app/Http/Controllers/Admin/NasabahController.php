@@ -8,6 +8,8 @@ use App\Models\Nasabah;
 use App\Models\User;
 use App\Models\Unit;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class NasabahController extends Controller
 {
@@ -80,13 +82,33 @@ class NasabahController extends Controller
             $validated['foto'] = $request->file('foto')->store('nasabah', 'public');
         }
 
-        $validated['no_rekening'] = Nasabah::generateNoRekening();
+        $noRekening = Nasabah::generateNoRekening();
+        $validated['no_rekening'] = $noRekening;
         $validated['registered_by'] = auth()->id();
         $validated['saldo'] = 0;
 
-        Nasabah::create($validated);
+        // Default password: 6 digit terakhir No HP (atau '123456' jika no HP pendek)
+        $cleanPhone = preg_replace('/[^0-9]/', '', $validated['no_hp']);
+        $defaultPassword = strlen($cleanPhone) >= 6 ? substr($cleanPhone, -6) : '123456';
+        $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
 
-        return redirect()->route('admin.nasabah.index')->with('success', 'Nasabah baru berhasil didaftarkan.');
+        DB::transaction(function () use ($validated, $defaultPassword, $generatedEmail) {
+            $userNasabah = User::create([
+                'name' => $validated['nama'],
+                'email' => $generatedEmail,
+                'password' => Hash::make($defaultPassword),
+                'role' => 'nasabah',
+                'is_active' => true,
+                'unit_id' => $validated['unit_id'] ?? null,
+            ]);
+
+            $validated['user_id'] = $userNasabah->id;
+            Nasabah::create($validated);
+        });
+
+        $msg = "Nasabah baru berhasil didaftarkan! No. Rekening: {$noRekening}. Akun login mandiri dibuat otomatis (Login: No. Rekening / No. HP, Password: {$defaultPassword}).";
+
+        return redirect()->route('admin.nasabah.index')->with('success', $msg);
     }
 
     public function show(Nasabah $nasabah)
@@ -144,6 +166,33 @@ class NasabahController extends Controller
         $nasabah->update(['status' => $newStatus]);
 
         return back()->with('success', "Status nasabah {$nasabah->nama} diubah menjadi {$newStatus}.");
+    }
+
+    public function resetPassword(Nasabah $nasabah)
+    {
+        $cleanPhone = preg_replace('/[^0-9]/', '', $nasabah->no_hp);
+        $defaultPassword = strlen($cleanPhone) >= 6 ? substr($cleanPhone, -6) : '123456';
+
+        if ($nasabah->user) {
+            $nasabah->user->update([
+                'password' => Hash::make($defaultPassword),
+                'is_active' => true,
+            ]);
+        } else {
+            // Jika belum punya akun user, buatkan seketika
+            $generatedEmail = strtolower(str_replace('-', '', $nasabah->no_rekening)) . '@nasabah.banksampah.test';
+            $user = User::create([
+                'name' => $nasabah->nama,
+                'email' => $generatedEmail,
+                'password' => Hash::make($defaultPassword),
+                'role' => 'nasabah',
+                'is_active' => true,
+                'unit_id' => $nasabah->unit_id,
+            ]);
+            $nasabah->update(['user_id' => $user->id]);
+        }
+
+        return back()->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset menjadi: {$defaultPassword} (6 digit No. HP).");
     }
 }
 

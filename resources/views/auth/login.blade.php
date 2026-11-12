@@ -5,10 +5,11 @@
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
-        <!-- Email Address -->
+        <!-- Email / No. Rekening / No. HP -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+            <x-input-label for="email" :value="__('Email / No. Rekening / No. HP')" />
+            <x-text-input id="email" class="block mt-1 w-full text-sm" type="text" name="email" :value="old('email')" required autofocus placeholder="admin@banksampah.test, BS-2026-00001, atau 0812..." />
+            <p class="text-[11px] text-slate-400 mt-1">Nasabah dapat login menggunakan No. Rekening atau No. HP.</p>
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
@@ -32,14 +33,21 @@
             </label>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="flex items-center justify-between mt-5">
+            <span class="text-xs text-slate-500">Warga belum punya rekening?</span>
+            <a href="{{ route('nasabah.register') }}" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
+                Daftar Nasabah Baru &rarr;
+            </a>
+        </div>
+
+        <div class="flex items-center justify-end mt-4 pt-4 border-t border-slate-100">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
+                <a class="underline text-xs text-slate-500 hover:text-slate-800 rounded-md focus:outline-none" href="{{ route('password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
+            <x-primary-button class="ms-3 bg-emerald-600 hover:bg-emerald-700">
                 {{ __('Log in') }}
             </x-primary-button>
         </div>

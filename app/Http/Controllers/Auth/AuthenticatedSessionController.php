@@ -30,15 +30,18 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        if ($user->isAdmin() || $user->isPengelola()) {
-            return redirect()->intended(route('admin.dashboard'));
+        $targetRoute = match ($user->role) {
+            'admin', 'pengelola' => route('admin.dashboard'),
+            'petugas' => route('petugas.dashboard'),
+            default => route('nasabah.dashboard'),
+        };
+
+        $intended = session()->pull('url.intended');
+        if ($intended && ! in_array($intended, [url('/'), route('login')])) {
+            return redirect()->to($intended);
         }
 
-        if ($user->isPetugas()) {
-            return redirect()->intended(route('petugas.dashboard'));
-        }
-
-        return redirect()->intended(route('nasabah.dashboard'));
+        return redirect()->to($targetRoute);
     }
 
     /**

@@ -92,6 +92,7 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
 
         // Data Nasabah
         Route::resource('/nasabah', AdminNasabahController::class);
+        Route::post('/nasabah/{nasabah}/reset-password', [AdminNasabahController::class, 'resetPassword'])->name('nasabah.reset-password');
 
         // Transaksi Warga
         Route::get('/transaksi', [AdminTransaksiController::class, 'index'])->name('transaksi.index');
@@ -138,6 +139,7 @@ Route::middleware(['auth', 'role:petugas,admin', 'check.active'])
         // Nasabah (view-only list for petugas)
         Route::get('/nasabah', [AdminNasabahController::class, 'index'])->name('nasabah.index');
         Route::get('/nasabah/{nasabah}', [AdminNasabahController::class, 'show'])->name('nasabah.show');
+        Route::post('/nasabah/{nasabah}/reset-password', [AdminNasabahController::class, 'resetPassword'])->name('nasabah.reset-password');
 
         // Transaksi Setor & Tarik
         Route::get('/transaksi', [AdminTransaksiController::class, 'index'])->name('transaksi.index');
