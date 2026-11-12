@@ -44,12 +44,5 @@ Semua fase pengembangan dan prompt dari `prompt.md` telah berhasil dieksekusi, d
 
 ## 🧪 Hasil Automated Feature Testing
 File: `tests/Feature/BankSampahTest.php`
-- **Total Tests**: 11 passed (44 assertions)
-- **Status**: 100% SUCCESS (Login redirect, 403 authorization, no rekening, kalkulasi saldo setor, over-tarik validation, void rollback, laporan export, multi-unit scoping, penjualan pengepul & stok).
-
----
-
-## 🔑 Kredensial Akun Pengujian (Password: `password`):
-- **Admin**: `admin@banksampah.test` (Pengelola Desa - Akses Penuh Lintas Unit)
-- **Petugas**: `petugas@banksampah.test` (Petugas Unit Melati Dusun 1)
-- **Nasabah**: `nasabah@banksampah.test` (Nasabah Terdaftar di Unit Melati)
+- **Total Tests**: 41 passed (208 assertions)
+- **Status**: 100% SUCCESS (Login redirect, 403 authorization, no rekening, kalkulasi saldo setor, over-tarik validation, void rollback, laporan export, multi-unit scoping, penjualan pengepul & stok, dual pricing beli & jual).

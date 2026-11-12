@@ -54,20 +54,6 @@ Aplikasi web modern berbasis **Laravel 11**, **MySQL**, **Tailwind CSS**, dan **
 
 ---
 
-## 📋 Akun Default & Demo
-
-Semua akun menggunakan password standar: `password`
-
-| Role | Email | Password | Akses Dashboard |
-|------|-------|----------|-----------------|
-| **Admin** | `admin@banksampah.test` | `password` | `/admin/dashboard` |
-| **Petugas** | `petugas@banksampah.test` | `password` | `/petugas/dashboard` |
-| **Nasabah** | `nasabah@banksampah.test` | `password` | `/nasabah/dashboard` |
-
-> *Catatan: Terdapat 25 nasabah demo realistis dan 65 transaksi historis (50 setor, 15 tarik, 2 void) yang digenerate oleh `DemoSeeder`.*
-
----
-
 ## 💻 Panduan Instalasi & Menjalankan
 
 ### 1. Prasyarat Sistem
@@ -79,7 +65,7 @@ Semua akun menggunakan password standar: `password`
 ### 2. Kloning & Pengaturan Lingkungan
 ```bash
 # Clone repositori
-git clone https://github.com/theydoet666/banksampah.git Bank-Sampah-BAA
+git clone https://github.com/theydoet666/banksampah-laravel.git Bank-Sampah-BAA
 cd Bank-Sampah-BAA
 
 # Salin file konfigurasi environment
