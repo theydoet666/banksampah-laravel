@@ -24,6 +24,16 @@ class UserSeeder extends Seeder
         );
 
         User::updateOrCreate(
+            ['email' => 'pengelola@banksampah.test'],
+            [
+                'name' => 'Pengelola & Bendahara',
+                'password' => Hash::make('password'),
+                'role' => 'pengelola',
+                'is_active' => true,
+            ]
+        );
+
+        User::updateOrCreate(
             ['email' => 'petugas@banksampah.test'],
             [
                 'name' => 'Petugas Satu',

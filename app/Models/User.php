@@ -82,6 +82,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isPengelola(): bool
+    {
+        return $this->role === 'pengelola';
+    }
+
     public function isPetugas(): bool
     {
         return $this->role === 'petugas';
@@ -90,6 +95,11 @@ class User extends Authenticatable
     public function isNasabah(): bool
     {
         return $this->role === 'nasabah';
+    }
+
+    public function canManageFinanceAndWarehouse(): bool
+    {
+        return in_array($this->role, ['admin', 'pengelola']);
     }
 
     public function scopeActive($query)

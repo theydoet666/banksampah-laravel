@@ -25,9 +25,10 @@ Bank Sampah BAA adalah sistem pengelolaan sampah berbasis tabungan yang memungki
 
 | Role | Deskripsi |
 |------|-----------|
-| **Admin / Pengelola Desa** | Koordinator Bank Sampah Induk di tingkat desa — mengelola seluruh unit, stok gudang desa, transaksi penjualan ke pengepul, penetapan harga master, manajemen pengguna, dan laporan laba/rugi |
-| **Petugas Unit** | Operator di masing-masing unit dusun/RW — menginput data nasabah unitnya, mencatat setoran sampah warga, melayani penarikan saldo, dan mencetak struk transaksi |
-| **Nasabah** | Anggota/warga desa yang terdaftar di unit tertentu — memantau saldo tabungan, mutasi kredit/debit, dan unduh riwayat secara mandiri |
+| **Admin Desa / Administrator Sistem** (`admin`) | Administrator sistem di tingkat desa — mengelola pembentukan unit bank sampah (Dusun/RW), manajemen pengguna (admin & petugas), penetapan konfigurasi sistem, dan identitas/branding bank sampah |
+| **Pengelola Bank Sampah / Bendahara** (`pengelola`) | Pengelola operasional & bendahara Bank Sampah Induk — bertanggung jawab atas sirkulasi keuangan dan gudang: otorisasi/approval penarikan saldo nasabah, transaksi penjualan sampah ke pengepul, monitoring stok gudang desa, serta laporan laba/rugi operasional |
+| **Petugas Unit** (`petugas`) | Operator di masing-masing unit dusun/RW — menginput data nasabah unitnya, mencatat timbangan setoran sampah warga, melayani pengajuan penarikan saldo ke desa, dan mencetak struk transaksi |
+| **Nasabah** (`nasabah`) | Anggota/warga desa yang terdaftar di unit tertentu — memantau saldo tabungan, mengajukan tarik saldo mandiri via portal HP, mutasi kredit/debit, dan unduh riwayat secara mandiri |
 
 ---
 
@@ -207,7 +208,8 @@ pengepul (Off-taker)                           │
 | created_at / updated_at | TIMESTAMP | |
 
 #### Perubahan pada Tabel `users`
-- Tambah kolom `unit_id`: `BIGINT NULL FK → units(id)` (NULL untuk Admin/Pengelola Desa, terisi untuk Petugas Unit).
+- Tambah kolom `unit_id`: `BIGINT NULL FK → units(id)` (NULL untuk Admin & Pengelola Desa, terisi untuk Petugas Unit).
+- Nilai kolom `role`: `VARCHAR(30)` (`admin`, `pengelola`, `petugas`, `nasabah`).
 
 #### Perubahan pada Tabel `nasabah`
 - Tambah kolom `unit_id`: `BIGINT NOT NULL FK → units(id)` (menandakan unit domisili nasabah).

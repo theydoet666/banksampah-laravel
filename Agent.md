@@ -39,28 +39,36 @@
 ## Struktur Peran & Akses
 
 ```
-Admin / Pengelola Desa (Bank Sampah Induk)
- ├── Semua fitur & lintas unit
+1. Admin Desa / Administrator Sistem (`admin`)
+ ├── Pengaturan identitas sistem & upload logo
  ├── Manajemen Unit Bank Sampah (Dusun/RW)
- ├── Manajemen Pengepul & Transaksi Penjualan Sampah (Gudang Desa)
- ├── Monitoring Stok Fisik Sampah Desa
- ├── Laporan Laba/Rugi Operasional Desa
- ├── Manajemen pengguna (penugasan unit petugas)
- ├── Void/batalkan transaksi
- └── Pengaturan sistem
+ ├── Manajemen Pengguna Sistem (Admin, Pengelola, Petugas Unit)
+ ├── Penetapan master kategori & jenis sampah + harga acuan
+ └── Akses penuh pemantauan seluruh data & audit log
 
-Petugas Unit (Bank Sampah Unit Dusun/RW)
+2. Pengelola Bank Sampah / Bendahara (`pengelola`)
+ ├── Otorisasi & Persetujuan Penarikan Saldo Nasabah (Pencairan Kas Desa)
+ ├── Monitoring Stok Fisik Sampah Gudang Desa
+ ├── Manajemen Mitra Pengepul & Transaksi Penjualan Sampah
+ ├── Cetak Surat Jalan Penjualan Sampah ke Pengepul
+ ├── Akses Laporan Laba/Rugi Operasional Bank Sampah Desa
+ ├── Akses Laporan Transaksi, Rekap Saldo, & Penjualan (PDF/Excel)
+ └── Lihat data nasabah & riwayat transaksi seluruh unit (view-only)
+
+3. Petugas Unit (`petugas`)
  ├── Khusus mengelola unit tempat ditugaskan (unit_id)
- ├── Input transaksi warga unit (setor sampah & tarik saldo)
- ├── Lihat & tambah data nasabah di unitnya
- ├── Lihat riwayat transaksi unitnya
- └── Cetak struk kasir
+ ├── Input timbangan setoran sampah warga unit
+ ├── Input pengajuan permohonan tarik saldo warga ke desa
+ ├── Pendaftaran & pengelolaan nasabah di unitnya
+ ├── Riwayat transaksi unitnya
+ └── Cetak struk timbangan nasabah
 
-Nasabah
+4. Nasabah (`nasabah`)
  ├── Terdaftar pada unit domisilinya
- ├── Lihat saldo sendiri
- ├── Lihat riwayat transaksi sendiri
- └── Edit profil sendiri
+ ├── Akses buku tabungan digital & kartu virtual
+ ├── Pengajuan mandiri tarik saldo tabungan via portal HP
+ ├── Riwayat mutasi kredit/debit tabungan & cetak bukti
+ └── Ubah profil kontak & password akun
 ```
 
 ---

@@ -33,7 +33,14 @@
                         <td class="py-4 px-6 font-semibold text-slate-800">{{ $user->name }}</td>
                         <td class="py-4 px-6 text-slate-600 text-xs">{{ $user->email }}</td>
                         <td class="py-4 px-6">
-                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold uppercase {{ $user->role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-emerald-50 text-emerald-700' }}">
+                            @php
+                                $roleClass = match($user->role) {
+                                    'admin' => 'bg-purple-50 text-purple-700',
+                                    'pengelola' => 'bg-amber-50 text-amber-700 border border-amber-200',
+                                    default => 'bg-emerald-50 text-emerald-700',
+                                };
+                            @endphp
+                            <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold uppercase {{ $roleClass }}">
                                 {{ $user->role }}
                             </span>
                         </td>

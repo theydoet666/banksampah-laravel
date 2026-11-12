@@ -38,7 +38,8 @@
                         <select name="role" x-model="role" required
                             class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <option value="petugas">Petugas Unit (Operator Dusun/RW)</option>
-                            <option value="admin">Administrator / Pengelola Desa (Akses Penuh)</option>
+                            <option value="pengelola">Pengelola & Bendahara (Gudang & Finansial Desa)</option>
+                            <option value="admin">Administrator Sistem (Akses Penuh)</option>
                         </select>
                     </div>
 

@@ -56,6 +56,14 @@ class BankSampahTest extends TestCase
         ]);
         $response->assertRedirect(route('nasabah.dashboard'));
 
+        // Pengelola login
+        $this->post('/logout');
+        $response = $this->post('/login', [
+            'email' => 'pengelola@banksampah.test',
+            'password' => 'password',
+        ]);
+        $response->assertRedirect(route('admin.dashboard'));
+
         // Wrong password
         $this->post('/logout');
         $response = $this->post('/login', [
@@ -404,5 +412,48 @@ class BankSampahTest extends TestCase
         $nasabahAfterReject = $this->nasabah->fresh();
         $this->assertEquals(70000, (float) $nasabahAfterReject->saldo);
         $this->assertEquals(0, $nasabahAfterReject->saldo_tertahan);
+    }
+
+    public function test_pengelola_role_permissions_and_restrictions(): void
+    {
+        $pengelola = User::where('role', 'pengelola')->first();
+        $this->assertNotNull($pengelola);
+
+        // 1. Pengelola diizinkan mengakses Dashboard
+        $response = $this->actingAs($pengelola)->get(route('admin.dashboard'));
+        $response->assertStatus(200);
+
+        // 2. Pengelola diizinkan mengakses Penjualan Sampah & Mitra Pengepul
+        $response = $this->actingAs($pengelola)->get(route('admin.penjualan.index'));
+        $response->assertStatus(200);
+
+        $response = $this->actingAs($pengelola)->get(route('admin.penjualan.stok'));
+        $response->assertStatus(200);
+
+        $response = $this->actingAs($pengelola)->get(route('admin.pengepul.index'));
+        $response->assertStatus(200);
+
+        // 3. Pengelola diizinkan mengakses Persetujuan Tarik Saldo
+        $response = $this->actingAs($pengelola)->get(route('admin.persetujuan-tarik.index'));
+        $response->assertStatus(200);
+
+        // 4. Pengelola diizinkan mengakses Laporan Laba/Rugi & Laporan Transaksi
+        $response = $this->actingAs($pengelola)->get(route('admin.laporan.laba-rugi'));
+        $response->assertStatus(200);
+
+        $response = $this->actingAs($pengelola)->get(route('admin.laporan.index'));
+        $response->assertStatus(200);
+
+        // 5. RESTRICTIONS: Pengelola DILARANG mengakses Manajemen Pengguna (403)
+        $response = $this->actingAs($pengelola)->get(route('admin.users.index'));
+        $response->assertStatus(403);
+
+        // 6. RESTRICTIONS: Pengelola DILARANG mengakses Manajemen Unit (403)
+        $response = $this->actingAs($pengelola)->get(route('admin.units.index'));
+        $response->assertStatus(403);
+
+        // 7. RESTRICTIONS: Pengelola DILARANG mengakses Pengaturan Identitas/Logo (403)
+        $response = $this->actingAs($pengelola)->get(route('admin.pengaturan.index'));
+        $response->assertStatus(403);
     }
 }

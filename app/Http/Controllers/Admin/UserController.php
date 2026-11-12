@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('unit')->whereIn('role', ['admin', 'petugas'])->orderBy('name')->get();
+        $users = User::with('unit')->whereIn('role', ['admin', 'pengelola', 'petugas'])->orderBy('name')->get();
         return view('admin.users.index', compact('users'));
     }
 
@@ -29,15 +29,15 @@ class UserController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|max:100|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|in:admin,petugas',
+            'role' => 'required|in:admin,pengelola,petugas',
             'unit_id' => 'nullable|exists:units,id',
             'is_active' => 'boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
-        if ($validated['role'] === 'admin') {
-            $validated['unit_id'] = null; // Admin adalah level desa lintas unit
+        if (in_array($validated['role'], ['admin', 'pengelola'])) {
+            $validated['unit_id'] = null; // Admin & Pengelola adalah level desa lintas unit
         }
 
         User::create($validated);
@@ -56,7 +56,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,petugas',
+            'role' => 'required|in:admin,pengelola,petugas',
             'unit_id' => 'nullable|exists:units,id',
             'is_active' => 'boolean',
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
@@ -69,7 +69,7 @@ class UserController extends Controller
         }
 
         $validated['is_active'] = $request->has('is_active');
-        if ($validated['role'] === 'admin') {
+        if (in_array($validated['role'], ['admin', 'pengelola'])) {
             $validated['unit_id'] = null;
         }
 
