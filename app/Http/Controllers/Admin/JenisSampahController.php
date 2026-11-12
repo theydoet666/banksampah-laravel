@@ -36,7 +36,7 @@ class JenisSampahController extends Controller
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategori_sampah,id',
             'nama' => 'required|string|max:100',
-            'satuan' => 'required|in:kg,gram',
+            'satuan' => 'required|in:kg,gram,unit,buah,pcs,liter',
             'harga_beli' => 'nullable|numeric|min:0',
             'harga_jual' => 'nullable|numeric|min:0',
             'harga_per_satuan' => 'nullable|numeric|min:0',
@@ -83,7 +83,7 @@ class JenisSampahController extends Controller
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategori_sampah,id',
             'nama' => 'required|string|max:100',
-            'satuan' => 'required|in:kg,gram',
+            'satuan' => 'required|in:kg,gram,unit,buah,pcs,liter',
             'harga_beli' => 'nullable|numeric|min:0',
             'harga_jual' => 'nullable|numeric|min:0',
             'harga_per_satuan' => 'nullable|numeric|min:0',

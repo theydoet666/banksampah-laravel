@@ -628,5 +628,29 @@ class BankSampahTest extends TestCase
         $this->assertEquals(2500, $latestLog->harga_beli_baru);
         $this->assertEquals(3000, $latestLog->harga_jual_lama);
         $this->assertEquals(3800, $latestLog->harga_jual_baru);
+
+        // 4. Test satuan 'unit' dan 'buah'
+        $responseUnit = $this->actingAs($this->admin)->post(route('admin.jenis-sampah.store'), [
+            'kategori_id' => $kategori->id,
+            'nama' => 'Elektronik Satuan Unit Test',
+            'satuan' => 'unit',
+            'harga_beli' => 15000,
+            'harga_jual' => 20000,
+            'is_active' => '1',
+        ]);
+        $responseUnit->assertRedirect(route('admin.jenis-sampah.index'));
+
+        $responseBuah = $this->actingAs($this->admin)->post(route('admin.jenis-sampah.store'), [
+            'kategori_id' => $kategori->id,
+            'nama' => 'Kelapa Tua Satuan Buah Test',
+            'satuan' => 'buah',
+            'harga_beli' => 1000,
+            'harga_jual' => 1500,
+            'is_active' => '1',
+        ]);
+        $responseBuah->assertRedirect(route('admin.jenis-sampah.index'));
+
+        $this->assertDatabaseHas('jenis_sampah', ['nama' => 'Elektronik Satuan Unit Test', 'satuan' => 'unit']);
+        $this->assertDatabaseHas('jenis_sampah', ['nama' => 'Kelapa Tua Satuan Buah Test', 'satuan' => 'buah']);
     }
 }

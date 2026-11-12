@@ -57,6 +57,10 @@
                 <select name="satuan" x-model="satuan" required class="w-full rounded-xl border-slate-200 text-xs focus:border-emerald-500 focus:ring-emerald-500">
                     <option value="kg">Kilogram (kg)</option>
                     <option value="gram">Gram (g)</option>
+                    <option value="unit">Unit</option>
+                    <option value="buah">Buah</option>
+                    <option value="pcs">Pcs</option>
+                    <option value="liter">Liter (L)</option>
                 </select>
             </div>
 

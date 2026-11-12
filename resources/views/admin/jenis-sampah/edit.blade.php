@@ -57,6 +57,10 @@
                 <select name="satuan" x-model="satuan" required class="w-full rounded-xl border-slate-200 text-xs focus:border-emerald-500 focus:ring-emerald-500">
                     <option value="kg" {{ old('satuan', $jenisSampah->satuan) === 'kg' ? 'selected' : '' }}>Kilogram (kg)</option>
                     <option value="gram" {{ old('satuan', $jenisSampah->satuan) === 'gram' ? 'selected' : '' }}>Gram (g)</option>
+                    <option value="unit" {{ old('satuan', $jenisSampah->satuan) === 'unit' ? 'selected' : '' }}>Unit</option>
+                    <option value="buah" {{ old('satuan', $jenisSampah->satuan) === 'buah' ? 'selected' : '' }}>Buah</option>
+                    <option value="pcs" {{ old('satuan', $jenisSampah->satuan) === 'pcs' ? 'selected' : '' }}>Pcs</option>
+                    <option value="liter" {{ old('satuan', $jenisSampah->satuan) === 'liter' ? 'selected' : '' }}>Liter (L)</option>
                 </select>
             </div>
 
