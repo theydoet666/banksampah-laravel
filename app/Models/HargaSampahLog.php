@@ -16,8 +16,13 @@ class HargaSampahLog extends Model
 
     protected $fillable = [
         'jenis_sampah_id',
+        'tipe_perubahan',
         'harga_lama',
         'harga_baru',
+        'harga_beli_lama',
+        'harga_beli_baru',
+        'harga_jual_lama',
+        'harga_jual_baru',
         'changed_by',
         'created_at',
     ];
@@ -25,6 +30,10 @@ class HargaSampahLog extends Model
     protected $casts = [
         'harga_lama' => 'decimal:2',
         'harga_baru' => 'decimal:2',
+        'harga_beli_lama' => 'decimal:2',
+        'harga_beli_baru' => 'decimal:2',
+        'harga_jual_lama' => 'decimal:2',
+        'harga_jual_baru' => 'decimal:2',
         'created_at' => 'datetime',
     ];
 
@@ -38,4 +47,3 @@ class HargaSampahLog extends Model
         return $this->belongsTo(User::class, 'changed_by');
     }
 }
-

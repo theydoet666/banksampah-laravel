@@ -37,20 +37,33 @@ class JenisSampahController extends Controller
             'kategori_id' => 'required|exists:kategori_sampah,id',
             'nama' => 'required|string|max:100',
             'satuan' => 'required|in:kg,gram',
-            'harga_per_satuan' => 'required|numeric|min:0',
+            'harga_beli' => 'nullable|numeric|min:0',
+            'harga_jual' => 'nullable|numeric|min:0',
+            'harga_per_satuan' => 'nullable|numeric|min:0',
             'deskripsi' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
+        $hargaBeli = (float) ($validated['harga_beli'] ?? $validated['harga_per_satuan'] ?? 0);
+        $hargaJual = (float) ($validated['harga_jual'] ?? round($hargaBeli * 1.30, -1));
+
+        $validated['harga_beli'] = $hargaBeli;
+        $validated['harga_jual'] = $hargaJual;
+        $validated['harga_per_satuan'] = $hargaBeli;
         $validated['is_active'] = $request->has('is_active');
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $hargaBeli, $hargaJual) {
             $jenisSampah = JenisSampah::create($validated);
 
             HargaSampahLog::create([
                 'jenis_sampah_id' => $jenisSampah->id,
+                'tipe_perubahan' => 'keduanya',
                 'harga_lama' => 0,
-                'harga_baru' => $validated['harga_per_satuan'],
+                'harga_baru' => $hargaBeli,
+                'harga_beli_lama' => 0,
+                'harga_beli_baru' => $hargaBeli,
+                'harga_jual_lama' => 0,
+                'harga_jual_baru' => $hargaJual,
                 'changed_by' => auth()->id(),
                 'created_at' => now(),
             ]);
@@ -71,21 +84,40 @@ class JenisSampahController extends Controller
             'kategori_id' => 'required|exists:kategori_sampah,id',
             'nama' => 'required|string|max:100',
             'satuan' => 'required|in:kg,gram',
-            'harga_per_satuan' => 'required|numeric|min:0',
+            'harga_beli' => 'nullable|numeric|min:0',
+            'harga_jual' => 'nullable|numeric|min:0',
+            'harga_per_satuan' => 'nullable|numeric|min:0',
             'deskripsi' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
-        $validated['is_active'] = $request->has('is_active');
-        $oldPrice = (float) $jenisSampah->harga_per_satuan;
-        $newPrice = (float) $validated['harga_per_satuan'];
+        $oldBeli = (float) $jenisSampah->harga_beli;
+        $oldJual = (float) $jenisSampah->harga_jual;
 
-        DB::transaction(function () use ($jenisSampah, $validated, $oldPrice, $newPrice) {
-            if ($oldPrice !== $newPrice) {
+        $newBeli = (float) ($validated['harga_beli'] ?? $validated['harga_per_satuan'] ?? $oldBeli);
+        $newJual = (float) ($validated['harga_jual'] ?? $oldJual);
+
+        $validated['harga_beli'] = $newBeli;
+        $validated['harga_jual'] = $newJual;
+        $validated['harga_per_satuan'] = $newBeli;
+        $validated['is_active'] = $request->has('is_active');
+
+        DB::transaction(function () use ($jenisSampah, $validated, $oldBeli, $newBeli, $oldJual, $newJual) {
+            $changedBeli = ($oldBeli !== $newBeli);
+            $changedJual = ($oldJual !== $newJual);
+
+            if ($changedBeli || $changedJual) {
+                $tipe = ($changedBeli && $changedJual) ? 'keduanya' : ($changedBeli ? 'beli' : 'jual');
+
                 HargaSampahLog::create([
                     'jenis_sampah_id' => $jenisSampah->id,
-                    'harga_lama' => $oldPrice,
-                    'harga_baru' => $newPrice,
+                    'tipe_perubahan' => $tipe,
+                    'harga_lama' => $oldBeli,
+                    'harga_baru' => $newBeli,
+                    'harga_beli_lama' => $oldBeli,
+                    'harga_beli_baru' => $newBeli,
+                    'harga_jual_lama' => $oldJual,
+                    'harga_jual_baru' => $newJual,
                     'changed_by' => auth()->id(),
                     'created_at' => now(),
                 ]);
@@ -111,4 +143,3 @@ class JenisSampahController extends Controller
         return view('admin.jenis-sampah.harga-log', compact('jenisSampah', 'logs'));
     }
 }
-

@@ -50,10 +50,20 @@ class PenjualanSampahController extends Controller
         $stokGudang = $this->penjualanService->getStokSampahGudang();
         $totalBeratSisa = $stokGudang->sum('sisa_stok');
         $totalEstimasiNilai = $stokGudang->sum('estimasi_nilai');
+        $totalEstimasiJual = $stokGudang->sum('estimasi_nilai_jual');
+        $totalPotensiLaba = $stokGudang->sum('potensi_laba');
         $totalMasuk = $stokGudang->sum('total_masuk');
         $totalTerjual = $stokGudang->sum('total_terjual');
 
-        return view('admin.penjualan.stok', compact('stokGudang', 'totalBeratSisa', 'totalEstimasiNilai', 'totalMasuk', 'totalTerjual'));
+        return view('admin.penjualan.stok', compact(
+            'stokGudang', 
+            'totalBeratSisa', 
+            'totalEstimasiNilai', 
+            'totalEstimasiJual', 
+            'totalPotensiLaba', 
+            'totalMasuk', 
+            'totalTerjual'
+        ));
     }
 
     public function create()

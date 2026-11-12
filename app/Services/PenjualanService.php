@@ -40,16 +40,25 @@ class PenjualanService
             $terjual = (float) ($terjualPerJenis[$jenis->id] ?? 0);
             $sisa = max(0, $masuk - $terjual);
 
+            $hargaBeli = (float) ($jenis->harga_beli ?? $jenis->harga_per_satuan ?? 0);
+            $hargaJual = (float) ($jenis->harga_jual ?? round($hargaBeli * 1.30, -1));
+            $estimasiNilaiBeli = $sisa * $hargaBeli;
+            $estimasiNilaiJual = $sisa * $hargaJual;
+
             $stokSummary[] = [
                 'id' => $jenis->id,
                 'nama' => $jenis->nama,
                 'kategori' => $jenis->kategori->nama ?? '-',
                 'satuan' => $jenis->satuan,
-                'harga_beli' => (float) $jenis->harga_per_satuan,
+                'harga_beli' => $hargaBeli,
+                'harga_jual' => $hargaJual,
                 'total_masuk' => $masuk,
                 'total_terjual' => $terjual,
                 'sisa_stok' => $sisa,
-                'estimasi_nilai' => $sisa * (float) $jenis->harga_per_satuan,
+                'estimasi_nilai' => $estimasiNilaiBeli,
+                'estimasi_nilai_beli' => $estimasiNilaiBeli,
+                'estimasi_nilai_jual' => $estimasiNilaiJual,
+                'potensi_laba' => max(0, $estimasiNilaiJual - $estimasiNilaiBeli),
             ];
         }
 

@@ -13,10 +13,10 @@ class BankSampahTest extends TestCase
 {
     use DatabaseTransactions;
 
-    protected User $admin;
-    protected User $petugas;
-    protected User $nasabahUser;
-    protected Nasabah $nasabah;
+    protected ?User $admin = null;
+    protected ?User $petugas = null;
+    protected ?User $nasabahUser = null;
+    protected ?Nasabah $nasabah = null;
 
     protected function setUp(): void
     {
@@ -29,9 +29,33 @@ class BankSampahTest extends TestCase
         $this->admin = User::where('role', 'admin')->first();
         $this->petugas = User::where('role', 'petugas')->first();
         $this->nasabahUser = User::where('role', 'nasabah')->first();
-        $this->nasabah = Nasabah::where('user_id', $this->nasabahUser?->id)->first() ?? Nasabah::where('status', 'aktif')->first();
-        if ($this->nasabah && $this->nasabahUser && $this->nasabah->user_id !== $this->nasabahUser->id) {
-            $this->nasabah->update(['user_id' => $this->nasabahUser->id]);
+
+        if (! $this->nasabahUser) {
+            $unit = \App\Models\Unit::first() ?? \App\Models\Unit::create(['nama' => 'Unit Test', 'kode_unit' => 'UNT-01', 'status' => 'aktif']);
+            $this->nasabahUser = User::create([
+                'name' => 'Budi Santoso',
+                'email' => 'nasabah@banksampah.test',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'role' => 'nasabah',
+                'is_active' => true,
+                'unit_id' => $unit->id,
+            ]);
+        }
+
+        $this->nasabah = Nasabah::where('user_id', $this->nasabahUser->id)->first();
+        if (! $this->nasabah) {
+            $unit = \App\Models\Unit::first();
+            $this->nasabah = Nasabah::create([
+                'user_id' => $this->nasabahUser->id,
+                'unit_id' => $unit?->id,
+                'no_rekening' => 'BS-2026-00001',
+                'nama' => 'Budi Santoso',
+                'no_hp' => '081234567890',
+                'jenis_kelamin' => 'L',
+                'alamat' => 'Jl. Mawar No. 12',
+                'saldo' => 50000,
+                'status' => 'aktif',
+            ]);
         }
     }
 
@@ -262,7 +286,13 @@ class BankSampahTest extends TestCase
 
     public function test_penjualan_sampah_ke_pengepul_and_laba_rugi(): void
     {
-        $pengepul = \App\Models\Pengepul::first();
+        $pengepul = \App\Models\Pengepul::first() ?? \App\Models\Pengepul::create([
+            'nama_perusahaan' => 'PT Daur Ulang Lestari',
+            'penanggung_jawab' => 'Pak Hendra',
+            'no_hp' => '081234567899',
+            'alamat' => 'Kawasan Industri',
+            'status' => 'aktif',
+        ]);
         $this->assertNotNull($pengepul);
 
         // Ambil stok yang ada
@@ -549,5 +579,54 @@ class BankSampahTest extends TestCase
             'password' => $expectedResetPassword,
         ]);
         $responseLoginReset->assertRedirect(route('nasabah.dashboard'));
+    }
+
+    public function test_dual_pricing_structure_beli_and_jual(): void
+    {
+        $kategori = \App\Models\KategoriSampah::first() ?? \App\Models\KategoriSampah::create(['nama' => 'Plastik Test']);
+
+        // 1. Simpan jenis sampah dengan 2 harga berbeda
+        $responseStore = $this->actingAs($this->admin)->post(route('admin.jenis-sampah.store'), [
+            'kategori_id' => $kategori->id,
+            'nama' => 'Plastik Dual Price Test',
+            'satuan' => 'kg',
+            'harga_beli' => 2000,
+            'harga_jual' => 3000,
+            'deskripsi' => 'Testing dual price',
+            'is_active' => '1',
+        ]);
+        $responseStore->assertRedirect(route('admin.jenis-sampah.index'));
+
+        $sampah = \App\Models\JenisSampah::where('nama', 'Plastik Dual Price Test')->first();
+        $this->assertNotNull($sampah);
+        $this->assertEquals(2000, $sampah->harga_beli);
+        $this->assertEquals(3000, $sampah->harga_jual);
+        $this->assertEquals(2000, $sampah->harga_per_satuan); // backward compatibility
+        $this->assertEquals(1000, $sampah->margin_rp);
+        $this->assertEquals(50.0, $sampah->margin_persen);
+
+        // 2. Update harga beli dan jual
+        $responseUpdate = $this->actingAs($this->admin)->put(route('admin.jenis-sampah.update', $sampah), [
+            'kategori_id' => $kategori->id,
+            'nama' => 'Plastik Dual Price Test',
+            'satuan' => 'kg',
+            'harga_beli' => 2500,
+            'harga_jual' => 3800,
+            'is_active' => '1',
+        ]);
+        $responseUpdate->assertRedirect(route('admin.jenis-sampah.index'));
+
+        $sampah->refresh();
+        $this->assertEquals(2500, $sampah->harga_beli);
+        $this->assertEquals(3800, $sampah->harga_jual);
+
+        // 3. Pastikan log perubahan harga tercatat
+        $latestLog = $sampah->hargaLogs()->first();
+        $this->assertNotNull($latestLog);
+        $this->assertEquals('keduanya', $latestLog->tipe_perubahan);
+        $this->assertEquals(2000, $latestLog->harga_beli_lama);
+        $this->assertEquals(2500, $latestLog->harga_beli_baru);
+        $this->assertEquals(3000, $latestLog->harga_jual_lama);
+        $this->assertEquals(3800, $latestLog->harga_jual_baru);
     }
 }

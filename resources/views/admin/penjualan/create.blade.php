@@ -105,7 +105,7 @@
                                                 class="w-full text-xs rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500">
                                             <option value="">Pilih Jenis Sampah...</option>
                                             <template x-for="j in availableJenis" :key="j.id">
-                                                <option :value="j.id" x-text="`${j.nama} (Stok: ${formatNumber(j.sisa_stok)} kg)`"></option>
+                                                <option :value="j.id" x-text="`${j.nama} (Stok: ${formatNumber(j.sisa_stok)} kg | Std Jual: Rp ${formatRupiah(j.harga_jual)})`"></option>
                                             </template>
                                         </select>
                                     </td>
@@ -211,10 +211,8 @@ function penjualanForm() {
             const jenis = this.availableJenis.find(j => j.id == selectedId);
             if (jenis) {
                 this.items[index].maxStok = parseFloat(jenis.sisa_stok);
-                // Beri rekomendasi harga jual (misal 20% di atas harga beli)
-                if (!this.items[index].harga_jual_satuan) {
-                    this.items[index].harga_jual_satuan = Math.round(parseFloat(jenis.harga_beli) * 1.3 / 100) * 100;
-                }
+                // Auto-fill harga jual standar master komoditas
+                this.items[index].harga_jual_satuan = jenis.harga_jual ? parseFloat(jenis.harga_jual) : Math.round(parseFloat(jenis.harga_beli) * 1.3 / 100) * 100;
             } else {
                 this.items[index].maxStok = 0;
             }
