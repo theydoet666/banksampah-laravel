@@ -1,8 +1,8 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.2.0  
-> Tanggal: 12 November 2026  
+> Versi: 1.3.0  
+> Tanggal: 17 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
 > Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js**
 
@@ -10,12 +10,15 @@
 
 ## 1. Latar Belakang & Tujuan
 
-Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.2.0 ini, sistem telah diperluas mencakup:
+Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.3.0 ini, sistem telah disempurnakan mencakup:
 1. **Multi-Unit Bank Sampah** di tingkat Dusun/RW.
 2. **Role Berjenjang 4 Tingkat** (`admin`, `pengelola`, `petugas`, `nasabah`).
 3. **Mekanisme Multi-Identifier Login & Auto Onboarding Nasabah** yang fleksibel dan ramah warga desa.
 4. **Struktur Dua Harga Komoditas** (Harga Beli Nasabah & Harga Jual Pengepul) dengan kalkulasi margin keuntungan desa secara *real-time*.
-5. **Manajemen Penjualan Sampah Gudang Induk ke Pengepul** serta laporan laba/rugi usaha desa terpadu.
+5. **Ekstensi Satuan Ukur Komoditas** (`kg`, `gram`, `unit`, `buah`, `pcs`, `liter`).
+6. **Manajemen Penjualan Sampah Gudang Induk ke Pengepul** serta laporan laba/rugi usaha desa terpadu.
+7. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
+8. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
 
 ### Tujuan Utama
 - Mendigitalisasi pencatatan setoran dan penarikan tabungan sampah di setiap pos dusun/RW.
