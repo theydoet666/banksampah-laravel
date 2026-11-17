@@ -95,6 +95,7 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | SAM-03 | Pilihan satuan ukur luas: `kg`, `gram`, `unit`, `buah`, `pcs`, `liter` | P0 | Selesai |
 | SAM-04 | Riwayat fluktuasi harga komoditas (`harga_sampah_log`) untuk harga beli dan harga jual | P1 | Selesai |
 | SAM-05 | Manajemen Kategori Sampah (Plastik, Kertas, Logam, Kaca, Organik, Elektronik) | P0 | Selesai |
+| SAM-06 | **Hapus Jenis Sampah dengan Proteksi Relasi Data**: Komoditas yang sudah pernah tercatat pada transaksi setoran nasabah atau penjualan ke pengepul dilarang dihapus demi menjaga integritas pembukuan; komoditas baru/tanpa transaksi dapat dihapus tuntas dengan modal konfirmasi | P0 | Selesai |
 
 ### 4.5 Transaksi Setoran Sampah (Pos Unit Dusun)
 | ID | Fitur | Prioritas | Status |
@@ -244,7 +245,7 @@ pengepul (Off-taker)                           │       harga_sampah_log
 - [x] Pengelola dapat mengontrol stok gudang, menjual sampah ke pengepul, dan menyetujui penarikan saldo nasabah.
 - [x] Petugas unit terisolasi dalam lingkup unit dusunnya masing-masing.
 - [x] Nasabah dapat login mandiri via No. Rekening / No. HP dengan password aman.
-- [x] Master komoditas sampah mendukung harga beli nasabah, harga jual pengepul, dan satuan `unit` / `buah`.
+- [x] Master komoditas sampah mendukung harga beli nasabah, harga jual pengepul, satuan fleksibel, serta penghapusan aman berproteksi relasi transaksi.
 - [x] Master unit bank sampah mendukung penambahan, pengeditan, penonaktifan, serta penghapusan aman dengan perlindungan relasi data.
 - [x] Laporan laba/rugi otomatis mengkalkulasi selisih penjualan pengepul dikurangi beban setoran nasabah.
 - [x] Antarmuka login profesional, elegan, responsif, dan dilengkapi toggle lihat kata sandi.

@@ -142,4 +142,29 @@ class JenisSampahController extends Controller
         $logs = $jenisSampah->hargaLogs()->with('user')->orderBy('id', 'desc')->get();
         return view('admin.jenis-sampah.harga-log', compact('jenisSampah', 'logs'));
     }
+
+    public function destroy(JenisSampah $jenisSampah)
+    {
+        $jenisSampah->loadCount(['detailTransaksi', 'detailPenjualan']);
+
+        if ($jenisSampah->detail_transaksi_count > 0 || $jenisSampah->detail_penjualan_count > 0) {
+            $alasan = [];
+            if ($jenisSampah->detail_transaksi_count > 0) {
+                $alasan[] = "{$jenisSampah->detail_transaksi_count} transaksi setoran nasabah";
+            }
+            if ($jenisSampah->detail_penjualan_count > 0) {
+                $alasan[] = "{$jenisSampah->detail_penjualan_count} transaksi penjualan ke pengepul";
+            }
+
+            $detailAlasan = implode(' dan ', $alasan);
+
+            return back()->with('error', "Jenis sampah '{$jenisSampah->nama}' tidak dapat dihapus karena sudah memiliki {$detailAlasan}. Demi integritas pencatatan keuangan warga dan kas desa, silakan nonaktifkan status komoditas ini jika sudah tidak menerima setoran.");
+        }
+
+        $namaSampah = $jenisSampah->nama;
+        $jenisSampah->delete();
+
+        return redirect()->route('admin.jenis-sampah.index')
+            ->with('success', "Jenis sampah '{$namaSampah}' berhasil dihapus.");
+    }
 }

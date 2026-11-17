@@ -702,4 +702,109 @@ class BankSampahTest extends TestCase
         $responseSuccess->assertSessionHas('success');
         $this->assertDatabaseMissing('units', ['id' => $emptyUnit->id]);
     }
+
+    public function test_jenis_sampah_deletion_prevented_if_has_relations_and_succeeds_when_unused(): void
+    {
+        $kategori = \App\Models\KategoriSampah::first() ?? \App\Models\KategoriSampah::create([
+            'nama' => 'Plastik Test',
+            'deskripsi' => 'Kategori Plastik Test',
+        ]);
+
+        // 1. Buat jenis sampah dan hubungkan dengan transaksi setoran nasabah
+        $sampahTerpakai = JenisSampah::create([
+            'kategori_id' => $kategori->id,
+            'nama' => 'Botol Bening Terpakai',
+            'satuan' => 'kg',
+            'harga_beli' => 3000,
+            'harga_jual' => 4500,
+            'is_active' => true,
+        ]);
+
+        $transaksi = Transaksi::create([
+            'kode_transaksi' => 'TRX-' . time() . '-TEST',
+            'unit_id' => $this->nasabah->unit_id ?? \App\Models\Unit::first()->id,
+            'nasabah_id' => $this->nasabah->id,
+            'petugas_id' => $this->petugas->id ?? $this->admin->id,
+            'tanggal_transaksi' => now()->toDateString(),
+            'jenis' => 'setor',
+            'total_berat' => 2.5,
+            'total_nilai' => 7500,
+            'status' => 'aktif',
+        ]);
+
+        \App\Models\DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'jenis_sampah_id' => $sampahTerpakai->id,
+            'berat' => 2.5,
+            'harga_satuan' => 3000,
+            'subtotal' => 7500,
+        ]);
+
+        // Hapus sampah terpakai -> Harus GAGAL
+        $responseFail = $this->actingAs($this->admin)->delete(route('admin.jenis-sampah.destroy', $sampahTerpakai));
+        $responseFail->assertSessionHas('error');
+        $this->assertDatabaseHas('jenis_sampah', ['id' => $sampahTerpakai->id]);
+
+        // 2. Buat jenis sampah dan hubungkan dengan penjualan pengepul
+        $pengepul = \App\Models\Pengepul::first() ?? \App\Models\Pengepul::create([
+            'nama_perusahaan' => 'PT Daur Ulang Lestari',
+            'penanggung_jawab' => 'Pak Hendra',
+            'no_hp' => '089988776655',
+            'alamat' => 'Gudang Pengepul Test',
+            'status' => 'aktif',
+        ]);
+
+        $sampahPengepul = JenisSampah::create([
+            'kategori_id' => $kategori->id,
+            'nama' => 'Kardus Terjual Pengepul',
+            'satuan' => 'kg',
+            'harga_beli' => 2000,
+            'harga_jual' => 2500,
+            'is_active' => true,
+        ]);
+
+        $penjualan = \App\Models\PenjualanSampah::create([
+            'kode_penjualan' => 'PJL-' . time() . '-TEST',
+            'pengepul_id' => $pengepul->id,
+            'tanggal_penjualan' => now()->toDateString(),
+            'total_berat' => 10,
+            'total_pendapatan' => 25000,
+            'status_pembayaran' => 'lunas',
+            'pengelola_id' => $this->admin->id,
+        ]);
+
+        \App\Models\DetailPenjualanSampah::create([
+            'penjualan_id' => $penjualan->id,
+            'jenis_sampah_id' => $sampahPengepul->id,
+            'berat' => 10,
+            'harga_jual_satuan' => 2500,
+            'subtotal' => 25000,
+        ]);
+
+        // Hapus sampah yang terjual ke pengepul -> Harus GAGAL
+        $responseFailJual = $this->actingAs($this->admin)->delete(route('admin.jenis-sampah.destroy', $sampahPengepul));
+        $responseFailJual->assertSessionHas('error');
+        $this->assertDatabaseHas('jenis_sampah', ['id' => $sampahPengepul->id]);
+
+        // 3. Buat jenis sampah bersih tanpa riwayat transaksi
+        $sampahKosong = JenisSampah::create([
+            'kategori_id' => $kategori->id,
+            'nama' => 'Sampah Uji Coba Bersih',
+            'satuan' => 'unit',
+            'harga_beli' => 5000,
+            'harga_jual' => 8000,
+            'is_active' => true,
+        ]);
+
+        // Non-admin (nasabah) mencoba menghapus -> Harus FORBIDDEN (403)
+        $responseForbidden = $this->actingAs($this->nasabahUser)->delete(route('admin.jenis-sampah.destroy', $sampahKosong));
+        $responseForbidden->assertForbidden();
+        $this->assertDatabaseHas('jenis_sampah', ['id' => $sampahKosong->id]);
+
+        // Admin menghapus jenis sampah kosong -> Harus BERHASIL
+        $responseSuccess = $this->actingAs($this->admin)->delete(route('admin.jenis-sampah.destroy', $sampahKosong));
+        $responseSuccess->assertRedirect(route('admin.jenis-sampah.index'));
+        $responseSuccess->assertSessionHas('success');
+        $this->assertDatabaseMissing('jenis_sampah', ['id' => $sampahKosong->id]);
+    }
 }

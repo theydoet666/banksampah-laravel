@@ -127,11 +127,25 @@
                 <label for="is_active" class="text-xs font-medium text-slate-700 cursor-pointer">Aktifkan untuk transaksi</label>
             </div>
 
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-                <a href="{{ route('admin.jenis-sampah.index') }}" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">Batal</a>
-                <button type="submit" :disabled="submitting" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-2 disabled:opacity-60 shadow-sm cursor-pointer">
-                    <span x-text="submitting ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                <button type="button" 
+                        @click="$dispatch('open-confirm-modal', {
+                            title: 'Hapus Jenis Sampah',
+                            message: 'Apakah Anda yakin ingin menghapus komoditas {{ $jenisSampah->nama }}? Tindakan ini hanya dapat dilakukan jika belum ada riwayat transaksi setoran warga atau penjualan pengepul.',
+                            action: '{{ route('admin.jenis-sampah.destroy', $jenisSampah) }}',
+                            method: 'DELETE',
+                            confirmText: 'Ya, Hapus',
+                            confirmButtonClass: 'bg-rose-600 hover:bg-rose-700'
+                        })"
+                        class="px-4 py-2 rounded-xl border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50 cursor-pointer">
+                    Hapus
                 </button>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('admin.jenis-sampah.index') }}" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">Batal</a>
+                    <button type="submit" :disabled="submitting" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-2 disabled:opacity-60 shadow-sm cursor-pointer">
+                        <span x-text="submitting ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
+                    </button>
+                </div>
             </div>
         </form>
     </x-card>
