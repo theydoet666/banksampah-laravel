@@ -24,6 +24,18 @@
             <a href="{{ route('admin.units.edit', $unit) }}" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors">
                 Edit Unit
             </a>
+            <button type="button" 
+                    @click="$dispatch('open-confirm-modal', {
+                        title: 'Hapus Unit Bank Sampah',
+                        message: 'Apakah Anda yakin ingin menghapus unit {{ $unit->nama }}? Jika unit masih memiliki nasabah, transaksi, atau petugas, penghapusan akan dibatalkan demi keamanan data.',
+                        action: '{{ route('admin.units.destroy', $unit) }}',
+                        method: 'DELETE',
+                        confirmText: 'Ya, Hapus Unit',
+                        confirmButtonClass: 'bg-rose-600 hover:bg-rose-700'
+                    })"
+                    class="px-4 py-2 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-colors">
+                Hapus Unit
+            </button>
             <a href="{{ route('admin.units.index') }}" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
                 &larr; Kembali
             </a>

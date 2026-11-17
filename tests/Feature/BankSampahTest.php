@@ -653,4 +653,53 @@ class BankSampahTest extends TestCase
         $this->assertDatabaseHas('jenis_sampah', ['nama' => 'Elektronik Satuan Unit Test', 'satuan' => 'unit']);
         $this->assertDatabaseHas('jenis_sampah', ['nama' => 'Kelapa Tua Satuan Buah Test', 'satuan' => 'buah']);
     }
+
+    public function test_unit_deletion_prevented_if_has_relations_and_succeeds_when_empty()
+    {
+        // 1. Buat unit yang berelasi dengan nasabah
+        $unitWithRelation = \App\Models\Unit::create([
+            'nama' => 'Unit Terisi Relasi',
+            'kode_unit' => 'UNT-REL',
+            'status' => 'aktif',
+        ]);
+
+        $testUser = User::create([
+            'name' => 'Warga Unit Relasi',
+            'email' => 'warga.relasi@banksampah.test',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'nasabah',
+            'is_active' => true,
+            'unit_id' => $unitWithRelation->id,
+        ]);
+
+        Nasabah::create([
+            'user_id' => $testUser->id,
+            'unit_id' => $unitWithRelation->id,
+            'no_rekening' => 'BSB-TEST-REL',
+            'nik' => '3201019988776655',
+            'nama' => 'Warga Unit Relasi',
+            'alamat' => 'Dusun Sukamaju RT 01',
+            'no_hp' => '081234567899',
+            'jenis_kelamin' => 'L',
+            'saldo' => 0,
+        ]);
+
+        // Percobaan hapus unit yang memiliki nasabah -> Harus DITOLAK
+        $responseFailed = $this->actingAs($this->admin)->delete(route('admin.units.destroy', $unitWithRelation));
+        $responseFailed->assertSessionHas('error');
+        $this->assertDatabaseHas('units', ['id' => $unitWithRelation->id]);
+
+        // 2. Buat unit kosong baru tanpa nasabah / transaksi / petugas
+        $emptyUnit = \App\Models\Unit::create([
+            'nama' => 'Unit Percobaan Kosong',
+            'kode_unit' => 'UNT-KOSONG',
+            'status' => 'aktif',
+        ]);
+
+        // Hapus unit kosong -> Harus BERHASIL
+        $responseSuccess = $this->actingAs($this->admin)->delete(route('admin.units.destroy', $emptyUnit));
+        $responseSuccess->assertRedirect(route('admin.units.index'));
+        $responseSuccess->assertSessionHas('success');
+        $this->assertDatabaseMissing('units', ['id' => $emptyUnit->id]);
+    }
 }

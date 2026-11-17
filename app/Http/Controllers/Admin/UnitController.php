@@ -79,5 +79,33 @@ class UnitController extends Controller
 
         return back()->with('success', "Status unit '{$unit->nama}' berhasil diubah menjadi {$newStatus}.");
     }
+
+    public function destroy(Unit $unit)
+    {
+        $unit->loadCount(['nasabah', 'transaksi', 'users']);
+
+        if ($unit->nasabah_count > 0 || $unit->transaksi_count > 0 || $unit->users_count > 0) {
+            $alasan = [];
+            if ($unit->nasabah_count > 0) {
+                $alasan[] = "{$unit->nasabah_count} nasabah";
+            }
+            if ($unit->transaksi_count > 0) {
+                $alasan[] = "{$unit->transaksi_count} riwayat transaksi";
+            }
+            if ($unit->users_count > 0) {
+                $alasan[] = "{$unit->users_count} petugas terkait";
+            }
+
+            $detailAlasan = implode(', ', $alasan);
+
+            return back()->with('error', "Unit '{$unit->nama}' tidak dapat dihapus karena masih memiliki {$detailAlasan}. Silakan pindahkan data terlebih dahulu atau nonaktifkan status unit ini.");
+        }
+
+        $namaUnit = $unit->nama;
+        $unit->delete();
+
+        return redirect()->route('admin.units.index')
+            ->with('success', "Unit bank sampah '{$namaUnit}' berhasil dihapus.");
+    }
 }
 

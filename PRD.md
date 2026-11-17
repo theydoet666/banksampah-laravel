@@ -132,6 +132,14 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | LAP-03 | Laporan valuasi stok gudang (modal beli vs potensi jual) | P0 | Selesai |
 | LAP-04 | Ekspor laporan format PDF (DomPDF) dan Excel (Maatwebsite) | P1 | Selesai |
 
+### 4.9 Manajemen Unit Bank Sampah (Dusun / RW)
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| UNT-01 | Master unit bank sampah (Dusun / RW) dengan kode unit unik, nama ketua, nomor kontak, dan alamat | P0 | Selesai |
+| UNT-02 | Tambah, edit, dan detail unit beserta visualisasi rekapitulasi nasabah dan transaksi | P0 | Selesai |
+| UNT-03 | Toggle aktif/nonaktif status operasional unit bank sampah | P0 | Selesai |
+| UNT-04 | **Hapus Unit Bank Sampah dengan Proteksi Relasi Data**: Unit yang memiliki relasi data (nasabah, riwayat transaksi, atau petugas) dicegah dari penghapusan secara ketat demi keamanan saldo dan riwayat audit warga desa; unit kosong tanpa relasi dapat dihapus tuntas dengan modal konfirmasi. | P0 | Selesai |
+
 ---
 
 ## 5. Desain Database & Skema Terkini
@@ -237,5 +245,6 @@ pengepul (Off-taker)                           │       harga_sampah_log
 - [x] Petugas unit terisolasi dalam lingkup unit dusunnya masing-masing.
 - [x] Nasabah dapat login mandiri via No. Rekening / No. HP dengan password aman.
 - [x] Master komoditas sampah mendukung harga beli nasabah, harga jual pengepul, dan satuan `unit` / `buah`.
+- [x] Master unit bank sampah mendukung penambahan, pengeditan, penonaktifan, serta penghapusan aman dengan perlindungan relasi data.
 - [x] Laporan laba/rugi otomatis mengkalkulasi selisih penjualan pengepul dikurangi beban setoran nasabah.
 - [x] Antarmuka login profesional, elegan, responsif, dan dilengkapi toggle lihat kata sandi.

@@ -118,6 +118,19 @@
                                         title="Toggle Status">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                                 </button>
+                                <button type="button" 
+                                        @click="$dispatch('open-confirm-modal', {
+                                            title: 'Hapus Unit Bank Sampah',
+                                            message: 'Apakah Anda yakin ingin menghapus unit {{ $unit->nama }}? Jika unit masih memiliki nasabah, transaksi, atau petugas, penghapusan akan dibatalkan demi keamanan data.',
+                                            action: '{{ route('admin.units.destroy', $unit) }}',
+                                            method: 'DELETE',
+                                            confirmText: 'Ya, Hapus Unit',
+                                            confirmButtonClass: 'bg-rose-600 hover:bg-rose-700'
+                                        })"
+                                        class="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 inline-block"
+                                        title="Hapus Unit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
                             </td>
                         </tr>
                     @empty
