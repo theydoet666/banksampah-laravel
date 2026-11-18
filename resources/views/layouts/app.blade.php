@@ -18,7 +18,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased bg-slate-50 text-slate-800" x-data="{ sidebarOpen: false }">
-    <div class="min-h-screen flex">
+    <div class="min-h-screen flex w-full overflow-x-hidden">
         <!-- Sidebar Navigation -->
         @include('layouts.partials.sidebar')
 
@@ -26,18 +26,18 @@
         <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity class="fixed inset-0 bg-slate-900/50 z-20 md:hidden"></div>
 
         <!-- Main Content Area -->
-        <div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+        <div class="flex-1 md:ml-64 flex flex-col min-h-screen min-w-0 w-full overflow-x-hidden">
             <!-- Topbar Navigation -->
             @include('layouts.partials.topbar')
 
             <!-- Page Body -->
-            <main class="p-6 flex-1">
+            <main class="p-4 sm:p-6 flex-1 min-w-0 w-full">
                 @include('layouts.partials.flash-message')
                 @yield('content')
             </main>
 
             <!-- Footer -->
-            <footer class="px-6 py-4 border-t border-slate-100 bg-white text-xs text-slate-400 text-center">
+            <footer class="px-4 sm:px-6 py-4 border-t border-slate-100 bg-white text-xs text-slate-400 text-center">
                 &copy; {{ date('Y') }} {{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}. Hak Cipta Dilindungi.
             </footer>
         </div>

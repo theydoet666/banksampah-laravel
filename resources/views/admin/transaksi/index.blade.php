@@ -10,12 +10,12 @@
             <h2 class="text-xl font-bold text-slate-800">Riwayat Transaksi</h2>
             <p class="text-xs text-slate-500">Pencatatan mutasi transaksi setoran dan penarikan saldo</p>
         </div>
-        <div class="flex items-center gap-3">
-            <a href="{{ roleRoute('transaksi.setor.create') }}" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <a href="{{ roleRoute('transaksi.setor.create') }}" class="flex-1 sm:flex-initial justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Setor Sampah
             </a>
-            <a href="{{ roleRoute('transaksi.tarik.create') }}" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
+            <a href="{{ roleRoute('transaksi.tarik.create') }}" class="flex-1 sm:flex-initial justify-center px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                 Tarik Saldo
             </a>
@@ -58,65 +58,70 @@
 
     <!-- Table -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                        <th class="py-3.5 px-6">Kode Transaksi</th>
-                        <th class="py-3.5 px-6">Tanggal</th>
-                        <th class="py-3.5 px-6">Nasabah</th>
-                        <th class="py-3.5 px-6">Jenis</th>
-                        <th class="py-3.5 px-6">Total Berat</th>
-                        <th class="py-3.5 px-6">Total Nilai</th>
-                        <th class="py-3.5 px-6">Petugas</th>
-                        <th class="py-3.5 px-6">Status</th>
-                        <th class="py-3.5 px-6 text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($transaksiList as $trx)
-                        <tr class="hover:bg-slate-50/50">
-                            <td class="py-3.5 px-6 font-mono font-medium text-xs text-slate-800">{{ $trx->kode_transaksi }}</td>
-                            <td class="py-3.5 px-6 text-xs text-slate-500">{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
-                            <td class="py-3.5 px-6">
-                                <a href="{{ roleRoute('nasabah.show', $trx->nasabah_id) }}" class="font-semibold text-slate-800 hover:text-emerald-600">
-                                    {{ $trx->nasabah->nama ?? '-' }}
-                                </a>
-                            </td>
-                            <td class="py-3.5 px-6">
-                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $trx->jenis === 'setor' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
-                                    {{ ucfirst($trx->jenis) }}
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-6 text-xs text-slate-600">
-                                {{ $trx->total_berat ? number_format($trx->total_berat, 2, ',', '.') . ' kg' : '-' }}
-                            </td>
-                            <td class="py-3.5 px-6 font-bold {{ $trx->jenis === 'setor' ? 'text-emerald-600' : 'text-rose-600' }}">
-                                {{ $trx->jenis === 'setor' ? '+' : '-' }}{{ formatRupiah($trx->total_nilai) }}
-                            </td>
-                            <td class="py-3.5 px-6 text-xs text-slate-500">{{ $trx->petugas->name ?? '-' }}</td>
-                            <td class="py-3.5 px-6">
-                                {!! $trx->status_badge !!}
-                            </td>
-                            <td class="py-3.5 px-6 text-right">
-                                <div class="inline-flex items-center gap-1.5">
-                                    <a href="{{ roleRoute('transaksi.show', $trx) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50" title="Detail">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </a>
-                                    <a href="{{ roleRoute('transaksi.struk', $trx) }}" target="_blank" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Cetak Struk">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                    </a>
-                                </div>
-                            </td>
+        @if($transaksiList->isEmpty())
+            <div class="p-6">
+                <x-empty-state 
+                    message="Belum ada riwayat transaksi" 
+                    submessage="Catat transaksi setoran sampah warga atau penarikan saldo untuk melihat mutasi di sini."
+                />
+            </div>
+        @else
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-sm min-w-[750px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3.5 px-6">Kode Transaksi</th>
+                            <th class="py-3.5 px-6">Tanggal</th>
+                            <th class="py-3.5 px-6">Nasabah</th>
+                            <th class="py-3.5 px-6">Jenis</th>
+                            <th class="py-3.5 px-6">Total Berat</th>
+                            <th class="py-3.5 px-6">Total Nilai</th>
+                            <th class="py-3.5 px-6">Petugas</th>
+                            <th class="py-3.5 px-6">Status</th>
+                            <th class="py-3.5 px-6 text-right">Aksi</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="text-center py-10 text-slate-400 text-xs">Belum ada riwayat transaksi</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($transaksiList as $trx)
+                            <tr class="hover:bg-slate-50/50">
+                                <td class="py-3.5 px-6 font-mono font-medium text-xs text-slate-800">{{ $trx->kode_transaksi }}</td>
+                                <td class="py-3.5 px-6 text-xs text-slate-500">{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
+                                <td class="py-3.5 px-6">
+                                    <a href="{{ roleRoute('nasabah.show', $trx->nasabah_id) }}" class="font-semibold text-slate-800 hover:text-emerald-600">
+                                        {{ $trx->nasabah->nama ?? '-' }}
+                                    </a>
+                                </td>
+                                <td class="py-3.5 px-6">
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $trx->jenis === 'setor' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                        {{ ucfirst($trx->jenis) }}
+                                    </span>
+                                </td>
+                                <td class="py-3.5 px-6 text-xs text-slate-600">
+                                    {{ $trx->total_berat ? number_format($trx->total_berat, 2, ',', '.') . ' kg' : '-' }}
+                                </td>
+                                <td class="py-3.5 px-6 font-bold {{ $trx->jenis === 'setor' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                    {{ $trx->jenis === 'setor' ? '+' : '-' }}{{ formatRupiah($trx->total_nilai) }}
+                                </td>
+                                <td class="py-3.5 px-6 text-xs text-slate-500">{{ $trx->petugas->name ?? '-' }}</td>
+                                <td class="py-3.5 px-6">
+                                    {!! $trx->status_badge !!}
+                                </td>
+                                <td class="py-3.5 px-6 text-right">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <a href="{{ roleRoute('transaksi.show', $trx) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50" title="Detail">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </a>
+                                        <a href="{{ roleRoute('transaksi.struk', $trx) }}" target="_blank" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Cetak Struk">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
 
         @if($transaksiList->hasPages())
             <div class="p-4 border-t border-slate-100">
