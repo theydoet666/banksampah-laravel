@@ -830,4 +830,69 @@ class BankSampahTest extends TestCase
         $responseSuccess->assertSessionHas('success');
         $this->assertDatabaseMissing('jenis_sampah', ['id' => $sampahKosong->id]);
     }
+
+    public function test_petugas_can_register_and_manage_nasabah_in_their_unit(): void
+    {
+        $unitA = \App\Models\Unit::create(['nama' => 'Unit Mawar', 'kode_unit' => 'UNT-MWR', 'status' => 'aktif']);
+        $unitB = \App\Models\Unit::create(['nama' => 'Unit Melati', 'kode_unit' => 'UNT-MLT', 'status' => 'aktif']);
+
+        $petugasA = User::create([
+            'name' => 'Petugas Mawar',
+            'email' => 'petugas.mawar@banksampah.test',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'petugas',
+            'is_active' => true,
+            'unit_id' => $unitA->id,
+        ]);
+
+        // 1. Petugas bisa membuka form tambah nasabah
+        $responseCreate = $this->actingAs($petugasA)->get(route('petugas.nasabah.create'));
+        $responseCreate->assertStatus(200);
+
+        // 2. Petugas menyimpan nasabah baru (unit_id otomatis terkunci ke unitA)
+        $responseStore = $this->actingAs($petugasA)->post(route('petugas.nasabah.store'), [
+            'nama' => 'Warga Mawar Baru',
+            'nik' => '3201018899001122',
+            'jenis_kelamin' => 'L',
+            'no_hp' => '081234567888',
+            'alamat' => 'Dusun Mawar No. 01',
+            'status' => 'aktif',
+        ]);
+
+        $responseStore->assertRedirect(route('petugas.nasabah.index'));
+        $responseStore->assertSessionHas('success');
+
+        $nasabahBaru = Nasabah::where('nik', '3201018899001122')->first();
+        $this->assertNotNull($nasabahBaru);
+        $this->assertEquals($unitA->id, $nasabahBaru->unit_id);
+        $this->assertEquals($petugasA->id, $nasabahBaru->registered_by);
+
+        // 3. Petugas bisa melihat & mengedit nasabah di unitnya
+        $responseShow = $this->actingAs($petugasA)->get(route('petugas.nasabah.show', $nasabahBaru));
+        $responseShow->assertStatus(200);
+
+        $responseEdit = $this->actingAs($petugasA)->get(route('petugas.nasabah.edit', $nasabahBaru));
+        $responseEdit->assertStatus(200);
+
+        // 4. Buat nasabah di unitB
+        $nasabahUnitB = Nasabah::create([
+            'user_id' => $this->nasabahUser->id,
+            'unit_id' => $unitB->id,
+            'no_rekening' => 'BS-TEST-B',
+            'nik' => '3201015544332211',
+            'nama' => 'Warga Melati',
+            'jenis_kelamin' => 'P',
+            'no_hp' => '081299887766',
+            'alamat' => 'Dusun Melati',
+            'saldo' => 0,
+            'status' => 'aktif',
+        ]);
+
+        // Petugas unitA mencoba akses nasabah unitB -> 403 Forbidden
+        $responseForbiddenShow = $this->actingAs($petugasA)->get(route('petugas.nasabah.show', $nasabahUnitB));
+        $responseForbiddenShow->assertStatus(403);
+
+        $responseForbiddenEdit = $this->actingAs($petugasA)->get(route('petugas.nasabah.edit', $nasabahUnitB));
+        $responseForbiddenEdit->assertStatus(403);
+    }
 }

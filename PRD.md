@@ -85,7 +85,7 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | ID | Fitur | Prioritas | Status |
 |----|-------|-----------|--------|
 | NAS-01 | Daftar nasabah (searchable, filter per unit dusun, paginated) | P0 | Selesai |
-| NAS-02 | Tambah nasabah baru + auto-generate No. Rekening unik format `BS-YYYY-xxxxx` | P0 | Selesai |
+| NAS-02 | Tambah nasabah baru oleh Admin Desa dan Petugas Pos Unit (otomatis terkunci ke unit pos dusun petugas pendaftar) + auto-generate No. Rekening unik format `BS-YYYY-xxxxx` | P0 | Selesai |
 | NAS-03 | Kartu info kredensial login mandiri & tombol Reset Password nasabah | P0 | Selesai |
 | NAS-04 | Detail buku tabungan (saldo riil + riwayat transaksi debit/kredit) | P0 | Selesai |
 | NAS-05 | Cetak kartu anggota nasabah (PDF) | P1 | Selesai |

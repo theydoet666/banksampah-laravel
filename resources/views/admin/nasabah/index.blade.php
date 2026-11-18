@@ -10,7 +10,7 @@
             <h2 class="text-xl font-bold text-slate-800">Daftar Nasabah</h2>
             <p class="text-xs text-slate-500">Kelola anggota masyarakat penabung sampah</p>
         </div>
-        <a href="{{ route('admin.nasabah.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors">
+        <a href="{{ roleRoute('nasabah.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Tambah Nasabah
         </a>
@@ -18,7 +18,7 @@
 
     <!-- Filter & Search -->
     <x-card>
-        <form method="GET" action="{{ route('admin.nasabah.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <form method="GET" action="{{ roleRoute('nasabah.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div class="sm:col-span-2">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, nomor rekening, atau no. HP..." class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
             </div>
@@ -84,25 +84,27 @@
                             </td>
                             <td class="py-4 px-6 text-right">
                                 <div class="inline-flex items-center gap-1.5">
-                                    <a href="{{ route('admin.nasabah.show', $nasabah) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50" title="Detail">
+                                    <a href="{{ roleRoute('nasabah.show', $nasabah) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50" title="Detail">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </a>
-                                    <a href="{{ route('admin.nasabah.edit', $nasabah) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Edit">
+                                    <a href="{{ roleRoute('nasabah.edit', $nasabah) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Edit">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>
-                                    <button type="button" 
-                                            @click="$dispatch('open-confirm-modal', {
-                                                action: '{{ route('admin.nasabah.toggle-status', $nasabah) }}',
-                                                method: 'PATCH',
-                                                title: 'Ubah Status Nasabah',
-                                                message: 'Apakah Anda yakin ingin {{ $nasabah->status === 'aktif' ? 'menonaktifkan' : 'mengaktifkan' }} nasabah {{ $nasabah->nama }}?',
-                                                confirmText: '{{ $nasabah->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}',
-                                                confirmClass: '{{ $nasabah->status === 'aktif' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}'
-                                            })"
-                                            class="p-1.5 rounded-lg {{ $nasabah->status === 'aktif' ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50' }}" 
-                                            title="{{ $nasabah->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-                                    </button>
+                                    @if(auth()->user()->isAdmin())
+                                        <button type="button" 
+                                                @click="$dispatch('open-confirm-modal', {
+                                                    action: '{{ route('admin.nasabah.toggle-status', $nasabah) }}',
+                                                    method: 'PATCH',
+                                                    title: 'Ubah Status Nasabah',
+                                                    message: 'Apakah Anda yakin ingin {{ $nasabah->status === 'aktif' ? 'menonaktifkan' : 'mengaktifkan' }} nasabah {{ $nasabah->nama }}?',
+                                                    confirmText: '{{ $nasabah->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}',
+                                                    confirmClass: '{{ $nasabah->status === 'aktif' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}'
+                                                })"
+                                                class="p-1.5 rounded-lg {{ $nasabah->status === 'aktif' ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50' }}" 
+                                                title="{{ $nasabah->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -113,7 +115,7 @@
                                     message="Tidak ada nasabah yang ditemukan" 
                                     submessage="Silakan periksa kata kunci pencarian Anda atau tambahkan nasabah baru." 
                                     actionText="Tambah Nasabah Baru" 
-                                    :actionUrl="route('admin.nasabah.create')" 
+                                    :actionUrl="roleRoute('nasabah.create')" 
                                 />
                             </td>
                         </tr>

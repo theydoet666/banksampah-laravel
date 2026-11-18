@@ -53,12 +53,17 @@ Semua modul, fitur bisnis, keamanan relasi data, dan pengujian otomatis telah di
 - **Komponen Blade `<x-favicon />`**: Komponen terpadu yang dipasang pada seluruh layout sistem (`layouts/app`, `layouts/guest`, `layouts/nasabah`, `auth/login`, dan halaman error) dengan urutan fallback cerdas (*Favicon kustom -> Logo bank sampah -> Default emerald icon*).
 - **UI & Preview Interaktif**: Dilengkapi visual mockup mini tab browser pada halaman `/admin/pengaturan` dan preview instan Alpine.js.
 
+### 8. Hak Akses & Fitur Pendaftaran Nasabah oleh Petugas Pos Unit
+- **Buka Akses Penuh Manajemen Nasabah Pos Unit**: Mendaftarkan rute `create`, `store`, `edit`, `update` di bawah prefix `/petugas/nasabah` (`Route::resource('/nasabah', ...)->except(['destroy'])`).
+- **Unit Scoping Strict**: Petugas otomatis hanya dapat melihat, mendaftarkan (unit_id terkunci), dan mengedit nasabah di unit pos dusunnya sendiri (akses ke nasabah unit lain diblokir 403 Forbidden).
+- **Helper `roleRoute()` & Dynamic Routing**: Mengonversi rute statis di Blade ke helper adaptif `roleRoute()` sehingga tautan tombol dan formulir otomatis menyesuaikan role yang sedang aktif (`petugas.` atau `admin.`) tanpa tersangkut 403.
+
 ---
 
 ## 🧪 Hasil Automated Feature Testing
 File: `tests/Feature/BankSampahTest.php`
-- **Total Skenario Uji**: 18 skenario komprehensif
-- **Total Assertions**: 169 assertions
+- **Total Skenario Uji**: 19 skenario komprehensif
+- **Total Assertions**: 180 assertions
 - **Status**: 100% SUCCESS PASS
   1. `login post redirects per role`
   2. `dashboard url redirects per role`

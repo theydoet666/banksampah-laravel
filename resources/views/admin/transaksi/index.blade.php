@@ -11,11 +11,11 @@
             <p class="text-xs text-slate-500">Pencatatan mutasi transaksi setoran dan penarikan saldo</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="{{ route('admin.transaksi.setor.create') }}" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
+            <a href="{{ roleRoute('transaksi.setor.create') }}" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Setor Sampah
             </a>
-            <a href="{{ route('admin.transaksi.tarik.create') }}" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
+            <a href="{{ roleRoute('transaksi.tarik.create') }}" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                 Tarik Saldo
             </a>
@@ -24,7 +24,7 @@
 
     <!-- Filter Card -->
     <x-card>
-        <form method="GET" action="{{ route('admin.transaksi.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+        <form method="GET" action="{{ roleRoute('transaksi.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
             <div>
                 <label class="block font-semibold text-slate-500 uppercase mb-1">Cari Kode / Nasabah</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik kode atau nama..." class="w-full rounded-lg border-slate-200 text-xs focus:border-emerald-500 focus:ring-emerald-500">
@@ -48,7 +48,7 @@
             <div class="flex items-end gap-2">
                 <button type="submit" class="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs">Terapkan Filter</button>
                 @if(request()->hasAny(['search', 'jenis', 'status', 'tanggal_dari', 'tanggal_sampai']))
-                    <a href="{{ route('admin.transaksi.index') }}" class="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50" title="Reset">
+                    <a href="{{ roleRoute('transaksi.index') }}" class="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50" title="Reset">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     </a>
                 @endif
@@ -79,7 +79,7 @@
                             <td class="py-3.5 px-6 font-mono font-medium text-xs text-slate-800">{{ $trx->kode_transaksi }}</td>
                             <td class="py-3.5 px-6 text-xs text-slate-500">{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
                             <td class="py-3.5 px-6">
-                                <a href="{{ route('admin.nasabah.show', $trx->nasabah_id) }}" class="font-semibold text-slate-800 hover:text-emerald-600">
+                                <a href="{{ roleRoute('nasabah.show', $trx->nasabah_id) }}" class="font-semibold text-slate-800 hover:text-emerald-600">
                                     {{ $trx->nasabah->nama ?? '-' }}
                                 </a>
                             </td>
@@ -100,10 +100,10 @@
                             </td>
                             <td class="py-3.5 px-6 text-right">
                                 <div class="inline-flex items-center gap-1.5">
-                                    <a href="{{ route('admin.transaksi.show', $trx) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50" title="Detail">
+                                    <a href="{{ roleRoute('transaksi.show', $trx) }}" class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50" title="Detail">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </a>
-                                    <a href="{{ route('admin.transaksi.struk', $trx) }}" target="_blank" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Cetak Struk">
+                                    <a href="{{ roleRoute('transaksi.struk', $trx) }}" target="_blank" class="p-1.5 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50" title="Cetak Struk">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                     </a>
                                 </div>

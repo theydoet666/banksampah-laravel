@@ -14,3 +14,11 @@ if (! function_exists('appSetting')) {
     }
 }
 
+if (! function_exists('roleRoute')) {
+    function roleRoute(string $name, $parameters = [], bool $absolute = true): string
+    {
+        $prefix = auth()->user()?->isPetugas() ? 'petugas.' : 'admin.';
+        return route($prefix . $name, $parameters, $absolute);
+    }
+}
+

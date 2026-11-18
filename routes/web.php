@@ -136,9 +136,8 @@ Route::middleware(['auth', 'role:petugas,admin', 'check.active'])
     ->group(function () {
         Route::get('/dashboard', [PetugasDashboardController::class, 'index'])->name('dashboard');
 
-        // Nasabah (view-only list for petugas)
-        Route::get('/nasabah', [AdminNasabahController::class, 'index'])->name('nasabah.index');
-        Route::get('/nasabah/{nasabah}', [AdminNasabahController::class, 'show'])->name('nasabah.show');
+        // Nasabah (Manajemen Nasabah Pos Unit)
+        Route::resource('/nasabah', AdminNasabahController::class)->except(['destroy']);
         Route::post('/nasabah/{nasabah}/reset-password', [AdminNasabahController::class, 'resetPassword'])->name('nasabah.reset-password');
 
         // Transaksi Setor & Tarik

@@ -10,11 +10,11 @@
             <h2 class="text-xl font-bold text-slate-800">Form Pendaftaran Nasabah</h2>
             <p class="text-xs text-slate-500">Nomor rekening akan dibuat secara otomatis oleh sistem</p>
         </div>
-        <a href="{{ route('admin.nasabah.index') }}" class="text-sm font-semibold text-slate-600 hover:text-slate-800">Kembali</a>
+        <a href="{{ roleRoute('nasabah.index') }}" class="text-sm font-semibold text-slate-600 hover:text-slate-800">Kembali</a>
     </div>
 
     <x-card>
-        <form method="POST" action="{{ route('admin.nasabah.store') }}" enctype="multipart/form-data" class="space-y-5" x-data="{ submitting: false }" @submit="submitting = true">
+        <form method="POST" action="{{ roleRoute('nasabah.store') }}" enctype="multipart/form-data" class="space-y-5" x-data="{ submitting: false }" @submit="submitting = true">
             @csrf
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -101,7 +101,7 @@
             </div>
 
             <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-                <a href="{{ route('admin.nasabah.index') }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
+                <a href="{{ roleRoute('nasabah.index') }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
                 <button type="submit" :disabled="submitting" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm inline-flex items-center gap-2 disabled:opacity-60">
                     <svg x-show="submitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

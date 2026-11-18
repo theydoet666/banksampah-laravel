@@ -108,11 +108,16 @@ class NasabahController extends Controller
 
         $msg = "Nasabah baru berhasil didaftarkan! No. Rekening: {$noRekening}. Akun login mandiri dibuat otomatis (Login: No. Rekening / No. HP, Password: {$defaultPassword}).";
 
-        return redirect()->route('admin.nasabah.index')->with('success', $msg);
+        $route = auth()->user()?->isPetugas() ? 'petugas.nasabah.index' : 'admin.nasabah.index';
+        return redirect()->route($route)->with('success', $msg);
     }
 
     public function show(Nasabah $nasabah)
     {
+        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id && $nasabah->unit_id !== auth()->user()->unit_id) {
+            abort(403, 'Akses ditolak: Anda hanya dapat melihat data nasabah di unit Anda.');
+        }
+
         $nasabah->load(['petugasPendaftar', 'unit', 'transaksi' => function ($q) {
             $q->orderBy('id', 'desc')->limit(10);
         }]);
@@ -122,6 +127,10 @@ class NasabahController extends Controller
 
     public function edit(Nasabah $nasabah)
     {
+        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id && $nasabah->unit_id !== auth()->user()->unit_id) {
+            abort(403, 'Akses ditolak: Anda hanya dapat mengedit data nasabah di unit Anda.');
+        }
+
         $units = Unit::aktif()->orderBy('nama')->get();
         return view('admin.nasabah.edit', compact('nasabah', 'units'));
     }
@@ -129,6 +138,10 @@ class NasabahController extends Controller
     public function update(Request $request, Nasabah $nasabah)
     {
         $user = auth()->user();
+
+        if ($user && $user->isPetugas() && $user->unit_id && $nasabah->unit_id !== $user->unit_id) {
+            abort(403, 'Akses ditolak: Anda hanya dapat memperbarui data nasabah di unit Anda.');
+        }
 
         $rules = [
             'nama' => 'required|string|max:100',
@@ -157,7 +170,8 @@ class NasabahController extends Controller
 
         $nasabah->update($validated);
 
-        return redirect()->route('admin.nasabah.show', $nasabah)->with('success', 'Data nasabah berhasil diperbarui.');
+        $route = auth()->user()?->isPetugas() ? 'petugas.nasabah.show' : 'admin.nasabah.show';
+        return redirect()->route($route, $nasabah)->with('success', 'Data nasabah berhasil diperbarui.');
     }
 
     public function toggleStatus(Nasabah $nasabah)

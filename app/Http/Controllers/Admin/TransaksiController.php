@@ -92,7 +92,8 @@ class TransaksiController extends Controller
 
         try {
             $transaksi = $this->transaksiService->prosesSetoran($validated);
-            return redirect()->route('admin.transaksi.show', $transaksi)->with('success', 'Transaksi setoran sampah berhasil disimpan.');
+            $routePrefix = auth()->user()->isPetugas() ? 'petugas.' : 'admin.';
+            return redirect()->route($routePrefix . 'transaksi.show', $transaksi)->with('success', 'Transaksi setoran sampah berhasil disimpan.');
         } catch (Exception $e) {
             return back()->withInput()->with('error', 'Gagal memproses setoran: ' . $e->getMessage());
         }
