@@ -83,8 +83,8 @@
                     </button>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-xs min-w-[650px]">
                         <thead>
                             <tr class="border-b border-slate-100 text-slate-400 font-semibold uppercase text-[10px]">
                                 <th class="py-2.5 px-2">Jenis Sampah (Tersedia)</th>
@@ -116,6 +116,7 @@
                                                @input="calculateSubtotal(index)" 
                                                step="0.01" 
                                                min="0.01" 
+                                               inputmode="decimal" 
                                                :max="item.maxStok" 
                                                placeholder="0.0" 
                                                required 
@@ -129,6 +130,7 @@
                                                @input="calculateSubtotal(index)" 
                                                step="100" 
                                                min="100" 
+                                               inputmode="numeric" 
                                                placeholder="Harga / kg" 
                                                required 
                                                class="w-full text-xs rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 font-mono">

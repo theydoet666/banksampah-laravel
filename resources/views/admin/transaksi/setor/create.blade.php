@@ -10,10 +10,10 @@
             <h2 class="text-xl font-bold text-slate-800">Form Setor Sampah</h2>
             <p class="text-xs text-slate-500">Penimbangan dan konversi rupiah langsung ke saldo nasabah</p>
         </div>
-        <a href="{{ route('admin.transaksi.index') }}" class="text-sm font-semibold text-slate-600 hover:text-slate-800">Kembali</a>
+        <a href="{{ roleRoute('transaksi.index') }}" class="text-sm font-semibold text-slate-600 hover:text-slate-800">Kembali</a>
     </div>
 
-    <form method="POST" action="{{ route('admin.transaksi.setor.store') }}" class="space-y-6" @submit="submitting = true">
+    <form method="POST" action="{{ roleRoute('transaksi.setor.store') }}" class="space-y-6" @submit="submitting = true">
         @csrf
 
         <!-- Informasi Nasabah & Transaksi -->
@@ -51,9 +51,9 @@
 
         <!-- Detail Sampah Dinamis -->
         <x-card title="Detail Sampah yang Disetor">
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-sm">
-                    <thead>
+                    <thead class="hidden sm:table-header-group">
                         <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
                             <th class="py-2.5 w-5/12">Jenis Sampah</th>
                             <th class="py-2.5 w-2/12">Berat</th>
@@ -62,27 +62,55 @@
                             <th class="py-2.5 w-1/12 text-center">Hapus</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="block sm:table-row-group divide-y-0 sm:divide-y divide-slate-100 space-y-3 sm:space-y-0">
                         <template x-for="(row, index) in rows" :key="index">
-                            <tr>
-                                <td class="py-3 pr-3">
-                                    <select :name="`details[${index}][jenis_sampah_id]`" x-model="row.jenis_sampah_id" @change="onJenisSampahChange(index)" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <tr class="block sm:table-row p-4 sm:p-0 bg-slate-50/70 sm:bg-transparent rounded-2xl border border-slate-200/80 sm:border-0 relative space-y-3 sm:space-y-0">
+                                <!-- Kolom Jenis Sampah -->
+                                <td class="block sm:table-cell sm:py-3 sm:pr-3 sm:w-5/12">
+                                    <div class="flex items-center justify-between sm:hidden mb-1.5">
+                                        <span class="text-xs font-bold text-slate-700 uppercase" x-text="`Sampah #${index + 1}`"></span>
+                                        <button type="button" @click="removeRow(index)" :disabled="rows.length <= 1" class="text-rose-500 hover:text-rose-700 disabled:opacity-30 inline-flex items-center gap-1 text-xs font-semibold p-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <span>Hapus</span>
+                                        </button>
+                                    </div>
+                                    <label class="block sm:hidden text-[11px] font-semibold text-slate-500 uppercase mb-1">Pilih Jenis Sampah *</label>
+                                    <select :name="`details[${index}][jenis_sampah_id]`" x-model="row.jenis_sampah_id" @change="onJenisSampahChange(index)" required class="w-full rounded-xl sm:rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500 bg-white shadow-xs">
                                         <option value="">Pilih Jenis Sampah</option>
                                         <template x-for="item in jenisSampahList" :key="item.id">
                                             <option :value="item.id" x-text="`${item.nama} (${formatRupiah(item.harga_per_satuan)}/${item.satuan})`"></option>
                                         </template>
                                     </select>
                                 </td>
-                                <td class="py-3 pr-3">
+
+                                <!-- Kolom Berat -->
+                                <td class="block sm:table-cell sm:py-3 sm:pr-3 sm:w-2/12">
+                                    <label class="block sm:hidden text-[11px] font-semibold text-slate-500 uppercase mb-1">Berat Timbangan *</label>
                                     <div class="relative">
-                                        <input type="number" step="0.01" min="0.01" :name="`details[${index}][berat]`" x-model="row.berat" @input="calculateRow(index)" required class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="0.0">
-                                        <span class="absolute right-3 top-2.5 text-xs text-slate-400 uppercase" x-text="row.satuan || 'kg'"></span>
+                                        <input type="number" step="0.01" min="0.01" inputmode="decimal" :name="`details[${index}][berat]`" x-model="row.berat" @input="calculateRow(index)" required class="w-full rounded-xl sm:rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500 pr-12 bg-white shadow-xs font-mono" placeholder="0.0">
+                                        <span class="absolute right-3 top-2.5 text-xs text-slate-400 uppercase pointer-events-none font-semibold select-none" x-text="row.satuan || 'kg'"></span>
                                     </div>
                                 </td>
-                                <td class="py-3 pr-3 text-xs font-semibold text-slate-600" x-text="formatRupiah(row.harga_satuan)"></td>
-                                <td class="py-3 pr-3 font-bold text-emerald-600" x-text="formatRupiah(row.subtotal)"></td>
-                                <td class="py-3 text-center">
-                                    <button type="button" @click="removeRow(index)" :disabled="rows.length <= 1" class="p-1 rounded text-slate-400 hover:text-rose-600 disabled:opacity-30">
+
+                                <!-- Kolom Harga Satuan -->
+                                <td class="block sm:table-cell sm:py-3 sm:pr-3 sm:w-2/12 text-xs">
+                                    <div class="flex items-center justify-between sm:block bg-white sm:bg-transparent p-2.5 sm:p-0 rounded-lg border border-slate-100 sm:border-0">
+                                        <span class="sm:hidden text-[11px] font-semibold text-slate-400 uppercase">Harga Satuan:</span>
+                                        <span class="font-semibold text-slate-700" x-text="formatRupiah(row.harga_satuan) + ' / ' + (row.satuan || 'kg')"></span>
+                                    </div>
+                                </td>
+
+                                <!-- Kolom Subtotal -->
+                                <td class="block sm:table-cell sm:py-3 sm:pr-3 sm:w-2/12">
+                                    <div class="flex items-center justify-between sm:block bg-emerald-50/50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg border border-emerald-100/50 sm:border-0">
+                                        <span class="sm:hidden text-[11px] font-bold text-emerald-800 uppercase">Subtotal:</span>
+                                        <span class="font-bold text-emerald-600 text-sm" x-text="formatRupiah(row.subtotal)"></span>
+                                    </div>
+                                </td>
+
+                                <!-- Kolom Hapus (Desktop) -->
+                                <td class="hidden sm:table-cell sm:py-3 sm:w-1/12 text-center">
+                                    <button type="button" @click="removeRow(index)" :disabled="rows.length <= 1" class="p-1 rounded text-slate-400 hover:text-rose-600 disabled:opacity-30 transition-colors" title="Hapus Baris">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </td>
@@ -93,12 +121,12 @@
             </div>
 
             <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <button type="button" @click="addRow()" class="px-3.5 py-2 rounded-lg border border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold inline-flex items-center gap-1.5">
+                <button type="button" @click="addRow()" class="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl border border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors shadow-xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Tambah Baris Sampah
                 </button>
 
-                <div class="text-right space-y-1">
+                <div class="w-full sm:w-auto text-center sm:text-right space-y-1">
                     <p class="text-xs text-slate-400">Total Berat: <span class="font-bold text-slate-700" x-text="totalBerat.toFixed(2) + ' kg'"></span></p>
                     <p class="text-lg font-extrabold text-emerald-700">Total Nilai: <span x-text="formatRupiah(totalNilai)"></span></p>
                 </div>
@@ -106,8 +134,8 @@
         </x-card>
 
         <div class="flex items-center justify-end gap-3">
-            <a href="{{ route('admin.transaksi.index') }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
-            <button type="submit" :disabled="!selectedNasabahId || totalNilai <= 0 || submitting" class="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50 inline-flex items-center gap-2">
+            <a href="{{ roleRoute('transaksi.index') }}" class="flex-1 sm:flex-initial text-center px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
+            <button type="submit" :disabled="!selectedNasabahId || totalNilai <= 0 || submitting" class="flex-1 sm:flex-initial justify-center px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50 inline-flex items-center gap-2">
                 <svg x-show="submitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>

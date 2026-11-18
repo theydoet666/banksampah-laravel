@@ -28,7 +28,8 @@ class BankSampahTest extends TestCase
 
         $this->admin = User::where('role', 'admin')->first();
         $this->petugas = User::where('role', 'petugas')->first();
-        $this->nasabahUser = User::where('role', 'nasabah')->first();
+        $this->nasabahUser = User::where('email', 'nasabah@banksampah.test')->first()
+            ?? User::where('role', 'nasabah')->first();
 
         if (! $this->nasabahUser) {
             $unit = \App\Models\Unit::first() ?? \App\Models\Unit::create(['nama' => 'Unit Test', 'kode_unit' => 'UNT-01', 'status' => 'aktif']);
@@ -40,6 +41,9 @@ class BankSampahTest extends TestCase
                 'is_active' => true,
                 'unit_id' => $unit->id,
             ]);
+        } else {
+            $this->nasabahUser->password = \Illuminate\Support\Facades\Hash::make('password');
+            $this->nasabahUser->save();
         }
 
         $this->nasabah = Nasabah::where('user_id', $this->nasabahUser->id)->first();
@@ -79,7 +83,7 @@ class BankSampahTest extends TestCase
         // Nasabah login
         $this->post('/logout');
         $response = $this->post('/login', [
-            'email' => 'nasabah@banksampah.test',
+            'email' => $this->nasabahUser->email,
             'password' => 'password',
         ]);
         $response->assertRedirect(route('nasabah.dashboard'));
