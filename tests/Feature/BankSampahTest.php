@@ -899,4 +899,35 @@ class BankSampahTest extends TestCase
         $responseForbiddenEdit = $this->actingAs($petugasA)->get(route('petugas.nasabah.edit', $nasabahUnitB));
         $responseForbiddenEdit->assertStatus(403);
     }
+
+    public function test_petugas_can_access_cetak_struk_and_admin_struk_redirects(): void
+    {
+        $transaksi = Transaksi::first() ?? Transaksi::create([
+            'kode_transaksi' => 'TRX-TEST-STRUK',
+            'nasabah_id' => $this->nasabah->id,
+            'unit_id' => $this->nasabah->unit_id,
+            'petugas_id' => $this->petugas->id,
+            'tanggal_transaksi' => now()->toDateString(),
+            'jenis' => 'setor',
+            'total_berat' => 2.5,
+            'total_nilai' => 25000,
+            'saldo_sebelum' => 0,
+            'saldo_sesudah' => 25000,
+            'status' => 'aktif',
+        ]);
+
+        // 1. Petugas bisa membuka struk via route petugas
+        $responsePetugas = $this->actingAs($this->petugas)->get(route('petugas.transaksi.struk', $transaksi));
+        $responsePetugas->assertStatus(200);
+        $responsePetugas->assertSee($transaksi->kode_transaksi);
+
+        // 2. Petugas yang mengakses /admin/transaksi/{id}/struk diarahkan otomatis ke route petugas
+        $responseAdminRedirect = $this->actingAs($this->petugas)->get("/admin/transaksi/{$transaksi->id}/struk");
+        $responseAdminRedirect->assertRedirect("/petugas/transaksi/{$transaksi->id}/struk");
+
+        // 3. Admin juga tetap bisa membuka struk
+        $responseAdmin = $this->actingAs($this->admin)->get(route('admin.transaksi.struk', $transaksi));
+        $responseAdmin->assertStatus(200);
+        $responseAdmin->assertSee($transaksi->kode_transaksi);
+    }
 }

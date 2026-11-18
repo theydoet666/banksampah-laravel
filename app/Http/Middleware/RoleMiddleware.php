@@ -20,6 +20,12 @@ class RoleMiddleware
         }
 
         if (! in_array($request->user()->role, $roles)) {
+            // Jika petugas membuka URL struk admin, arahkan otomatis ke struk petugas
+            if ($request->user()->isPetugas() && $request->is('admin/transaksi/*/struk')) {
+                $target = str_replace('admin/transaksi/', 'petugas/transaksi/', $request->getRequestUri());
+                return redirect()->to($target);
+            }
+
             abort(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman ini.');
         }
 
