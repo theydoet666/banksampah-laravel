@@ -48,12 +48,17 @@ Semua modul, fitur bisnis, keamanan relasi data, dan pengujian otomatis telah di
 - Repositori bersih dari credential leaks pada dokumentasi publik (`README.md`, `PROGRESS.md`, `PRD.md`).
 - Sinkronisasi penuh ke GitHub: `https://github.com/theydoet666/banksampah-laravel.git` pada branch `master` dan `main`.
 
+### 7. Fitur Upload Favicon Tab Browser & Komponen Global
+- **Backend Controller**: Method `update()` di `PengaturanController` memvalidasi dan menyimpan berkas `favicon` (mendukung ICO, PNG, SVG, WEBP, JPG max 1MB) serta opsi hapus/reset favicon.
+- **Komponen Blade `<x-favicon />`**: Komponen terpadu yang dipasang pada seluruh layout sistem (`layouts/app`, `layouts/guest`, `layouts/nasabah`, `auth/login`, dan halaman error) dengan urutan fallback cerdas (*Favicon kustom -> Logo bank sampah -> Default emerald icon*).
+- **UI & Preview Interaktif**: Dilengkapi visual mockup mini tab browser pada halaman `/admin/pengaturan` dan preview instan Alpine.js.
+
 ---
 
 ## 🧪 Hasil Automated Feature Testing
 File: `tests/Feature/BankSampahTest.php`
 - **Total Skenario Uji**: 18 skenario komprehensif
-- **Total Assertions**: 162 assertions
+- **Total Assertions**: 169 assertions
 - **Status**: 100% SUCCESS PASS
   1. `login post redirects per role`
   2. `dashboard url redirects per role`

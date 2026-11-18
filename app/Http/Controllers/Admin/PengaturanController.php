@@ -24,6 +24,8 @@ class PengaturanController extends Controller
             'email' => 'required|email|max:100',
             'tahun_berdiri' => 'nullable|string|max:4',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
+            'favicon' => 'nullable|file|mimes:ico,png,svg,webp,jpg,jpeg|max:1024',
+            'hapus_favicon' => 'nullable|boolean',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -36,7 +38,23 @@ class PengaturanController extends Controller
             AppSetting::set('logo', $path);
         }
 
-        unset($validated['logo']);
+        if ($request->boolean('hapus_favicon')) {
+            $oldFavicon = AppSetting::get('favicon');
+            if ($oldFavicon && Storage::disk('public')->exists($oldFavicon)) {
+                Storage::disk('public')->delete($oldFavicon);
+            }
+            AppSetting::set('favicon', null);
+        } elseif ($request->hasFile('favicon')) {
+            $oldFavicon = AppSetting::get('favicon');
+            if ($oldFavicon && Storage::disk('public')->exists($oldFavicon)) {
+                Storage::disk('public')->delete($oldFavicon);
+            }
+
+            $path = $request->file('favicon')->store('settings', 'public');
+            AppSetting::set('favicon', $path);
+        }
+
+        unset($validated['logo'], $validated['favicon'], $validated['hapus_favicon']);
 
         foreach ($validated as $key => $value) {
             AppSetting::set($key, $value ?? '');

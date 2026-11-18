@@ -8,6 +8,8 @@
     <title>@yield('title', 'Dashboard') - {{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</title>
     <meta name="description" content="{{ appSetting('deskripsi', 'Sistem Informasi Manajemen Bank Sampah BAA Terpadu dan Berkelanjutan.') }}">
 
+    <x-favicon />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />

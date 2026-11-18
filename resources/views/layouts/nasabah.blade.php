@@ -8,6 +8,8 @@
     <title>@yield('title', 'Portal Nasabah') - {{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</title>
     <meta name="description" content="{{ appSetting('deskripsi', 'Portal Buku Tabungan Digital Nasabah Bank Sampah BAA.') }}">
 
+    <x-favicon />
+
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 

@@ -341,6 +341,7 @@ class BankSampahTest extends TestCase
         \Illuminate\Support\Facades\Storage::fake('public');
 
         $logoFile = \Illuminate\Http\UploadedFile::fake()->image('bank_logo.png', 200, 200);
+        $faviconFile = \Illuminate\Http\UploadedFile::fake()->image('favicon.png', 32, 32);
 
         $response = $this->actingAs($this->admin)->put(route('admin.pengaturan.update'), [
             'nama_bank_sampah' => 'Bank Sampah Berkah Mandiri',
@@ -350,6 +351,7 @@ class BankSampahTest extends TestCase
             'alamat' => 'Jl. Hijau Lestari No. 10',
             'tahun_berdiri' => '2024',
             'logo' => $logoFile,
+            'favicon' => $faviconFile,
         ]);
 
         $response->assertRedirect();
@@ -361,6 +363,27 @@ class BankSampahTest extends TestCase
         $logoPath = \App\Models\AppSetting::get('logo');
         $this->assertNotEmpty($logoPath);
         \Illuminate\Support\Facades\Storage::disk('public')->assertExists($logoPath);
+
+        $faviconPath = \App\Models\AppSetting::get('favicon');
+        $this->assertNotEmpty($faviconPath);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($faviconPath);
+
+        // Pastikan render favicon di halaman
+        $pageResponse = $this->actingAs($this->admin)->get(route('admin.pengaturan.index'));
+        $pageResponse->assertSee($faviconPath);
+        $pageResponse->assertSee('rel="icon"', false);
+
+        // Test hapus favicon
+        $deleteFaviconResponse = $this->actingAs($this->admin)->put(route('admin.pengaturan.update'), [
+            'nama_bank_sampah' => 'Bank Sampah Berkah Mandiri',
+            'no_telp' => '081234567890',
+            'email' => 'admin@berkahmandiri.test',
+            'alamat' => 'Jl. Hijau Lestari No. 10',
+            'hapus_favicon' => '1',
+        ]);
+        $deleteFaviconResponse->assertRedirect();
+        $this->assertNull(\App\Models\AppSetting::get('favicon'));
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($faviconPath);
     }
 
     public function test_nasabah_pengajuan_tarik_and_admin_approval_workflow(): void

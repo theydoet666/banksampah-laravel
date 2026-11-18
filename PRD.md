@@ -51,7 +51,7 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 - Transaksi penarikan saldo dengan alur persetujuan (*approval workflow*) oleh Pengelola Desa.
 - Monitoring stok gudang induk dan transaksi penjualan ke pengepul (dengan fitur auto-fill harga jual standar).
 - Laporan Keuangan, Operasional, Stok Gudang, dan Laba/Rugi (PDF & Excel).
-- Pengaturan identitas bank sampah, logo, dan profil desa.
+- Pengaturan identitas bank sampah, logo resmi, favicon kustom tab browser, dan profil desa.
 - Tool pemeliharaan data: command artisan `bank-sampah:reset-data` untuk pengujian bersih dari nol.
 
 ### Di Luar Lingkup (Out of Scope)
@@ -251,4 +251,5 @@ pengepul (Off-taker)                           │       harga_sampah_log
 - [x] Master komoditas sampah mendukung harga beli nasabah, harga jual pengepul, satuan fleksibel, serta penghapusan aman berproteksi relasi transaksi.
 - [x] Master unit bank sampah mendukung penambahan, pengeditan, penonaktifan, serta penghapusan aman dengan perlindungan relasi data.
 - [x] Laporan laba/rugi otomatis mengkalkulasi selisih penjualan pengepul dikurangi beban setoran nasabah.
+- [x] Pengaturan identitas mendukung upload logo resmi dan favicon kustom browser dengan simulasi mockup interaktif.
 - [x] Antarmuka login profesional, elegan, responsif, dan dilengkapi toggle lihat kata sandi.
