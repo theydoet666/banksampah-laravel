@@ -11,6 +11,12 @@
             <h2 class="text-xl font-bold text-slate-800">Persetujuan Penarikan Saldo</h2>
             <p class="text-xs text-slate-500">Otorisasi pencairan dana tabungan warga oleh Pengelola/Bendahara Desa</p>
         </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('profile.edit') }}#pin-otorisasi" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-xs">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Kelola PIN Otorisasi
+            </a>
+        </div>
     </div>
 
     <!-- Ringkasan Status -->
@@ -209,7 +215,12 @@
                                                                     <svg x-show="showPin" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                                                                 </button>
                                                             </div>
-                                                            <p class="text-[10px] text-slate-400 mt-1">Hanya pengelola yang memiliki PIN otorisasi sah yang dapat mencairkan dana.</p>
+                                                            <div class="flex items-center justify-between text-[10px] mt-1">
+                                                                <span class="text-slate-400">PIN 6 digit otorisasi kas.</span>
+                                                                <a href="{{ route('profile.edit') }}#pin-otorisasi" target="_blank" class="text-emerald-700 hover:text-emerald-800 font-semibold underline">
+                                                                    Lupa / Ganti PIN?
+                                                                </a>
+                                                            </div>
                                                         </div>
 
                                                         <div class="flex items-center justify-end gap-2 pt-2">
