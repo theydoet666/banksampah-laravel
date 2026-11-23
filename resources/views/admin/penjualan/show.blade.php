@@ -148,7 +148,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.penjualan.pelunasan', $penjualan) }}" class="space-y-3">
+            <form method="POST" action="{{ route('admin.penjualan.pelunasan', $penjualan) }}" onsubmit="event.preventDefault(); confirmPelunasan(this);" class="space-y-3">
                 @csrf
                 @method('PATCH')
 
@@ -193,14 +193,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-                @if($penjualan->catatan)
-                    <div class="pt-2 text-[11px] text-slate-500 italic">
-                        Catatan: {{ $penjualan->catatan }}
-                    </div>
-                @endif
-            </div>
         </div>
     </div>
 
@@ -258,4 +250,124 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function confirmPelunasan(form) {
+    if (typeof Swal === 'undefined') {
+        if (confirm('Konfirmasi pelunasan piutang penjualan ini?')) {
+            form.submit();
+        }
+        return;
+    }
+
+    const tanggalInput = form.querySelector('[name="tanggal_pelunasan"]');
+    const metodeSelect = form.querySelector('[name="metode_pelunasan"]');
+    const catatanInput = form.querySelector('[name="catatan_pelunasan"]');
+    const metodeText = metodeSelect ? metodeSelect.options[metodeSelect.selectedIndex].text : '-';
+    const tanggalVal = tanggalInput ? tanggalInput.value : '';
+    const catatanVal = catatanInput && catatanInput.value.trim() ? catatanInput.value.trim() : '-';
+
+    let tanggalFormatted = tanggalVal;
+    if (tanggalVal) {
+        const parts = tanggalVal.split('-');
+        if (parts.length === 3) {
+            tanggalFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+    }
+
+    Swal.fire({
+        title: 'Konfirmasi Pelunasan Piutang?',
+        html: `
+            <div class="text-left text-xs space-y-2 mt-2">
+                <p class="text-slate-600">Pastikan pembayaran dari mitra pengepul telah benar-benar diterima:</p>
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                    <div class="flex justify-between text-slate-500">
+                        <span>Mitra Pengepul:</span>
+                        <strong class="text-slate-800">{{ $penjualan->pengepul->nama_perusahaan }}</strong>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                        <span>No. Transaksi:</span>
+                        <span class="font-mono text-slate-700">{{ $penjualan->kode_penjualan }}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                        <span>Total Tagihan:</span>
+                        <strong class="text-emerald-700 font-bold text-sm">{{ formatRupiah($penjualan->total_pendapatan) }}</strong>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                        <span>Metode Bayar:</span>
+                        <span class="font-semibold text-slate-800">${metodeText}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                        <span>Tanggal Terima:</span>
+                        <span class="font-medium text-slate-800">${tanggalFormatted}</span>
+                    </div>
+                    ${catatanVal !== '-' ? `
+                    <div class="pt-1 border-t border-slate-200/60 text-slate-500">
+                        <span>Catatan:</span> <span class="italic text-slate-700">${catatanVal}</span>
+                    </div>` : ''}
+                </div>
+                <div class="p-2 bg-amber-50 rounded-lg border border-amber-200 text-amber-800 text-[11px]">
+                    ⚠️ Status transaksi akan diperbarui menjadi <strong>LUNAS</strong> dan tercatat ke kas Bank Sampah.
+                </div>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Konfirmasi Lunas',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-2xl shadow-xl border border-slate-100',
+            confirmButton: 'rounded-xl text-xs font-semibold px-4 py-2.5',
+            cancelButton: 'rounded-xl text-xs font-semibold px-4 py-2.5'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+
+@if(session('success'))
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Berhasil!',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            confirmButtonColor: '#059669',
+            confirmButtonText: 'Selesai',
+            timer: 4000,
+            timerProgressBar: true,
+            customClass: {
+                popup: 'rounded-2xl shadow-xl border border-slate-100',
+                confirmButton: 'rounded-xl text-xs font-semibold px-4 py-2.5'
+            }
+        });
+    }
+});
+@endif
+
+@if(session('error'))
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Perhatian / Gagal',
+            text: "{{ session('error') }}",
+            icon: 'error',
+            confirmButtonColor: '#e11d48',
+            confirmButtonText: 'Tutup',
+            customClass: {
+                popup: 'rounded-2xl shadow-xl border border-slate-100',
+                confirmButton: 'rounded-xl text-xs font-semibold px-4 py-2.5'
+            }
+        });
+    }
+});
+@endif
+</script>
+@endpush
 
