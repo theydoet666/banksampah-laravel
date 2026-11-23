@@ -1,31 +1,37 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.3.0  
-> Tanggal: 17 November 2026  
+> Versi: 1.4.0  
+> Tanggal: 23 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
-> Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js**
+> Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js + SweetAlert2**
 
 ---
 
 ## 1. Latar Belakang & Tujuan
 
-Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.3.0 ini, sistem telah disempurnakan mencakup:
+Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.4.0 ini, sistem telah disempurnakan mencakup:
 1. **Multi-Unit Bank Sampah** di tingkat Dusun/RW.
 2. **Role Berjenjang 4 Tingkat** (`admin`, `pengelola`, `petugas`, `nasabah`).
 3. **Mekanisme Multi-Identifier Login & Auto Onboarding Nasabah** yang fleksibel dan ramah warga desa.
 4. **Struktur Dua Harga Komoditas** (Harga Beli Nasabah & Harga Jual Pengepul) dengan kalkulasi margin keuntungan desa secara *real-time*.
 5. **Ekstensi Satuan Ukur Komoditas** (`kg`, `gram`, `unit`, `buah`, `pcs`, `liter`).
 6. **Manajemen Penjualan Sampah Gudang Induk ke Pengepul** serta laporan laba/rugi usaha desa terpadu.
-7. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
-8. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
+7. **Pencatatan & Pelunasan Piutang Penjualan Pengepul** (penjualan tempo yang dapat dilunasi bertahap/tunai/transfer dengan konfirmasi interaktif SweetAlert2).
+8. **Otorisasi PIN Transaksi Keuangan** (PIN 6-digit wajib untuk otorisasi pencairan saldo nasabah oleh Pengelola/Bendahara guna melindungi kas desa).
+9. **Kop Surat & Logo Dinamis pada Seluruh Dokumen Cetak/PDF** (Base64 data embedding untuk DomPDF, Surat Jalan, dan Struk Kasir sesuai pengaturan identitas sistem).
+10. **Portal Mandiri Nasabah Mobile-First** dengan Mobile App Bottom Navigation Bar untuk pengalaman pengguna layaknya aplikasi mobile banking.
+11. **Penyempurnaan Rekapitulasi Laporan & Pelaporan Status Transaksi** (kalkulasi penarikan akurat dan badge status resmi).
+12. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
+13. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
 
 ### Tujuan Utama
 - Mendigitalisasi pencatatan setoran dan penarikan tabungan sampah di setiap pos dusun/RW.
 - Mengakomodasi operasional berjenjang (Admin Desa, Pengelola/Bendahara Gudang Induk, Petugas Pos Dusun, dan Nasabah Warga).
 - Menyediakan transparansi penetapan harga komoditas (harga beli dari warga vs harga jual ke industri/pengepul).
 - Memberikan kemudahan akses login bagi warga desa (menggunakan No. Rekening, No. HP/WhatsApp, atau Email).
-- Menyediakan pengawasan stok fisik sampah gudang desa dan akuntabilitas laba/rugi operasional.
+- Menyediakan pengawasan stok fisik sampah gudang desa, akuntabilitas laba/rugi operasional, dan proteksi kas via PIN.
+- Menjamin identitas branding institusi desa terintegrasi pada seluruh nota, struk, dan laporan cetak.
 
 ---
 
@@ -34,9 +40,9 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | Role | Deskripsi & Batasan Akses |
 |------|---------------------------|
 | **Admin Desa / Administrator Sistem** (`admin`) | Administrator penuh tingkat desa — berwenang mengelola pembentukan unit dusun/RW, manajemen akun seluruh pengguna sistem (admin, pengelola, petugas), identitas branding/logo, dan konfigurasi master sistem. |
-| **Pengelola Bank Sampah / Bendahara** (`pengelola`) | Koordinator operasional & bendahara Bank Sampah Induk — berwenang mengelola transaksi penjualan sampah ke pengepul, otorisasi/approval penarikan saldo nasabah, monitoring stok fisik gudang desa, serta laporan laba/rugi operasional. *(Dibatasi: 403 Forbidden untuk manajemen user sistem, unit dusun, dan branding logo)*. |
+| **Pengelola Bank Sampah / Bendahara** (`pengelola`) | Koordinator operasional & bendahara Bank Sampah Induk — berwenang mengelola transaksi penjualan sampah ke pengepul, pelunasan piutang tempo, otorisasi/approval penarikan saldo nasabah dengan PIN otorisasi, monitoring stok fisik gudang desa, serta laporan laba/rugi operasional. *(Dibatasi: 403 Forbidden untuk manajemen user sistem, unit dusun, dan branding logo)*. |
 | **Petugas Unit** (`petugas`) | Operator di pos dusun/RW — mencatat timbangan setoran sampah warga, melayani pengajuan tarik saldo ke pengelola desa, mendaftarkan nasabah unitnya, dan mencetak struk transaksi. |
-| **Nasabah** (`nasabah`) | Warga desa pemilik buku tabungan digital — memantau saldo tabungan, mutasi kredit/debit secara mandiri, mengajukan penarikan saldo online, serta melihat katalog harga beli sampah. |
+| **Nasabah** (`nasabah`) | Warga desa pemilik buku tabungan digital — memantau saldo tabungan, mutasi kredit/debit secara mandiri, mengajukan penarikan saldo online, serta melihat katalog harga beli sampah melalui tampilan web/mobile responsif. |
 
 ---
 
@@ -48,14 +54,17 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 - Manajemen Unit Dusun/RW (Multi-Unit scoping).
 - Master Kategori & Jenis Sampah dengan **Struktur Dua Harga** (Harga Beli & Harga Jual) serta dukungan satuan `kg`, `gram`, `unit`, `buah`, `pcs`, `liter`.
 - Transaksi setoran sampah warga di pos unit (multi-item detail).
-- Transaksi penarikan saldo dengan alur persetujuan (*approval workflow*) oleh Pengelola Desa.
+- Transaksi penarikan saldo dengan alur persetujuan (*approval workflow*) dan **verifikasi 6-Digit PIN Otorisasi** oleh Pengelola Desa.
 - Monitoring stok gudang induk dan transaksi penjualan ke pengepul (dengan fitur auto-fill harga jual standar).
-- Laporan Keuangan, Operasional, Stok Gudang, dan Laba/Rugi (PDF & Excel).
+- Alur pelunasan piutang penjualan pengepul (pembayaran tempo) dengan konfirmasi SweetAlert2.
+- Laporan Keuangan, Operasional, Stok Gudang, dan Laba/Rugi (PDF & Excel) dengan **Kop Surat & Logo Resmi Dinamis**.
+- Portal layanan mandiri nasabah responsif mobile dengan **Bottom Navigation Bar**.
 - Pengaturan identitas bank sampah, logo resmi, favicon kustom tab browser, dan profil desa.
 - Tool pemeliharaan data: command artisan `bank-sampah:reset-data` untuk pengujian bersih dari nol.
 
 ### Di Luar Lingkup (Out of Scope)
-- Integrasi transfer host-to-host bank otomatis (penarikan saldo tetap diserahterimakan tunai di pos loket/kantor).
+- Integrasi payment gateway otomatis ke rekening bank umum (penarikan saldo diserahterimakan langsung atau via transfer manual kas desa).
+- SMS/WhatsApp gateway pihak ketiga berbayar (fase berikutnya).
 - Aplikasi native Android/iOS khusus (sistem sepenuhnya responsif web mobile PWA-ready).
 - SMS/WhatsApp gateway pihak ketiga berbayar (fase berikutnya).
 
@@ -113,10 +122,12 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | ID | Fitur | Prioritas | Status |
 |----|-------|-----------|--------|
 | TAR-01 | Pengajuan penarikan saldo oleh nasabah atau petugas pos unit | P0 | Selesai |
-| TAR-02 | Validasi saldo cukup (tidak boleh minus) | P0 | Selesai |
+| TAR-02 | Validasi saldo cukup (tidak boleh minus) & pemisahan saldo riil vs saldo tertahan | P0 | Selesai |
 | TAR-03 | Alur persetujuan (*approval workflow*) penarikan oleh Pengelola/Admin Desa | P0 | Selesai |
 | TAR-04 | Pemotongan saldo nasabah saat penarikan disetujui (status: disetujui/ditolak) | P0 | Selesai |
-| TAR-05 | Cetak bukti penarikan saldo | P1 | Selesai |
+| TAR-05 | Cetak bukti / struk penarikan saldo dengan logo dinamis | P1 | Selesai |
+| TAR-06 | **Otorisasi PIN 6-Digit**: Pengelola/Admin wajib memasukkan PIN otorisasi transaksi yang valid saat menyetujui penarikan saldo guna melindungi integritas kas desa | P0 | Selesai |
+| TAR-07 | **Manajemen PIN Pengguna**: Fitur pembuatan dan pembaruan PIN di menu profil (`/profile`) serta tautan pintasan (*quick shortcut*) di halaman persetujuan | P0 | Selesai |
 
 ### 4.7 Penjualan Sampah ke Pengepul & Gudang Induk
 | ID | Fitur | Prioritas | Status |
@@ -127,14 +138,19 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | JUA-04 | Validasi kuantitas jual tidak melebihi stok gudang yang tersedia | P0 | Selesai |
 | JUA-05 | Pengurangan stok gudang otomatis saat transaksi penjualan disimpan | P0 | Selesai |
 | JUA-06 | Laporan Laba/Rugi Desa: Pendapatan Jual vs Beban Setoran Nasabah | P0 | Selesai |
+| JUA-07 | **Pencatatan Status Pembayaran Penjualan**: Mendukung status pembayaran langsung (`lunas`) atau sistem tempo/piutang (`piutang`) | P0 | Selesai |
+| JUA-08 | **Alur Pelunasan Piutang Pengepul**: Modal pelunasan piutang interaktif dengan pencatatan tanggal, metode bayar (transfer/tunai), catatan referensi, dan penerima kas, dilengkapi dialog konfirmasi **SweetAlert2** | P0 | Selesai |
+| JUA-09 | **Cetak Surat Jalan & Nota Penjualan**: Dokumen cetak otomatis memuat rincian pelunasan dan logo resmi bank sampah | P1 | Selesai |
 
 ### 4.8 Laporan & Rekapitulasi
 | ID | Fitur | Prioritas | Status |
 |----|-------|-----------|--------|
-| LAP-01 | Laporan transaksi setor/tarik (filter periode, jenis, unit dusun) | P0 | Selesai |
+| LAP-01 | Laporan transaksi setor/tarik (filter periode, jenis, unit dusun, status lengkap) | P0 | Selesai |
 | LAP-02 | Laporan laba/rugi penjualan sampah ke pengepul (filter tanggal) | P0 | Selesai |
 | LAP-03 | Laporan valuasi stok gudang (modal beli vs potensi jual) | P0 | Selesai |
 | LAP-04 | Ekspor laporan format PDF (DomPDF) dan Excel (Maatwebsite) | P1 | Selesai |
+| LAP-05 | **Kop Surat & Logo Dinamis Resmi**: Seluruh dokumen cetak/PDF otomatis memuat logo institusi (Base64) serta identitas alamat dan nomor kontak yang sinkron dengan pengaturan sistem | P0 | Selesai |
+| LAP-06 | **Penyempurnaan Rekapitulasi Kas & Status Badge**: Perhitungan kartu rekapitulasi nilai penarikan akurat menghitung status `disetujui` dan visualisasi badge status profesional tanpa coret salah | P0 | Selesai |
 
 ### 4.9 Manajemen Unit Bank Sampah (Dusun / RW)
 | ID | Fitur | Prioritas | Status |
@@ -142,16 +158,22 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | UNT-01 | Master unit bank sampah (Dusun / RW) dengan kode unit unik, nama ketua, nomor kontak, dan alamat | P0 | Selesai |
 | UNT-02 | Tambah, edit, dan detail unit beserta visualisasi rekapitulasi nasabah dan transaksi | P0 | Selesai |
 | UNT-03 | Toggle aktif/nonaktif status operasional unit bank sampah | P0 | Selesai |
-| UNT-04 | **Hapus Unit Bank Sampah dengan Proteksi Relasi Data**: Unit yang memiliki relasi data (nasabah, riwayat transaksi, atau petugas) dicegah dari penghapusan secara ketat demi keamanan saldo dan riwayat audit warga desa; unit kosong tanpa relasi dapat dihapus tuntas dengan modal konfirmasi. | P0 | Selesai |
+| UNT-04 | **Hapus Unit Bank Sampah dengan Proteksi Relasi Data**: Unit yang memiliki relasi data dicegah dari penghapusan secara ketat demi keamanan saldo dan audit warga desa; unit kosong dapat dihapus tuntas. | P0 | Selesai |
+
+### 4.10 Portal Mandiri Nasabah (Mobile-First Experience)
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| NAS-06 | **Mobile App Bottom Navigation Bar**: Bilah navigasi bawah mengambang (*sticky bottom bar*) layaknya aplikasi mobile banking (Beranda, Riwayat, Tarik Saldo, Profil) | P0 | Selesai |
+| NAS-07 | **Antarmuka Mobile Adaptif**: Kartu ATM virtual digital tabungan, kartu ringkasan bulanan, dan tabel riwayat transaksi mutasi yang proporsional pada semua ukuran layar ponsel (360px - 412px) | P0 | Selesai |
 
 ---
 
 ## 5. Desain Database & Skema Terkini
 
-### ERD Overview (v1.2.0)
+### ERD Overview (v1.4.0)
 ```
 units (Dusun/RW)
-  ├── 1:N ── users (admin, pengelola, petugas, nasabah)
+  ├── 1:N ── users (admin, pengelola [PIN], petugas, nasabah)
   ├── 1:N ── nasabah
   └── 1:N ── transaksi (setor & tarik warga)
                   │
@@ -160,36 +182,11 @@ units (Dusun/RW)
 pengepul (Off-taker)                           │       harga_sampah_log
   │                                            │
   └── 1:N ── penjualan_sampah                  │
-                  │                            │
+                  │ (Lunas / Piutang + Pelunasan)
                   └── detail_penjualan_sampah ─┘ (stok keluar)
 ```
 
 ### Rincian Tabel Utama
-
-#### `jenis_sampah`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| kategori_id | BIGINT FK → kategori_sampah | |
-| nama | VARCHAR(100) | Misal: Botol PET Bening, Kardus Box |
-| satuan | VARCHAR(20) DEFAULT 'kg' | Mendukung: kg, gram, unit, buah, pcs, liter |
-| harga_beli | DECIMAL(10,2) | Harga tebus setoran nasabah |
-| harga_jual | DECIMAL(10,2) | Harga jual standar ke pengepul |
-| harga_per_satuan | DECIMAL(10,2) | Alias backward compatibility (mengacu ke harga_beli) |
-| deskripsi | TEXT NULL | |
-| is_active | BOOLEAN DEFAULT 1 | |
-| created_at / updated_at | TIMESTAMP | |
-
-#### `harga_sampah_log`
-| Kolom | Tipe | Keterangan |
-|-------|------|-----------|
-| id | BIGINT UNSIGNED AI PK | |
-| jenis_sampah_id | BIGINT FK → jenis_sampah | |
-| tipe_perubahan | VARCHAR(20) | 'beli', 'jual', 'keduanya' |
-| harga_beli_lama / harga_beli_baru | DECIMAL(10,2) NULL | Riwayat harga beli |
-| harga_jual_lama / harga_jual_baru | DECIMAL(10,2) NULL | Riwayat harga jual |
-| changed_by | BIGINT FK → users | Pengguna yang mengubah harga |
-| created_at | TIMESTAMP | |
 
 #### `users`
 | Kolom | Tipe | Keterangan |
@@ -199,21 +196,27 @@ pengepul (Off-taker)                           │       harga_sampah_log
 | name | VARCHAR(100) | |
 | email | VARCHAR(100) UNIQUE | |
 | password | VARCHAR(255) | Hash bcrypt |
+| pin | VARCHAR(255) NULL | Hash bcrypt PIN 6-digit untuk otorisasi transaksi kas |
 | role | VARCHAR(30) | 'admin', 'pengelola', 'petugas', 'nasabah' |
 | is_active | BOOLEAN DEFAULT 1 | |
 
-#### `nasabah`
+#### `penjualan_sampah`
 | Kolom | Tipe | Keterangan |
 |-------|------|-----------|
 | id | BIGINT UNSIGNED AI PK | |
-| user_id | BIGINT NULL FK → users | Akun pengguna untuk login mandiri |
-| unit_id | BIGINT FK → units | Dusun domisili nasabah |
-| no_rekening | VARCHAR(20) UNIQUE | Format `BS-YYYY-xxxxx` |
-| nama | VARCHAR(100) | Nama lengkap warga |
-| no_hp | VARCHAR(20) | Nomor WhatsApp/telepon |
-| saldo | DECIMAL(15,2) DEFAULT 0 | Saldo riil tabungan sampah |
-| registered_by | BIGINT NULL FK → users | Petugas pendaftar (NULL jika daftar mandiri online) |
-| status | ENUM('aktif','nonaktif') | |
+| kode_penjualan | VARCHAR(30) UNIQUE | Format `PJL-YYYYMMDD-xxxxx` |
+| pengepul_id | BIGINT FK → pengepul | Mitra pembeli off-taker |
+| pengelola_id | BIGINT FK → users | Pengelola yang mencatat penjualan awal |
+| tanggal_penjualan | DATE | Tanggal pengiriman sampah |
+| total_berat | DECIMAL(10,3) | Total kg terangkut |
+| total_pendapatan | DECIMAL(15,2) | Total nilai penjualan |
+| status_pembayaran | ENUM('lunas', 'piutang') DEFAULT 'lunas' | Status pelunasan dana |
+| tanggal_pelunasan | DATE NULL | Tanggal penerimaan uang pelunasan |
+| metode_pelunasan | VARCHAR(50) NULL | 'transfer' / 'tunai' |
+| catatan_pelunasan | TEXT NULL | No. referensi transfer / bukti bayar |
+| diterima_oleh | BIGINT NULL FK → users | Pengelola yang menerima & mencatat pelunasan |
+| catatan | TEXT NULL | Catatan pengiriman |
+| created_at / updated_at | TIMESTAMP | |
 
 #### `transaksi`
 | Kolom | Tipe | Keterangan |
@@ -225,8 +228,8 @@ pengepul (Off-taker)                           │       harga_sampah_log
 | jenis | ENUM('setor','tarik') | |
 | total_berat | DECIMAL(10,3) NULL | Khusus transaksi setoran |
 | total_nilai | DECIMAL(15,2) | Total nilai rupiah |
-| status | ENUM('aktif','void','pending','disetujui','ditolak') | Status persetujuan tarik saldo |
-| disetujui_oleh | BIGINT NULL FK → users | Pengelola/Admin yang meng-approve penarikan |
+| status | ENUM('aktif','void','menunggu_persetujuan','disetujui','ditolak') | Status transaksi / persetujuan tarik |
+| disetujui_oleh | BIGINT NULL FK → users | Pengelola/Admin yang meng-approve penarikan (dengan PIN) |
 
 ---
 
@@ -238,18 +241,21 @@ pengepul (Off-taker)                           │       harga_sampah_log
   ```
   Menghapus seluruh transaksi setor, tarik, penjualan pengepul, dan nasabah dummy, mengembalikan auto-increment ke nomor 1, serta mempertahankan akun master, unit dusun, kategori/jenis sampah, dan konfigurasi logo desa.
 - **Automated Feature Tests**:
-  Seluruh alur logika bisnis dilindungi oleh 41 skenario pengujian otomatis di `tests/Feature/BankSampahTest.php` berbasis `DatabaseTransactions` tanpa mengganggu database development.
+  Seluruh alur logika bisnis dilindungi oleh **47 skenario pengujian otomatis (276 assertions)** di `tests/Feature/BankSampahTest.php` berbasis `DatabaseTransactions` dengan tingkat kelulusan 100%.
 
 ---
 
 ## 7. Status Pengujian & Kesiapan Produksi
 
 - [x] Admin dapat login dan mengelola seluruh konfigurasi desa.
-- [x] Pengelola dapat mengontrol stok gudang, menjual sampah ke pengepul, dan menyetujui penarikan saldo nasabah.
+- [x] Pengelola dapat mengontrol stok gudang, menjual sampah ke pengepul, dan mencatat pelunasan piutang tempo (SweetAlert2).
+- [x] Pengelola wajib menggunakan PIN otorisasi 6-digit untuk mencairkan saldo tabungan nasabah.
 - [x] Petugas unit terisolasi dalam lingkup unit dusunnya masing-masing.
 - [x] Nasabah dapat login mandiri via No. Rekening / No. HP dengan password aman.
+- [x] Portal nasabah mobile-friendly dengan Mobile App Bottom Navigation Bar.
 - [x] Master komoditas sampah mendukung harga beli nasabah, harga jual pengepul, satuan fleksibel, serta penghapusan aman berproteksi relasi transaksi.
 - [x] Master unit bank sampah mendukung penambahan, pengeditan, penonaktifan, serta penghapusan aman dengan perlindungan relasi data.
 - [x] Laporan laba/rugi otomatis mengkalkulasi selisih penjualan pengepul dikurangi beban setoran nasabah.
+- [x] Seluruh dokumen cetak dan PDF (Laba/Rugi, Transaksi, Surat Jalan, Struk) otomatis memuat Logo resmi dinamis dan identitas sistem.
 - [x] Pengaturan identitas mendukung upload logo resmi dan favicon kustom browser dengan simulasi mockup interaktif.
 - [x] Antarmuka login profesional, elegan, responsif, dan dilengkapi toggle lihat kata sandi.
