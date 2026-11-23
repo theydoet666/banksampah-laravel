@@ -38,9 +38,17 @@
 
     <div class="struk-container">
         <div class="text-center">
-            <h2 style="margin: 0; font-size: 15px;" class="bold">{{ strtoupper(appSetting('nama_bank_sampah', 'BANK SAMPAH BAA')) }}</h2>
-            <p style="margin: 3px 0 0; font-size: 10px;">{{ appSetting('alamat', 'Jl. Lingkungan Hidup No. 1') }}</p>
-            <p style="margin: 2px 0 0; font-size: 10px;">Telp: {{ appSetting('no_telp', '08123456789') }}</p>
+            @php
+                $logoBase64 = appLogoBase64();
+            @endphp
+            @if($logoBase64)
+                <div style="margin-bottom: 6px;">
+                    <img src="{{ $logoBase64 }}" alt="Logo" style="height: 48px; max-width: 60px; object-fit: contain;">
+                </div>
+            @endif
+            <h2 style="margin: 0; font-size: 14px;" class="bold">{{ strtoupper(appSetting('nama_bank_sampah', 'BANK SAMPAH BALA AGA ASRI')) }}</h2>
+            <p style="margin: 3px 0 0; font-size: 9.5px;">{{ appSetting('alamat', 'Jalan Raya Belega, Desa Belega, Kec. Blahbatuh, Kab. Gianyar, Bali') }}</p>
+            <p style="margin: 2px 0 0; font-size: 9.5px;">Telp: {{ appSetting('no_telp', '08123456789') }}</p>
         </div>
 
         <div class="divider"></div>

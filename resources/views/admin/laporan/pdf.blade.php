@@ -18,11 +18,32 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h2>{{ strtoupper(appSetting('nama_bank_sampah', 'BANK SAMPAH BAA')) }}</h2>
-        <p>{{ appSetting('alamat', 'Jl. Lingkungan Hidup No. 1') }} &bull; Telp: {{ appSetting('no_telp', '08123456789') }}</p>
-        <p style="font-weight: bold; margin-top: 8px; font-size: 12px;">LAPORAN REKAPITULASI TRANSAKSI</p>
-    </div>
+    @php
+        $logoBase64 = appLogoBase64();
+    @endphp
+    <table style="width: 100%; border-bottom: 2px solid #16a34a; padding-bottom: 10px; margin-bottom: 15px;">
+        <tr>
+            @if($logoBase64)
+                <td style="width: 75px; vertical-align: middle; text-align: left;">
+                    <img src="{{ $logoBase64 }}" alt="Logo" style="height: 60px; max-width: 75px; object-fit: contain;">
+                </td>
+            @endif
+            <td style="vertical-align: middle; text-align: center; {{ $logoBase64 ? 'padding-right: 75px;' : '' }}">
+                <h2 style="margin: 0; font-size: 15px; color: #16a34a; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {{ strtoupper(appSetting('nama_bank_sampah', 'BANK SAMPAH BALA AGA ASRI')) }}
+                </h2>
+                <p style="margin: 3px 0 0; font-size: 9.5px; color: #475569;">
+                    {{ appSetting('alamat', 'Jalan Raya Belega, Desa Belega, Kec. Blahbatuh, Kab. Gianyar, Bali') }}
+                </p>
+                <p style="margin: 2px 0 0; font-size: 9.5px; color: #475569;">
+                    Telp/WA: {{ appSetting('no_telp', '08123456789') }} &bull; Email: {{ appSetting('email', 'info@banksampah.test') }}
+                </p>
+                <p style="font-weight: bold; margin-top: 8px; margin-bottom: 0; font-size: 12px; color: #0f172a;">
+                    LAPORAN REKAPITULASI TRANSAKSI
+                </p>
+            </td>
+        </tr>
+    </table>
 
     <table>
         <thead>

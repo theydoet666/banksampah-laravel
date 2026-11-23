@@ -86,12 +86,35 @@
         </button>
     </div>
 
-    <div class="header">
-        <h1>{{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</h1>
-        <p>{{ appSetting('alamat_bank_sampah', 'Desa BAA, Jawa Barat') }} | Telp: {{ appSetting('telepon', '08123456789') }}</p>
-        <h2 style="font-size: 14px; margin-top: 10px; margin-bottom: 0;">SURAT JALAN & NOTA PENJUALAN SAMPAH</h2>
-        <p style="font-family: monospace; font-size: 12px; font-weight: bold;">Nomor: {{ $penjualan->kode_penjualan }}</p>
-    </div>
+    @php
+        $logoBase64 = appLogoBase64();
+    @endphp
+    <table style="width: 100%; border-bottom: 2px solid #059669; padding-bottom: 10px; margin-bottom: 15px;">
+        <tr>
+            @if($logoBase64)
+                <td style="width: 75px; vertical-align: middle; text-align: left;">
+                    <img src="{{ $logoBase64 }}" alt="Logo" style="height: 60px; max-width: 75px; object-fit: contain;">
+                </td>
+            @endif
+            <td style="vertical-align: middle; text-align: center; {{ $logoBase64 ? 'padding-right: 75px;' : '' }}">
+                <h1 style="font-size: 16px; margin: 0; color: #059669; font-weight: bold; text-transform: uppercase;">
+                    {{ strtoupper(appSetting('nama_bank_sampah', 'Bank Sampah Bala Aga Asri')) }}
+                </h1>
+                <p style="margin: 3px 0 0; font-size: 10px; color: #4b5563;">
+                    {{ appSetting('alamat', 'Jalan Raya Belega, Desa Belega, Kec. Blahbatuh, Kab. Gianyar, Bali') }}
+                </p>
+                <p style="margin: 2px 0 0; font-size: 10px; color: #4b5563;">
+                    Telp/WA: {{ appSetting('no_telp', '08123456789') }} &bull; Email: {{ appSetting('email', 'info@banksampah.test') }}
+                </p>
+                <h2 style="font-size: 13px; margin-top: 8px; margin-bottom: 2px; text-transform: uppercase; color: #1e293b; font-weight: bold;">
+                    SURAT JALAN & NOTA PENJUALAN SAMPAH
+                </h2>
+                <p style="font-family: monospace; font-size: 11px; font-weight: bold; margin: 0; color: #334155;">
+                    Nomor: {{ $penjualan->kode_penjualan }}
+                </p>
+            </td>
+        </tr>
+    </table>
 
     <table class="info-table">
         <tr>

@@ -20,12 +20,35 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ appSetting('nama_bank_sampah', 'Bank Sampah BAA') }}</h1>
-        <p>{{ appSetting('alamat_bank_sampah', 'Desa BAA, Jawa Barat') }} | Telp: {{ appSetting('telepon', '08123456789') }}</p>
-        <h2 style="font-size: 13px; margin-top: 8px; margin-bottom: 2px;">REKAPITULASI LABA / RUGI OPERASIONAL BANK SAMPAH DESA</h2>
-        <p>Periode: <strong>{{ \Carbon\Carbon::parse($tanggalDari)->format('d/m/Y') }}</strong> s/d <strong>{{ \Carbon\Carbon::parse($tanggalSampai)->format('d/m/Y') }}</strong></p>
-    </div>
+    @php
+        $logoBase64 = appLogoBase64();
+    @endphp
+    <table style="width: 100%; border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 18px;">
+        <tr>
+            @if($logoBase64)
+                <td style="width: 75px; vertical-align: middle; text-align: left;">
+                    <img src="{{ $logoBase64 }}" alt="Logo" style="height: 60px; max-width: 75px; object-fit: contain;">
+                </td>
+            @endif
+            <td style="vertical-align: middle; text-align: center; {{ $logoBase64 ? 'padding-right: 75px;' : '' }}">
+                <h1 style="font-size: 15px; font-weight: bold; margin: 0; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px;">
+                    {{ strtoupper(appSetting('nama_bank_sampah', 'Bank Sampah Bala Aga Asri')) }}
+                </h1>
+                <p style="margin: 3px 0 0; font-size: 9.5px; color: #475569;">
+                    {{ appSetting('alamat', 'Jalan Raya Belega, Desa Belega, Kec. Blahbatuh, Kab. Gianyar, Bali') }}
+                </p>
+                <p style="margin: 2px 0 0; font-size: 9.5px; color: #475569;">
+                    Telp/WA: {{ appSetting('no_telp', '08123456789') }} &bull; Email: {{ appSetting('email', 'info@banksampah.test') }}
+                </p>
+                <h2 style="font-size: 12px; margin-top: 8px; margin-bottom: 2px; text-transform: uppercase; color: #059669; font-weight: bold;">
+                    REKAPITULASI LABA / RUGI OPERASIONAL BANK SAMPAH DESA
+                </h2>
+                <p style="margin: 0; font-size: 9.5px; color: #334155;">
+                    Periode: <strong>{{ \Carbon\Carbon::parse($tanggalDari)->format('d/m/Y') }}</strong> s/d <strong>{{ \Carbon\Carbon::parse($tanggalSampai)->format('d/m/Y') }}</strong>
+                </p>
+            </td>
+        </tr>
+    </table>
 
     <table class="summary-box">
         <tr>
