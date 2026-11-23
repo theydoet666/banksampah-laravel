@@ -80,7 +80,13 @@
                             {{ $trx->jenis === 'setor' ? '+' : '-' }}
                         </span>
                         <div class="min-w-0">
-                            <p class="text-xs sm:text-sm font-semibold text-slate-800 capitalize truncate">{{ $trx->jenis === 'setor' ? 'Setor Sampah' : 'Tarik Saldo' }}</p>
+                            <p class="text-xs sm:text-sm font-semibold text-slate-800 capitalize truncate">
+                                @if($trx->is_saldo_awal)
+                                    Saldo Awal Migrasi
+                                @else
+                                    {{ $trx->jenis === 'setor' ? 'Setor Sampah' : 'Tarik Saldo' }}
+                                @endif
+                            </p>
                             <p class="text-[11px] sm:text-xs text-slate-400 truncate">{{ $trx->tanggal_transaksi->format('d M Y') }} &bull; <span class="font-mono">{{ $trx->kode_transaksi }}</span></p>
                         </div>
                     </div>

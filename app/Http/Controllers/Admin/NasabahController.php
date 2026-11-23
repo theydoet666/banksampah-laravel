@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Nasabah;
 use App\Models\User;
 use App\Models\Unit;
+use App\Models\Transaksi;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,12 @@ class NasabahController extends Controller
             $rules['unit_id'] = 'required|exists:units,id';
         }
 
+        if ($user && $user->isAdmin()) {
+            $rules['saldo_awal'] = 'nullable|numeric|min:0';
+            $rules['catatan_saldo_awal'] = 'nullable|string|max:255';
+            $rules['tanggal_saldo_awal'] = 'nullable|date|before_or_equal:today';
+        }
+
         $validated = $request->validate($rules);
 
         if ($user && $user->isPetugas() && $user->unit_id) {
@@ -85,14 +92,17 @@ class NasabahController extends Controller
         $noRekening = Nasabah::generateNoRekening();
         $validated['no_rekening'] = $noRekening;
         $validated['registered_by'] = auth()->id();
-        $validated['saldo'] = 0;
+        
+        $saldoAwal = ($user && $user->isAdmin()) ? (float) $request->input('saldo_awal', 0) : 0;
+        $validated['saldo_awal'] = $saldoAwal;
+        $validated['saldo'] = $saldoAwal;
 
         // Default password: 6 digit terakhir No HP (atau '123456' jika no HP pendek)
         $cleanPhone = preg_replace('/[^0-9]/', '', $validated['no_hp']);
         $defaultPassword = strlen($cleanPhone) >= 6 ? substr($cleanPhone, -6) : '123456';
         $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
 
-        DB::transaction(function () use ($validated, $defaultPassword, $generatedEmail) {
+        DB::transaction(function () use ($validated, $defaultPassword, $generatedEmail, $saldoAwal, $request, $user) {
             $userNasabah = User::create([
                 'name' => $validated['nama'],
                 'email' => $generatedEmail,
@@ -103,7 +113,23 @@ class NasabahController extends Controller
             ]);
 
             $validated['user_id'] = $userNasabah->id;
-            Nasabah::create($validated);
+            $nasabah = Nasabah::create($validated);
+
+            if ($saldoAwal > 0) {
+                Transaksi::create([
+                    'kode_transaksi' => Transaksi::generateKodeTransaksi(),
+                    'unit_id' => $nasabah->unit_id,
+                    'nasabah_id' => $nasabah->id,
+                    'jenis' => 'setor',
+                    'total_berat' => null,
+                    'total_nilai' => $saldoAwal,
+                    'catatan' => $request->input('catatan_saldo_awal') ?: 'Saldo awal migrasi pembukuan manual',
+                    'status' => 'aktif',
+                    'is_saldo_awal' => true,
+                    'petugas_id' => $user->id,
+                    'tanggal_transaksi' => $request->input('tanggal_saldo_awal') ?: now()->toDateString(),
+                ]);
+            }
         });
 
         $msg = "Nasabah baru berhasil didaftarkan! No. Rekening: {$noRekening}. Akun login mandiri dibuat otomatis (Login: No. Rekening / No. HP, Password: {$defaultPassword}).";
@@ -207,6 +233,44 @@ class NasabahController extends Controller
         }
 
         return back()->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset menjadi: {$defaultPassword} (6 digit No. HP).");
+    }
+
+    public function inputSaldoAwal(Request $request, Nasabah $nasabah)
+    {
+        $user = auth()->user();
+        if (! $user || ! $user->isAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Administrator yang berwenang menambahkan saldo awal.');
+        }
+
+        $validated = $request->validate([
+            'nominal' => 'required|numeric|min:1',
+            'tanggal_transaksi' => 'required|date|before_or_equal:today',
+            'catatan' => 'nullable|string|max:255',
+        ]);
+
+        $nominal = (float) $validated['nominal'];
+        $catatan = !empty($validated['catatan']) ? $validated['catatan'] : 'Saldo awal migrasi pembukuan manual';
+
+        DB::transaction(function () use ($nasabah, $nominal, $catatan, $validated, $user) {
+            $nasabah->increment('saldo', $nominal);
+            $nasabah->increment('saldo_awal', $nominal);
+
+            Transaksi::create([
+                'kode_transaksi' => Transaksi::generateKodeTransaksi(),
+                'unit_id' => $nasabah->unit_id,
+                'nasabah_id' => $nasabah->id,
+                'jenis' => 'setor',
+                'total_berat' => null,
+                'total_nilai' => $nominal,
+                'catatan' => $catatan,
+                'status' => 'aktif',
+                'is_saldo_awal' => true,
+                'petugas_id' => $user->id,
+                'tanggal_transaksi' => $validated['tanggal_transaksi'],
+            ]);
+        });
+
+        return back()->with('success', "Saldo awal migrasi sebesar " . formatRupiah($nominal) . " berhasil ditambahkan untuk nasabah {$nasabah->nama}.");
     }
 }
 

@@ -32,9 +32,15 @@
                             <td class="py-3.5 px-4 sm:px-6 font-mono text-xs font-semibold text-slate-800">{{ $trx->kode_transaksi }}</td>
                             <td class="py-3.5 px-4 sm:px-6 text-xs text-slate-500">{{ $trx->tanggal_transaksi->format('d/m/Y') }}</td>
                             <td class="py-3.5 px-4 sm:px-6">
-                                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $trx->jenis === 'setor' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
-                                    {{ ucfirst($trx->jenis) }}
-                                </span>
+                                @if($trx->is_saldo_awal)
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                        Saldo Awal
+                                    </span>
+                                @else
+                                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold {{ $trx->jenis === 'setor' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                        {{ ucfirst($trx->jenis) }}
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4 sm:px-6 text-xs text-slate-600">{{ $trx->total_berat ? number_format($trx->total_berat, 2) . ' kg' : '-' }}</td>
                             <td class="py-3.5 px-4 sm:px-6 font-bold {{ $trx->jenis === 'setor' ? 'text-emerald-600' : 'text-rose-600' }}">

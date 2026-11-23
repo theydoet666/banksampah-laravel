@@ -137,7 +137,22 @@
         </div>
     </x-card>
 
-    @if($transaksi->jenis === 'setor')
+    @if($transaksi->is_saldo_awal)
+        <!-- Saldo Awal Info -->
+        <x-card title="Rincian Saldo Awal Migrasi">
+            <div class="p-4 rounded-xl bg-sky-50 border border-sky-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs uppercase font-bold text-sky-700 tracking-wider block">Saldo Awal Pembukuan Manual</span>
+                    <p class="text-xs text-slate-600 mt-1">Transaksi migrasi saldo sisa nasabah dari pencatatan pembukuan manual lama ke sistem digital.</p>
+                    <p class="text-xs text-slate-500 mt-2"><strong>Catatan:</strong> {{ $transaksi->catatan ?: '-' }}</p>
+                </div>
+                <div class="sm:text-right shrink-0">
+                    <span class="text-xs text-slate-400 block uppercase font-medium">Nominal Saldo Awal</span>
+                    <span class="text-2xl font-black text-sky-700">{{ formatRupiah($transaksi->total_nilai) }}</span>
+                </div>
+            </div>
+        </x-card>
+    @elseif($transaksi->jenis === 'setor')
         <!-- Breakdown Sampah -->
         <x-card title="Rincian Sampah Masuk">
             <div class="overflow-x-auto">

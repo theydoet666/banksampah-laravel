@@ -1,7 +1,7 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.4.0  
+> Versi: 1.5.0  
 > Tanggal: 23 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
 > Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js + SweetAlert2**
@@ -10,7 +10,7 @@
 
 ## 1. Latar Belakang & Tujuan
 
-Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.4.0 ini, sistem telah disempurnakan mencakup:
+Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.5.0 ini, sistem telah disempurnakan mencakup:
 1. **Multi-Unit Bank Sampah** di tingkat Dusun/RW.
 2. **Role Berjenjang 4 Tingkat** (`admin`, `pengelola`, `petugas`, `nasabah`).
 3. **Mekanisme Multi-Identifier Login & Auto Onboarding Nasabah** yang fleksibel dan ramah warga desa.
@@ -22,8 +22,9 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 9. **Kop Surat & Logo Dinamis pada Seluruh Dokumen Cetak/PDF** (Base64 data embedding untuk DomPDF, Surat Jalan, dan Struk Kasir sesuai pengaturan identitas sistem).
 10. **Portal Mandiri Nasabah Mobile-First** dengan Mobile App Bottom Navigation Bar untuk pengalaman pengguna layaknya aplikasi mobile banking.
 11. **Penyempurnaan Rekapitulasi Laporan & Pelaporan Status Transaksi** (kalkulasi penarikan akurat dan badge status resmi).
-12. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
-13. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
+12. **Saldo Awal Migrasi Pembukuan Manual** (fitur khusus Administrator untuk memasukkan saldo sisa pembukuan manual lama nasabah secara aman dan teraudit).
+13. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
+14. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
 
 ### Tujuan Utama
 - Mendigitalisasi pencatatan setoran dan penarikan tabungan sampah di setiap pos dusun/RW.
@@ -98,6 +99,7 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | NAS-03 | Kartu info kredensial login mandiri & tombol Reset Password nasabah | P0 | Selesai |
 | NAS-04 | Detail buku tabungan (saldo riil + riwayat transaksi debit/kredit) | P0 | Selesai |
 | NAS-05 | Cetak kartu anggota nasabah (PDF) | P1 | Selesai |
+| NAS-06 | **Saldo Awal Migrasi Pembukuan Manual**: Fitur khusus hak akses Administrator untuk mencatat sisa saldo nasabah dari sistem pembukuan manual lama (tersedia saat pendaftaran nasabah baru maupun penambahan saldo awal pada nasabah eksisting). Tercatat sebagai mutasi bertanda `Saldo Awal` di buku tabungan dan menambah saldo nasabah tanpa mempengaruhi timbangan fisik sampah gudang. Role Petugas dan Pengelola diblokir (403 Forbidden). | P0 | Selesai |
 
 ### 4.4 Manajemen Komoditas & Struktur Dua Harga
 | ID | Fitur | Prioritas | Status |

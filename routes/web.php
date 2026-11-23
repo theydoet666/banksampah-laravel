@@ -85,6 +85,9 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
 
             // Toggle Status Nasabah
             Route::patch('/nasabah/{nasabah}/toggle-status', [AdminNasabahController::class, 'toggleStatus'])->name('nasabah.toggle-status');
+
+            // Input Saldo Awal Nasabah (Khusus Admin)
+            Route::post('/nasabah/{nasabah}/saldo-awal', [AdminNasabahController::class, 'inputSaldoAwal'])->name('nasabah.saldo-awal');
         });
 
         // Master Data Sampah (Dapat Dilihat oleh Admin & Pengelola)

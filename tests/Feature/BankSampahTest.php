@@ -1072,4 +1072,91 @@ class BankSampahTest extends TestCase
         ]);
         $responseDouble->assertSessionHas('error');
     }
+
+    public function test_admin_can_register_nasabah_with_saldo_awal_and_petugas_cannot(): void
+    {
+        $unit = \App\Models\Unit::first();
+
+        // 1. Admin creates nasabah with saldo awal
+        $responseAdmin = $this->actingAs($this->admin)->post(route('admin.nasabah.store'), [
+            'nama' => 'Nasabah Migrasi Test',
+            'jenis_kelamin' => 'L',
+            'no_hp' => '089999888877',
+            'alamat' => 'Dusun 1 RT 02 RW 03',
+            'unit_id' => $unit->id,
+            'status' => 'aktif',
+            'saldo_awal' => 125000,
+            'tanggal_saldo_awal' => now()->toDateString(),
+            'catatan_saldo_awal' => 'Saldo awal buku tabungan manual',
+        ]);
+
+        $responseAdmin->assertRedirect(route('admin.nasabah.index'));
+        $nasabahAdmin = Nasabah::where('nama', 'Nasabah Migrasi Test')->first();
+        $this->assertNotNull($nasabahAdmin);
+        $this->assertEquals(125000, (float) $nasabahAdmin->saldo);
+        $this->assertEquals(125000, (float) $nasabahAdmin->saldo_awal);
+
+        // Assert audit trail in transaksi
+        $trxSaldoAwal = Transaksi::where('nasabah_id', $nasabahAdmin->id)->where('is_saldo_awal', true)->first();
+        $this->assertNotNull($trxSaldoAwal);
+        $this->assertEquals(125000, (float) $trxSaldoAwal->total_nilai);
+        $this->assertNull($trxSaldoAwal->total_berat);
+        $this->assertEquals('setor', $trxSaldoAwal->jenis);
+        $this->assertEquals($this->admin->id, $trxSaldoAwal->petugas_id);
+
+        // 2. Petugas attempts to set saldo awal during registration (should be ignored and set to 0)
+        $responsePetugas = $this->actingAs($this->petugas)->post(route('petugas.nasabah.store'), [
+            'nama' => 'Nasabah By Petugas',
+            'jenis_kelamin' => 'P',
+            'no_hp' => '087777666655',
+            'alamat' => 'Dusun 2 RT 01 RW 01',
+            'unit_id' => $unit->id,
+            'status' => 'aktif',
+            'saldo_awal' => 500000,
+            'catatan_saldo_awal' => 'Coba inject saldo awal',
+        ]);
+
+        $responsePetugas->assertRedirect(route('petugas.nasabah.index'));
+        $nasabahPetugas = Nasabah::where('nama', 'Nasabah By Petugas')->first();
+        $this->assertNotNull($nasabahPetugas);
+        $this->assertEquals(0, (float) $nasabahPetugas->saldo);
+        $this->assertEquals(0, (float) $nasabahPetugas->saldo_awal);
+        $this->assertFalse(Transaksi::where('nasabah_id', $nasabahPetugas->id)->where('is_saldo_awal', true)->exists());
+    }
+
+    public function test_admin_can_add_saldo_awal_to_existing_nasabah_and_petugas_is_forbidden(): void
+    {
+        $initialSaldo = (float) $this->nasabah->saldo;
+        $initialSaldoAwal = (float) $this->nasabah->saldo_awal;
+
+        // 1. Admin adds saldo awal to existing nasabah
+        $responseAdmin = $this->actingAs($this->admin)->post(route('admin.nasabah.saldo-awal', $this->nasabah), [
+            'nominal' => 75000,
+            'tanggal_transaksi' => now()->toDateString(),
+            'catatan' => 'Migrasi sisa pembukuan manual 2025',
+        ]);
+
+        $responseAdmin->assertRedirect();
+        $responseAdmin->assertSessionHas('success');
+
+        $this->nasabah->refresh();
+        $this->assertEquals($initialSaldo + 75000, (float) $this->nasabah->saldo);
+        $this->assertEquals($initialSaldoAwal + 75000, (float) $this->nasabah->saldo_awal);
+
+        $trx = Transaksi::where('nasabah_id', $this->nasabah->id)
+            ->where('is_saldo_awal', true)
+            ->orderByDesc('id')
+            ->first();
+        $this->assertNotNull($trx);
+        $this->assertEquals(75000, (float) $trx->total_nilai);
+        $this->assertNull($trx->total_berat);
+        $this->assertEquals('Migrasi sisa pembukuan manual 2025', $trx->catatan);
+
+        // 2. Petugas attempts to call admin.nasabah.saldo-awal (Forbidden)
+        $responsePetugas = $this->actingAs($this->petugas)->post(route('admin.nasabah.saldo-awal', $this->nasabah), [
+            'nominal' => 100000,
+            'tanggal_transaksi' => now()->toDateString(),
+        ]);
+        $responsePetugas->assertStatus(403);
+    }
 }

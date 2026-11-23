@@ -22,6 +22,7 @@ class Transaksi extends Model
         'total_nilai',
         'catatan',
         'status',
+        'is_saldo_awal',
         'metode_penarikan',
         'petugas_id',
         'disetujui_oleh',
@@ -33,6 +34,7 @@ class Transaksi extends Model
     protected $casts = [
         'total_berat' => 'decimal:3',
         'total_nilai' => 'decimal:2',
+        'is_saldo_awal' => 'boolean',
         'tanggal_transaksi' => 'date',
         'tanggal_persetujuan' => 'datetime',
     ];

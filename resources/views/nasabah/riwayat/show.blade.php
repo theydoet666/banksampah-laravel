@@ -27,7 +27,16 @@
             </div>
         </div>
 
-        @if($transaksi->jenis === 'setor')
+        @if($transaksi->is_saldo_awal)
+            <div class="text-center py-6 bg-sky-50/70 border border-sky-100 rounded-xl space-y-2">
+                <span class="text-xs text-sky-600 uppercase font-semibold tracking-wider">Saldo Awal Migrasi Pembukuan Manual</span>
+                <h3 class="text-3xl font-extrabold text-sky-700">{{ formatRupiah($transaksi->total_nilai) }}</h3>
+                <p class="text-xs text-slate-600 font-medium">Keterangan: <span class="font-normal text-slate-700">{{ $transaksi->catatan ?: 'Migrasi saldo sistem manual sebelumnya' }}</span></p>
+                <div class="mt-3 pt-3 border-t border-sky-100 text-xs text-slate-500">
+                    Dicatat oleh Administrator sistem pada {{ $transaksi->created_at?->format('d/m/Y H:i') }}
+                </div>
+            </div>
+        @elseif($transaksi->jenis === 'setor')
             <div>
                 <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Item Sampah Yang Ditimbang</h4>
                 <div class="divide-y divide-slate-100">

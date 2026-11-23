@@ -27,12 +27,14 @@ class Nasabah extends Model
         'no_hp',
         'foto',
         'saldo',
+        'saldo_awal',
         'status',
         'registered_by',
     ];
 
     protected $casts = [
         'saldo' => 'decimal:2',
+        'saldo_awal' => 'decimal:2',
         'tanggal_lahir' => 'date',
     ];
 
@@ -80,6 +82,11 @@ class Nasabah extends Model
     public function getFormattedSaldoAttribute(): string
     {
         return 'Rp ' . number_format((float) $this->saldo, 0, ',', '.');
+    }
+
+    public function getFormattedSaldoAwalAttribute(): string
+    {
+        return 'Rp ' . number_format((float) ($this->saldo_awal ?? 0), 0, ',', '.');
     }
 
     public function getSaldoTertahanAttribute(): float
