@@ -136,5 +136,25 @@ class PenjualanService
             return $penjualan;
         });
     }
+
+    /**
+     * Catat pelunasan pembayaran piutang penjualan sampah dari pengepul.
+     */
+    public function catatPelunasan(PenjualanSampah $penjualan, array $data, $user): PenjualanSampah
+    {
+        if ($penjualan->status_pembayaran === 'lunas') {
+            throw new Exception("Transaksi penjualan [{$penjualan->kode_penjualan}] sudah berstatus Lunas.");
+        }
+
+        $penjualan->update([
+            'status_pembayaran' => 'lunas',
+            'tanggal_pelunasan' => $data['tanggal_pelunasan'] ?? now()->toDateString(),
+            'metode_pelunasan' => $data['metode_pelunasan'] ?? 'transfer',
+            'catatan_pelunasan' => $data['catatan_pelunasan'] ?? null,
+            'diterima_oleh' => $user->id,
+        ]);
+
+        return $penjualan;
+    }
 }
 

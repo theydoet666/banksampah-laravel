@@ -103,7 +103,16 @@
             </td>
             <td style="width: 50%; text-align: right;">
                 <strong>Tanggal Pengiriman:</strong> {{ $penjualan->tanggal_penjualan->format('d F Y') }}<br>
-                <strong>Status Pembayaran:</strong> {{ strtoupper($penjualan->status_pembayaran) }}<br>
+                <strong>Status Pembayaran:</strong> 
+                @if($penjualan->status_pembayaran === 'lunas')
+                    <span style="color: #059669; font-weight: bold;">LUNAS</span>
+                    @if($penjualan->tanggal_pelunasan)
+                        <br><small style="color: #4b5563;">(Dilunasi: {{ $penjualan->tanggal_pelunasan->format('d/m/Y') }} via {{ strtoupper($penjualan->metode_pelunasan ?? '-') }})</small>
+                    @endif
+                @else
+                    <span style="color: #d97706; font-weight: bold;">PIUTANG / TEMPO</span>
+                @endif
+                <br>
                 <strong>Petugas Gudang:</strong> {{ $penjualan->pengelola->name ?? '-' }}
             </td>
         </tr>
@@ -144,7 +153,10 @@
     </table>
 
     @if($penjualan->catatan)
-        <p style="font-size: 11px; margin-bottom: 20px;"><strong>Catatan Pengiriman:</strong> {{ $penjualan->catatan }}</p>
+        <p style="font-size: 11px; margin-bottom: 10px;"><strong>Catatan Pengiriman:</strong> {{ $penjualan->catatan }}</p>
+    @endif
+    @if($penjualan->catatan_pelunasan)
+        <p style="font-size: 11px; margin-bottom: 20px;"><strong>Catatan Pelunasan:</strong> {{ $penjualan->catatan_pelunasan }}</p>
     @endif
 
     <table class="signatures">

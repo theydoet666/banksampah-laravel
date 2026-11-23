@@ -20,6 +20,10 @@ class PenjualanSampah extends Model
         'total_berat',
         'total_pendapatan',
         'status_pembayaran',
+        'tanggal_pelunasan',
+        'metode_pelunasan',
+        'catatan_pelunasan',
+        'diterima_oleh',
         'pengelola_id',
         'catatan',
     ];
@@ -28,6 +32,7 @@ class PenjualanSampah extends Model
         'total_berat' => 'decimal:3',
         'total_pendapatan' => 'decimal:2',
         'tanggal_penjualan' => 'date',
+        'tanggal_pelunasan' => 'date',
     ];
 
     public function pengepul(): BelongsTo
@@ -38,6 +43,21 @@ class PenjualanSampah extends Model
     public function pengelola(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pengelola_id');
+    }
+
+    public function diterimaOleh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'diterima_oleh');
+    }
+
+    public function isPiutang(): bool
+    {
+        return $this->status_pembayaran === 'piutang';
+    }
+
+    public function isLunas(): bool
+    {
+        return $this->status_pembayaran === 'lunas';
     }
 
     public function details(): HasMany

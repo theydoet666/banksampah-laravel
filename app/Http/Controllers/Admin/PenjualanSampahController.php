@@ -110,5 +110,27 @@ class PenjualanSampahController extends Controller
         $penjualan->load(['pengepul', 'pengelola', 'details.jenisSampah.kategori']);
         return view('admin.penjualan.surat-jalan', compact('penjualan'));
     }
+
+    public function pelunasan(Request $request, PenjualanSampah $penjualan)
+    {
+        $validated = $request->validate([
+            'tanggal_pelunasan' => 'required|date|before_or_equal:today',
+            'metode_pelunasan' => 'required|string|in:transfer,tunai',
+            'catatan_pelunasan' => 'nullable|string|max:255',
+        ], [
+            'tanggal_pelunasan.required' => 'Tanggal pembayaran wajib diisi.',
+            'tanggal_pelunasan.before_or_equal' => 'Tanggal pembayaran tidak boleh melebihi hari ini.',
+            'metode_pelunasan.required' => 'Metode pembayaran wajib dipilih.',
+            'metode_pelunasan.in' => 'Metode pembayaran harus berupa transfer atau tunai.',
+        ]);
+
+        try {
+            $this->penjualanService->catatPelunasan($penjualan, $validated, auth()->user());
+
+            return back()->with('success', "Pembayaran piutang transaksi [{$penjualan->kode_penjualan}] dari {$penjualan->pengepul->nama_perusahaan} sebesar " . formatRupiah($penjualan->total_pendapatan) . " berhasil dicatat dan dinyatakan Lunas.");
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
 }
 

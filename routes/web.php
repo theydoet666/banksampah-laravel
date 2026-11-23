@@ -117,6 +117,7 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
         Route::get('/penjualan/stok', [AdminPenjualanSampahController::class, 'stok'])->name('penjualan.stok');
         Route::resource('/penjualan', AdminPenjualanSampahController::class)->only(['index', 'create', 'store', 'show']);
         Route::get('/penjualan/{penjualan}/surat-jalan', [AdminPenjualanSampahController::class, 'suratJalan'])->name('penjualan.surat-jalan');
+        Route::patch('/penjualan/{penjualan}/pelunasan', [AdminPenjualanSampahController::class, 'pelunasan'])->name('penjualan.pelunasan');
 
         // Laporan (Admin & Pengelola)
         Route::get('/laporan', [AdminLaporanController::class, 'index'])->name('laporan.index');

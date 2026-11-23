@@ -1019,4 +1019,57 @@ class BankSampahTest extends TestCase
         $responseUpdatePin->assertSessionHas('success');
         $this->assertTrue($pengelola->fresh()->verifyPin('888999'));
     }
+
+    public function test_penjualan_sampah_pelunasan_piutang(): void
+    {
+        $pengepul = \App\Models\Pengepul::first() ?? \App\Models\Pengepul::create([
+            'nama_perusahaan' => 'CV Sumber Rejeki',
+            'penanggung_jawab' => 'Pak Joko',
+            'no_hp' => '081299998888',
+            'status' => 'aktif',
+        ]);
+
+        $penjualan = \App\Models\PenjualanSampah::create([
+            'kode_penjualan' => 'PJL-TEST-' . time(),
+            'pengepul_id' => $pengepul->id,
+            'pengelola_id' => $this->admin->id,
+            'tanggal_penjualan' => now()->subDays(3)->toDateString(),
+            'total_berat' => 150.0,
+            'total_pendapatan' => 750000,
+            'status_pembayaran' => 'piutang',
+            'catatan' => 'Pengiriman tempo 3 hari',
+        ]);
+
+        $this->assertTrue($penjualan->isPiutang());
+        $this->assertFalse($penjualan->isLunas());
+
+        // 1. Cek halaman show menampilkan tombol pelunasan
+        $responseShow = $this->actingAs($this->admin)->get(route('admin.penjualan.show', $penjualan));
+        $responseShow->assertStatus(200);
+        $responseShow->assertSee('Catat Pelunasan');
+
+        // 2. Submit form pelunasan piutang
+        $responsePelunasan = $this->actingAs($this->admin)->patch(route('admin.penjualan.pelunasan', $penjualan), [
+            'tanggal_pelunasan' => now()->toDateString(),
+            'metode_pelunasan' => 'transfer',
+            'catatan_pelunasan' => 'Pelunasan transfer BCA No. Ref 123456789',
+        ]);
+
+        $responsePelunasan->assertRedirect(route('admin.penjualan.show', $penjualan));
+        $responsePelunasan->assertSessionHas('success');
+
+        $penjualanRefreshed = $penjualan->fresh();
+        $this->assertEquals('lunas', $penjualanRefreshed->status_pembayaran);
+        $this->assertEquals('transfer', $penjualanRefreshed->metode_pelunasan);
+        $this->assertEquals('Pelunasan transfer BCA No. Ref 123456789', $penjualanRefreshed->catatan_pelunasan);
+        $this->assertEquals($this->admin->id, $penjualanRefreshed->diterima_oleh);
+        $this->assertTrue($penjualanRefreshed->isLunas());
+
+        // 3. Pelunasan ulang harus ditolak karena sudah lunas
+        $responseDouble = $this->actingAs($this->admin)->patch(route('admin.penjualan.pelunasan', $penjualanRefreshed), [
+            'tanggal_pelunasan' => now()->toDateString(),
+            'metode_pelunasan' => 'tunai',
+        ]);
+        $responseDouble->assertSessionHas('error');
+    }
 }
