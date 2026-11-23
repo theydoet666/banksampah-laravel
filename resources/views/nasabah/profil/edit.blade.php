@@ -44,7 +44,7 @@
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex justify-end">
-                <button type="submit" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">Simpan Perubahan</button>
+                <button type="submit" class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">Simpan Perubahan</button>
             </div>
         </form>
     </x-card>
@@ -73,7 +73,7 @@
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex justify-end">
-                <button type="submit" class="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold">Ganti Kata Sandi</button>
+                <button type="submit" class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold">Ganti Kata Sandi</button>
             </div>
         </form>
     </x-card>

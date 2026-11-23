@@ -4,15 +4,15 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
             <div class="flex items-center gap-2">
-                <h2 class="text-xl font-bold text-slate-800">Detail Transaksi</h2>
+                <h2 class="text-lg sm:text-xl font-bold text-slate-800">Detail Transaksi</h2>
                 {!! $transaksi->status_badge !!}
             </div>
             <p class="text-xs font-mono text-slate-400">{{ $transaksi->kode_transaksi }}</p>
         </div>
-        <a href="{{ route('nasabah.riwayat.index') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">&larr; Kembali ke Riwayat</a>
+        <a href="{{ route('nasabah.riwayat.index') }}" class="text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 self-start sm:self-auto">&larr; Kembali ke Riwayat</a>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 space-y-6">

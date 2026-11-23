@@ -94,7 +94,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full text-left text-xs min-w-[500px]">
                 <thead>
                     <tr class="bg-slate-50 text-slate-500 uppercase font-semibold">
                         <th class="py-3 px-4">Tanggal / Kode</th>
