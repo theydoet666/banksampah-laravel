@@ -27,6 +27,10 @@ class BankSampahTest extends TestCase
         }
 
         $this->admin = User::where('role', 'admin')->first();
+        if ($this->admin) {
+            $this->admin->pin = \Illuminate\Support\Facades\Hash::make('123456');
+            $this->admin->save();
+        }
         $this->petugas = User::where('role', 'petugas')->first();
         $this->nasabahUser = User::where('email', 'nasabah@banksampah.test')->first()
             ?? User::where('role', 'nasabah')->first();
@@ -392,7 +396,8 @@ class BankSampahTest extends TestCase
 
     public function test_nasabah_pengajuan_tarik_and_admin_approval_workflow(): void
     {
-        // 1. Pastikan nasabah punya saldo
+        // 1. Pastikan nasabah punya saldo dan bersihkan transaksi pending sebelumnya
+        Transaksi::where('nasabah_id', $this->nasabah->id)->where('status', 'menunggu_persetujuan')->delete();
         $this->nasabah->update(['saldo' => 100000]);
         $saldoAwal = (float) $this->nasabah->fresh()->saldo;
         $this->assertEquals(100000, $saldoAwal);
@@ -431,8 +436,10 @@ class BankSampahTest extends TestCase
         $responseAntrean->assertStatus(200);
         $responseAntrean->assertSee($transaksiPengajuan->kode_transaksi);
 
-        // 5. Admin menyetujui penarikan
-        $responseApprove = $this->actingAs($this->admin)->post(route('admin.persetujuan-tarik.setujui', $transaksiPengajuan));
+        // 5. Admin menyetujui penarikan dengan PIN yang benar
+        $responseApprove = $this->actingAs($this->admin)->post(route('admin.persetujuan-tarik.setujui', $transaksiPengajuan), [
+            'pin' => '123456',
+        ]);
         $responseApprove->assertRedirect();
         $responseApprove->assertSessionHas('success');
 
@@ -929,5 +936,87 @@ class BankSampahTest extends TestCase
         $responseAdmin = $this->actingAs($this->admin)->get(route('admin.transaksi.struk', $transaksi));
         $responseAdmin->assertStatus(200);
         $responseAdmin->assertSee($transaksi->kode_transaksi);
+    }
+
+    public function test_pengelola_pin_authorization_for_penarikan_approval(): void
+    {
+        $pengelola = User::where('role', 'pengelola')->first() ?? User::create([
+            'name' => 'Bendahara Desa',
+            'email' => 'bendahara@banksampah.test',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'pengelola',
+            'is_active' => true,
+        ]);
+
+        $pengelola->pin = \Illuminate\Support\Facades\Hash::make('654321');
+        $pengelola->save();
+
+        $this->nasabah->saldo = 100000;
+        $this->nasabah->save();
+
+        $trxMenunggu = Transaksi::create([
+            'kode_transaksi' => 'TRX-TARIK-PIN-' . uniqid(),
+            'nasabah_id' => $this->nasabah->id,
+            'unit_id' => $this->nasabah->unit_id,
+            'petugas_id' => $this->petugas->id,
+            'tanggal_transaksi' => now()->toDateString(),
+            'jenis' => 'tarik',
+            'total_berat' => 0,
+            'total_nilai' => 30000,
+            'saldo_sebelum' => 100000,
+            'saldo_sesudah' => 70000,
+            'status' => 'menunggu_persetujuan',
+        ]);
+
+        // 1. Pengelola salah memasukkan PIN -> Ditolak
+        $responseWrongPin = $this->actingAs($pengelola)->post(route('admin.persetujuan-tarik.setujui', $trxMenunggu), [
+            'pin' => '000000',
+        ]);
+        $responseWrongPin->assertRedirect();
+        $responseWrongPin->assertSessionHas('error');
+        $this->assertEquals('menunggu_persetujuan', $trxMenunggu->fresh()->status);
+
+        // 2. Format PIN tidak valid (bukan 6 digit) -> Error validasi
+        $responseInvalidPin = $this->actingAs($pengelola)->post(route('admin.persetujuan-tarik.setujui', $trxMenunggu), [
+            'pin' => '123',
+        ]);
+        $responseInvalidPin->assertSessionHasErrors('pin');
+        $this->assertEquals('menunggu_persetujuan', $trxMenunggu->fresh()->status);
+
+        // 3. User tanpa PIN mencoba menyetujui -> Ditolak meminta setel PIN
+        $userNoPin = User::create([
+            'name' => 'Pengelola Tanpa PIN',
+            'email' => 'nopin@banksampah.test',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'role' => 'pengelola',
+            'is_active' => true,
+            'pin' => null,
+        ]);
+        $responseNoPin = $this->actingAs($userNoPin)->post(route('admin.persetujuan-tarik.setujui', $trxMenunggu), [
+            'pin' => '123456',
+        ]);
+        $responseNoPin->assertSessionHas('error');
+        $this->assertEquals('menunggu_persetujuan', $trxMenunggu->fresh()->status);
+
+        // 4. Pengelola memasukkan PIN yang benar (654321) -> Berhasil disetujui & dicairkan
+        $responseSuccess = $this->actingAs($pengelola)->post(route('admin.persetujuan-tarik.setujui', $trxMenunggu), [
+            'pin' => '654321',
+        ]);
+        $responseSuccess->assertRedirect();
+        $responseSuccess->assertSessionHas('success');
+
+        $trxRefreshed = $trxMenunggu->fresh();
+        $this->assertEquals('disetujui', $trxRefreshed->status);
+        $this->assertEquals($pengelola->id, $trxRefreshed->disetujui_oleh);
+
+        // 5. Pengelola dapat memperbarui PIN melalui route profil
+        $responseUpdatePin = $this->actingAs($pengelola)->put(route('profile.pin.update'), [
+            'current_password' => 'password',
+            'pin' => '888999',
+            'pin_confirmation' => '888999',
+        ]);
+        $responseUpdatePin->assertRedirect();
+        $responseUpdatePin->assertSessionHas('success');
+        $this->assertTrue($pengelola->fresh()->verifyPin('888999'));
     }
 }

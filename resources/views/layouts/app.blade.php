@@ -34,6 +34,7 @@
             <main class="p-4 sm:p-6 flex-1 min-w-0 w-full">
                 @include('layouts.partials.flash-message')
                 @yield('content')
+                {{ $slot ?? '' }}
             </main>
 
             <!-- Footer -->

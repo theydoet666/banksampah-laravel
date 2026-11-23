@@ -57,4 +57,32 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Update the user's transaction authorization PIN.
+     */
+    public function updatePin(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        $rules = [
+            'pin' => ['required', 'string', 'digits:6', 'confirmed'],
+        ];
+
+        if ($user->hasPin()) {
+            $rules['current_password'] = ['required', 'current_password'];
+        }
+
+        $validated = $request->validate($rules, [
+            'pin.required' => 'PIN otorisasi 6-digit wajib diisi.',
+            'pin.digits' => 'PIN otorisasi harus tepat terdiri dari 6 digit angka.',
+            'pin.confirmed' => 'Konfirmasi PIN tidak cocok dengan PIN baru.',
+            'current_password.required' => 'Password saat ini diperlukan untuk verifikasi perubahan PIN.',
+            'current_password.current_password' => 'Password saat ini tidak sesuai.',
+        ]);
+
+        $user->setPin($validated['pin']);
+
+        return back()->with('success', 'PIN Otorisasi Transaksi 6-digit berhasil disimpan!');
+    }
 }

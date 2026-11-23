@@ -18,6 +18,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Administrator',
                 'password' => Hash::make('password'),
+                'pin' => Hash::make('123456'),
                 'role' => 'admin',
                 'is_active' => true,
             ]
@@ -28,6 +29,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Pengelola & Bendahara',
                 'password' => Hash::make('password'),
+                'pin' => Hash::make('123456'),
                 'role' => 'pengelola',
                 'is_active' => true,
             ]

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'pin',
         'role',
         'unit_id',
         'is_active',
@@ -35,6 +36,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'pin',
         'remember_token',
     ];
 
@@ -100,6 +102,26 @@ class User extends Authenticatable
     public function canManageFinanceAndWarehouse(): bool
     {
         return in_array($this->role, ['admin', 'pengelola']);
+    }
+
+    public function hasPin(): bool
+    {
+        return ! empty($this->pin);
+    }
+
+    public function verifyPin(?string $pin): bool
+    {
+        if (empty($pin) || empty($this->pin)) {
+            return false;
+        }
+
+        return \Illuminate\Support\Facades\Hash::check($pin, $this->pin);
+    }
+
+    public function setPin(string $pin): void
+    {
+        $this->pin = \Illuminate\Support\Facades\Hash::make($pin);
+        $this->save();
     }
 
     public function scopeActive($query)

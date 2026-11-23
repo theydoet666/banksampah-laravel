@@ -37,8 +37,25 @@ class PersetujuanPenarikanController extends Controller
 
     public function setujui(Request $request, Transaksi $transaksi, TransaksiService $transaksiService)
     {
+        $user = auth()->user();
+
+        if (! $user->hasPin()) {
+            return back()->with('error', 'Akun Anda belum memiliki PIN Otorisasi Transaksi. Silakan atur PIN 6-digit terlebih dahulu pada menu Profil.');
+        }
+
+        $request->validate([
+            'pin' => ['required', 'string', 'digits:6'],
+        ], [
+            'pin.required' => 'PIN Otorisasi wajib diisi untuk mencairkan saldo nasabah.',
+            'pin.digits' => 'PIN Otorisasi harus berupa 6 digit angka.',
+        ]);
+
+        if (! $user->verifyPin($request->pin)) {
+            return back()->with('error', 'PIN Otorisasi salah! Tindakan pencairan dana nasabah dibatalkan demi keamanan.');
+        }
+
         try {
-            $transaksiService->setujuiPenarikan($transaksi, auth()->user());
+            $transaksiService->setujuiPenarikan($transaksi, $user);
             return back()->with('success', "Penarikan saldo sebesar Rp " . number_format($transaksi->total_nilai, 0, ',', '.') . " untuk nasabah {$transaksi->nasabah->nama} berhasil disetujui & dicairkan.");
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
