@@ -63,6 +63,13 @@ class NasabahRegisterController extends Controller
                 'registered_by' => $user->id,
             ]);
 
+            auditLog(
+                action: 'create',
+                module: 'Nasabah',
+                description: "Registrasi mandiri nasabah online: {$validated['nama']} (No. Rek: {$noRekening})",
+                user: $user
+            );
+
             return $user;
         });
 

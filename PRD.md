@@ -1,7 +1,7 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.5.0  
+> Versi: 1.6.0  
 > Tanggal: 23 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
 > Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js + SweetAlert2**
@@ -10,7 +10,7 @@
 
 ## 1. Latar Belakang & Tujuan
 
-Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.5.0 ini, sistem telah disempurnakan mencakup:
+Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digital yang memungkinkan masyarakat (nasabah) menyetorkan sampah terpilah dan menukarnya menjadi saldo rupiah. Pada versi 1.6.0 ini, sistem telah disempurnakan mencakup:
 1. **Multi-Unit Bank Sampah** di tingkat Dusun/RW.
 2. **Role Berjenjang 4 Tingkat** (`admin`, `pengelola`, `petugas`, `nasabah`).
 3. **Mekanisme Multi-Identifier Login & Auto Onboarding Nasabah** yang fleksibel dan ramah warga desa.
@@ -23,8 +23,9 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 10. **Portal Mandiri Nasabah Mobile-First** dengan Mobile App Bottom Navigation Bar untuk pengalaman pengguna layaknya aplikasi mobile banking.
 11. **Penyempurnaan Rekapitulasi Laporan & Pelaporan Status Transaksi** (kalkulasi penarikan akurat dan badge status resmi).
 12. **Saldo Awal Migrasi Pembukuan Manual** (fitur khusus Administrator untuk memasukkan saldo sisa pembukuan manual lama nasabah secara aman dan teraudit).
-13. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
-14. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
+13. **Audit Log & Jejak Aktivitas Sistem** (fitur forensik dan akuntabilitas eksklusif Administrator untuk memantau semua aktivitas dari seluruh akun pengguna serta ekspor riwayat ke CSV).
+14. **Penghapusan Aman Master Data (Safety Guard)** pada Unit Bank Sampah dan Jenis Sampah untuk mencegah hilangnya riwayat keuangan warga.
+15. **Artisan Reset Tool** (`php artisan bank-sampah:reset-data`) untuk reset data transaksi pengujian secara higienis.
 
 ### Tujuan Utama
 - Mendigitalisasi pencatatan setoran dan penarikan tabungan sampah di setiap pos dusun/RW.
@@ -168,12 +169,25 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | NAS-06 | **Mobile App Bottom Navigation Bar**: Bilah navigasi bawah mengambang (*sticky bottom bar*) layaknya aplikasi mobile banking (Beranda, Riwayat, Tarik Saldo, Profil) | P0 | Selesai |
 | NAS-07 | **Antarmuka Mobile Adaptif**: Kartu ATM virtual digital tabungan, kartu ringkasan bulanan, dan tabel riwayat transaksi mutasi yang proporsional pada semua ukuran layar ponsel (360px - 412px) | P0 | Selesai |
 
+### 4.11 Audit Log & Rekam Jejak Sistem (Khusus Administrator)
+| ID | Fitur | Prioritas | Status |
+|----|-------|-----------|--------|
+| AUD-01 | **Pusat Pemantauan Log Terpadu**: Halaman dashboard audit log (`/admin/audit-log`) untuk memantau kronologi semua aktivitas pengguna (Admin, Pengelola, Petugas, Nasabah) secara *real-time* | P0 | Selesai |
+| AUD-02 | **Pencatatan Otomatis Seluruh Modul**: Merekam event login, logout, failed login, transaksi setor, tarik, otorisasi PIN, penolakan, saldo awal, penjualan pengepul, pelunasan piutang, reset password, dan konfigurasi master data | P0 | Selesai |
+| AUD-03 | **Penyaringan & Pencarian Lengkap**: Filter pencarian multivariat (kata kunci deskripsi/pengguna/IP, akun pengguna, role, modul sistem, jenis aksi, dan rentang tanggal) | P0 | Selesai |
+| AUD-04 | **Modal Rincian & Forensik Data**: Tampilan detail aktivitas lengkap beserta snapshot perbandingan data lama vs data baru (*old_values* vs *new_values*), alamat IP, dan perangkat (*user agent*) | P0 | Selesai |
+| AUD-05 | **Ekspor Audit Log (CSV)**: Unduhan rekapitulasi audit log terfilter ke file format CSV (UTF-8 BOM Excel-friendly) untuk keperluan pelaporan resmi desa, BPD, maupun inspektorat | P0 | Selesai |
+| AUD-06 | **Proteksi Ketat Hak Akses**: Akses eksklusif hanya untuk role `admin`; upaya akses oleh role `pengelola`, `petugas`, dan `nasabah` otomatis diblokir (403 Forbidden) | P0 | Selesai |
+
 ---
 
 ## 5. Desain Database & Skema Terkini
 
-### ERD Overview (v1.4.0)
+### ERD Overview (v1.6.0)
 ```
+audit_logs (Jejak forensik seluruh aktivitas sistem)
+  └── N:1 ── users (nullable on delete)
+
 units (Dusun/RW)
   ├── 1:N ── users (admin, pengelola [PIN], petugas, nasabah)
   ├── 1:N ── nasabah

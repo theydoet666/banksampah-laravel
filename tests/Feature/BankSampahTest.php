@@ -1159,4 +1159,78 @@ class BankSampahTest extends TestCase
         ]);
         $responsePetugas->assertStatus(403);
     }
+
+    public function test_admin_can_access_audit_log_and_export_and_non_admin_is_forbidden(): void
+    {
+        // 1. Admin can access audit log index & export
+        $responseAdmin = $this->actingAs($this->admin)->get(route('admin.audit-log.index'));
+        $responseAdmin->assertStatus(200);
+        $responseAdmin->assertSee('Audit Log');
+
+        $responseExport = $this->actingAs($this->admin)->get(route('admin.audit-log.export'));
+        $responseExport->assertStatus(200);
+        $responseExport->assertHeader('Content-Type', 'text/csv; charset=utf-8');
+
+        // 2. Petugas is forbidden
+        $responsePetugas = $this->actingAs($this->petugas)->get(route('admin.audit-log.index'));
+        $responsePetugas->assertStatus(403);
+
+        // 3. Pengelola is forbidden
+        $pengelola = User::where('role', 'pengelola')->first();
+        if ($pengelola) {
+            $responsePengelola = $this->actingAs($pengelola)->get(route('admin.audit-log.index'));
+            $responsePengelola->assertStatus(403);
+        }
+
+        // 4. Nasabah is forbidden
+        $responseNasabah = $this->actingAs($this->nasabahUser)->get(route('admin.audit-log.index'));
+        $responseNasabah->assertStatus(403);
+    }
+
+    public function test_audit_log_records_system_events_and_transactions(): void
+    {
+        $logCountBefore = \App\Models\AuditLog::count();
+
+        // 1. Login generates audit log
+        $this->post('/login', [
+            'email' => 'admin@banksampah.test',
+            'password' => 'password',
+        ]);
+
+        $this->assertTrue(\App\Models\AuditLog::where('action', 'login')->exists());
+
+        // 2. Transaksi setor records audit log
+        $unit = \App\Models\Unit::first();
+        $jenisSampah = JenisSampah::first();
+        $this->actingAs($this->admin)->post(route('admin.transaksi.setor.store'), [
+            'nasabah_id' => $this->nasabah->id,
+            'tanggal_transaksi' => now()->toDateString(),
+            'details' => [
+                [
+                    'jenis_sampah_id' => $jenisSampah->id,
+                    'berat' => 5.5,
+                ]
+            ]
+        ]);
+
+        $setorLog = \App\Models\AuditLog::where('module', 'Transaksi Warga')
+            ->where('action', 'create')
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($setorLog);
+        $this->assertStringContainsString($this->nasabah->nama, $setorLog->description);
+        $this->assertEquals('admin', $setorLog->user_role);
+
+        // 3. Saldo awal records audit log
+        $this->actingAs($this->admin)->post(route('admin.nasabah.saldo-awal', $this->nasabah), [
+            'nominal' => 25000,
+            'tanggal_transaksi' => now()->toDateString(),
+            'catatan' => 'Uji audit log saldo awal',
+        ]);
+
+        $saldoAwalLog = \App\Models\AuditLog::where('action', 'saldo_awal')->latest('id')->first();
+        $this->assertNotNull($saldoAwalLog);
+        $this->assertStringContainsString('25.000', $saldoAwalLog->description);
+    }
 }

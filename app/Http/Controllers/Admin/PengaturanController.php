@@ -60,6 +60,12 @@ class PengaturanController extends Controller
             AppSetting::set($key, $value ?? '');
         }
 
+        auditLog(
+            action: 'update',
+            module: 'Pengaturan',
+            description: "Memperbarui identitas sistem Bank Sampah: {$validated['nama_bank_sampah']}"
+        );
+
         return back()->with('success', 'Pengaturan sistem dan identitas bank sampah berhasil diperbarui.');
     }
 }

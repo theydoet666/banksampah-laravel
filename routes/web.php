@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\UnitController as AdminUnitController;
 use App\Http\Controllers\Admin\PengepulController as AdminPengepulController;
 use App\Http\Controllers\Admin\PenjualanSampahController as AdminPenjualanSampahController;
 use App\Http\Controllers\Admin\PersetujuanPenarikanController;
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 
 // Petugas Controllers
 use App\Http\Controllers\Petugas\DashboardController as PetugasDashboardController;
@@ -88,6 +89,11 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
 
             // Input Saldo Awal Nasabah (Khusus Admin)
             Route::post('/nasabah/{nasabah}/saldo-awal', [AdminNasabahController::class, 'inputSaldoAwal'])->name('nasabah.saldo-awal');
+
+            // Audit Log (Khusus Admin)
+            Route::get('/audit-log', [AdminAuditLogController::class, 'index'])->name('audit-log.index');
+            Route::get('/audit-log/export', [AdminAuditLogController::class, 'export'])->name('audit-log.export');
+            Route::get('/audit-log/{auditLog}', [AdminAuditLogController::class, 'show'])->name('audit-log.show');
         });
 
         // Master Data Sampah (Dapat Dilihat oleh Admin & Pengelola)

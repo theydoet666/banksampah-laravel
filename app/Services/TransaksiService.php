@@ -59,6 +59,13 @@ class TransaksiService
             $nasabah = Nasabah::findOrFail($data['nasabah_id']);
             $nasabah->increment('saldo', $totalNilai);
 
+            auditLog(
+                action: 'create',
+                module: 'Transaksi Warga',
+                description: "Mencatat setoran sampah warga {$nasabah->nama} ({$transaksi->kode_transaksi}) senilai " . formatRupiah($totalNilai) . " (" . number_format($totalBerat, 2) . " kg)",
+                subject: $transaksi
+            );
+
             return $transaksi;
         });
     }
@@ -79,7 +86,7 @@ class TransaksiService
             $user = $actor ?? auth()->user();
             $unitId = $nasabah->unit_id ?? $user?->unit_id;
 
-            return Transaksi::create([
+            $transaksi = Transaksi::create([
                 'kode_transaksi' => Transaksi::generateKodeTransaksi(),
                 'nasabah_id' => $nasabah->id,
                 'unit_id' => $unitId,
@@ -92,6 +99,16 @@ class TransaksiService
                 'petugas_id' => $user?->id ?? $nasabah->user_id,
                 'tanggal_transaksi' => $data['tanggal_transaksi'] ?? now()->toDateString(),
             ]);
+
+            auditLog(
+                action: 'create',
+                module: 'Transaksi Warga',
+                description: "Mengajukan penarikan saldo nasabah {$nasabah->nama} ({$transaksi->kode_transaksi}) senilai " . formatRupiah($nominal),
+                subject: $transaksi,
+                user: $user
+            );
+
+            return $transaksi;
         });
     }
 
@@ -119,6 +136,14 @@ class TransaksiService
                 'tanggal_persetujuan' => now(),
             ]);
 
+            auditLog(
+                action: 'approve',
+                module: 'Persetujuan Tarik',
+                description: "Menyetujui pencairan penarikan saldo {$transaksi->kode_transaksi} nasabah {$nasabah->nama} senilai " . formatRupiah($transaksi->total_nilai) . " dengan verifikasi PIN",
+                subject: $transaksi,
+                user: $admin
+            );
+
             return $transaksi->fresh();
         });
     }
@@ -139,6 +164,14 @@ class TransaksiService
                 'tanggal_persetujuan' => now(),
                 'alasan_penolakan' => $alasan,
             ]);
+
+            auditLog(
+                action: 'reject',
+                module: 'Persetujuan Tarik',
+                description: "Menolak pengajuan penarikan saldo {$transaksi->kode_transaksi} nasabah {$transaksi->nasabah->nama}. Alasan: {$alasan}",
+                subject: $transaksi,
+                user: $admin
+            );
 
             return $transaksi->fresh();
         });
@@ -183,6 +216,14 @@ class TransaksiService
             // Kurangi saldo nasabah
             $nasabah->decrement('saldo', $nominal);
 
+            auditLog(
+                action: 'create',
+                module: 'Transaksi Warga',
+                description: "Mencairkan langsung penarikan saldo nasabah {$nasabah->nama} ({$transaksi->kode_transaksi}) senilai " . formatRupiah($nominal),
+                subject: $transaksi,
+                user: $user
+            );
+
             return $transaksi;
         });
     }
@@ -209,6 +250,13 @@ class TransaksiService
             }
 
             $transaksi->update(['status' => 'void']);
+
+            auditLog(
+                action: 'void',
+                module: 'Transaksi Warga',
+                description: "Membatalkan (void) transaksi {$transaksi->kode_transaksi} nasabah {$nasabah->nama} senilai " . formatRupiah($transaksi->total_nilai),
+                subject: $transaksi
+            );
         });
     }
 }

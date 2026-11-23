@@ -133,6 +133,13 @@ class PenjualanService
                 ]);
             }
 
+            auditLog(
+                action: 'create',
+                module: 'Gudang & Penjualan',
+                description: "Mencatat penjualan sampah {$penjualan->kode_penjualan} ke pengepul {$penjualan->pengepul->nama_perusahaan} senilai " . formatRupiah($totalPendapatan) . " (" . number_format($totalBerat, 2) . " kg) [Status: " . ucfirst($penjualan->status_pembayaran) . "]",
+                subject: $penjualan
+            );
+
             return $penjualan;
         });
     }
@@ -153,6 +160,14 @@ class PenjualanService
             'catatan_pelunasan' => $data['catatan_pelunasan'] ?? null,
             'diterima_oleh' => $user->id,
         ]);
+
+        auditLog(
+            action: 'pelunasan',
+            module: 'Gudang & Penjualan',
+            description: "Mencatat pelunasan piutang penjualan {$penjualan->kode_penjualan} dari {$penjualan->pengepul->nama_perusahaan} sebesar " . formatRupiah($penjualan->total_pendapatan) . " via {$penjualan->metode_pelunasan}",
+            subject: $penjualan,
+            user: $user
+        );
 
         return $penjualan;
     }

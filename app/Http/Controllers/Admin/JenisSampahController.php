@@ -67,6 +67,13 @@ class JenisSampahController extends Controller
                 'changed_by' => auth()->id(),
                 'created_at' => now(),
             ]);
+
+            auditLog(
+                action: 'create',
+                module: 'Master Data',
+                description: "Menambahkan jenis sampah baru: {$jenisSampah->nama} (Beli: " . formatRupiah($hargaBeli) . ", Jual: " . formatRupiah($hargaJual) . ")",
+                subject: $jenisSampah
+            );
         });
 
         return redirect()->route('admin.jenis-sampah.index')->with('success', 'Jenis sampah berhasil ditambahkan.');
@@ -124,6 +131,13 @@ class JenisSampahController extends Controller
             }
 
             $jenisSampah->update($validated);
+
+            auditLog(
+                action: 'update',
+                module: 'Master Data',
+                description: "Memperbarui jenis sampah: {$jenisSampah->nama} (Beli: " . formatRupiah($newBeli) . ", Jual: " . formatRupiah($newJual) . ")",
+                subject: $jenisSampah
+            );
         });
 
         return redirect()->route('admin.jenis-sampah.index')->with('success', 'Jenis sampah berhasil diperbarui.');
@@ -163,6 +177,12 @@ class JenisSampahController extends Controller
 
         $namaSampah = $jenisSampah->nama;
         $jenisSampah->delete();
+
+        auditLog(
+            action: 'delete',
+            module: 'Master Data',
+            description: "Menghapus jenis sampah: {$namaSampah}"
+        );
 
         return redirect()->route('admin.jenis-sampah.index')
             ->with('success', "Jenis sampah '{$namaSampah}' berhasil dihapus.");

@@ -46,6 +46,13 @@ class UnitController extends Controller
     {
         $unit = Unit::create($request->validated());
 
+        auditLog(
+            action: 'create',
+            module: 'Master Data',
+            description: "Menambahkan unit bank sampah baru: {$unit->nama} ({$unit->kode_unit})",
+            subject: $unit
+        );
+
         return redirect()->route('admin.units.index')
             ->with('success', "Unit bank sampah '{$unit->nama}' berhasil ditambahkan.");
     }
@@ -67,6 +74,13 @@ class UnitController extends Controller
     public function update(UpdateUnitRequest $request, Unit $unit)
     {
         $unit->update($request->validated());
+
+        auditLog(
+            action: 'update',
+            module: 'Master Data',
+            description: "Memperbarui unit bank sampah: {$unit->nama} ({$unit->kode_unit})",
+            subject: $unit
+        );
 
         return redirect()->route('admin.units.index')
             ->with('success', "Data unit '{$unit->nama}' berhasil diperbarui.");
@@ -103,6 +117,12 @@ class UnitController extends Controller
 
         $namaUnit = $unit->nama;
         $unit->delete();
+
+        auditLog(
+            action: 'delete',
+            module: 'Master Data',
+            description: "Menghapus unit bank sampah: {$namaUnit}"
+        );
 
         return redirect()->route('admin.units.index')
             ->with('success', "Unit bank sampah '{$namaUnit}' berhasil dihapus.");

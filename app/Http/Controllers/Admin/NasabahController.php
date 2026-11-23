@@ -130,6 +130,13 @@ class NasabahController extends Controller
                     'tanggal_transaksi' => $request->input('tanggal_saldo_awal') ?: now()->toDateString(),
                 ]);
             }
+
+            auditLog(
+                action: 'create',
+                module: 'Nasabah',
+                description: "Mendaftarkan nasabah baru: {$nasabah->nama} ({$nasabah->no_rekening})" . ($saldoAwal > 0 ? " dengan Saldo Awal " . formatRupiah($saldoAwal) : ""),
+                subject: $nasabah
+            );
         });
 
         $msg = "Nasabah baru berhasil didaftarkan! No. Rekening: {$noRekening}. Akun login mandiri dibuat otomatis (Login: No. Rekening / No. HP, Password: {$defaultPassword}).";
@@ -196,6 +203,13 @@ class NasabahController extends Controller
 
         $nasabah->update($validated);
 
+        auditLog(
+            action: 'update',
+            module: 'Nasabah',
+            description: "Memperbarui profil nasabah: {$nasabah->nama} ({$nasabah->no_rekening})",
+            subject: $nasabah
+        );
+
         $route = auth()->user()?->isPetugas() ? 'petugas.nasabah.show' : 'admin.nasabah.show';
         return redirect()->route($route, $nasabah)->with('success', 'Data nasabah berhasil diperbarui.');
     }
@@ -231,6 +245,13 @@ class NasabahController extends Controller
             ]);
             $nasabah->update(['user_id' => $user->id]);
         }
+
+        auditLog(
+            action: 'reset_password',
+            module: 'Nasabah',
+            description: "Mereset kata sandi nasabah: {$nasabah->nama} ({$nasabah->no_rekening})",
+            subject: $nasabah
+        );
 
         return back()->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset menjadi: {$defaultPassword} (6 digit No. HP).");
     }
@@ -268,6 +289,13 @@ class NasabahController extends Controller
                 'petugas_id' => $user->id,
                 'tanggal_transaksi' => $validated['tanggal_transaksi'],
             ]);
+
+            auditLog(
+                action: 'saldo_awal',
+                module: 'Transaksi Warga',
+                description: "Menambahkan saldo awal migrasi " . formatRupiah($nominal) . " untuk nasabah {$nasabah->nama} ({$nasabah->no_rekening})",
+                subject: $nasabah
+            );
         });
 
         return back()->with('success', "Saldo awal migrasi sebesar " . formatRupiah($nominal) . " berhasil ditambahkan untuk nasabah {$nasabah->nama}.");

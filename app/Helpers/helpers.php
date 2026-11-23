@@ -55,3 +55,25 @@ if (! function_exists('appLogoBase64')) {
     }
 }
 
+if (! function_exists('auditLog')) {
+    function auditLog(
+        string $action,
+        string $module,
+        string $description,
+        ?\Illuminate\Database\Eloquent\Model $subject = null,
+        ?array $oldValues = null,
+        ?array $newValues = null,
+        ?\App\Models\User $user = null
+    ): ?\App\Models\AuditLog {
+        return \App\Services\AuditLogService::log(
+            $action,
+            $module,
+            $description,
+            $subject,
+            $oldValues,
+            $newValues,
+            $user
+        );
+    }
+}
+
