@@ -44,9 +44,12 @@
             <div>
                 <label class="block font-semibold text-slate-600 mb-1">Status</label>
                 <select name="status" class="w-full rounded-lg border-slate-200 text-xs focus:border-emerald-500 focus:ring-emerald-500">
-                    <option value="">Semua</option>
-                    <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
-                    <option value="void" {{ request('status') === 'void' ? 'selected' : '' }}>Void</option>
+                    <option value="">Semua Status</option>
+                    <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif (Setor)</option>
+                    <option value="disetujui" {{ request('status') === 'disetujui' ? 'selected' : '' }}>Disetujui (Tarik)</option>
+                    <option value="menunggu_persetujuan" {{ request('status') === 'menunggu_persetujuan' ? 'selected' : '' }}>Menunggu Persetujuan</option>
+                    <option value="ditolak" {{ request('status') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                    <option value="void" {{ request('status') === 'void' ? 'selected' : '' }}>Void / Dibatalkan</option>
                 </select>
             </div>
             <div class="flex items-end gap-2">
@@ -92,7 +95,9 @@
                             <td class="py-3 px-6 font-bold {{ $trx->jenis === 'setor' ? 'text-emerald-600' : 'text-rose-600' }}">
                                 {{ formatRupiah($trx->total_nilai) }}
                             </td>
-                            <td class="py-3 px-6 text-xs {{ $trx->status === 'aktif' ? 'text-slate-600' : 'text-rose-400 line-through' }}">{{ ucfirst($trx->status) }}</td>
+                            <td class="py-3 px-6 text-xs">
+                                {!! $trx->status_badge !!}
+                            </td>
                         </tr>
                     @empty
                         <tr>

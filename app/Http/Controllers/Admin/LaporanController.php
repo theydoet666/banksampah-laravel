@@ -48,7 +48,7 @@ class LaporanController extends Controller
         $transaksiList = (clone $query)->orderBy('tanggal_transaksi', 'desc')->paginate(25)->withQueryString();
 
         $totalSetor = (clone $query)->where('jenis', 'setor')->where('status', 'aktif')->sum('total_nilai');
-        $totalTarik = (clone $query)->where('jenis', 'tarik')->where('status', 'aktif')->sum('total_nilai');
+        $totalTarik = (clone $query)->where('jenis', 'tarik')->whereIn('status', ['aktif', 'disetujui'])->sum('total_nilai');
         $totalBerat = (clone $query)->where('jenis', 'setor')->where('status', 'aktif')->sum('total_berat');
 
         $nasabahList = Nasabah::orderBy('nama')->get();
@@ -134,7 +134,7 @@ class LaporanController extends Controller
     {
         $transaksi = $this->getFilteredData($request);
         $totalSetor = $transaksi->where('jenis', 'setor')->where('status', 'aktif')->sum('total_nilai');
-        $totalTarik = $transaksi->where('jenis', 'tarik')->where('status', 'aktif')->sum('total_nilai');
+        $totalTarik = $transaksi->where('jenis', 'tarik')->whereIn('status', ['aktif', 'disetujui'])->sum('total_nilai');
         $totalBerat = $transaksi->where('jenis', 'setor')->where('status', 'aktif')->sum('total_berat');
 
         $pdf = Pdf::loadView('admin.laporan.pdf', compact('transaksi', 'totalSetor', 'totalTarik', 'totalBerat'));
