@@ -8,20 +8,23 @@ use App\Models\Nasabah;
 use App\Models\User;
 use App\Models\Unit;
 use App\Models\Transaksi;
+use App\Http\Controllers\Concerns\AuthorizesUnitAccess;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
 class NasabahController extends Controller
 {
+    use AuthorizesUnitAccess;
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $query = Nasabah::with(['petugasPendaftar', 'user', 'unit']);
 
-        // Scope Petugas ke Unit-nya sendiri
-        if ($user && $user->isPetugas() && $user->unit_id) {
-            $query->where('unit_id', $user->unit_id);
+        // Scope Petugas ke Unit-nya sendiri (Fail-Closed via Trait)
+        if ($user && $user->isPetugas()) {
+            $query = $this->scopeUnitQuery($query, $user);
         } elseif ($request->filled('unit_id')) {
             $query->where('unit_id', $request->unit_id);
         }
@@ -47,6 +50,11 @@ class NasabahController extends Controller
 
     public function create()
     {
+        $user = auth()->user();
+        if ($user && $user->isPetugas() && empty($user->unit_id)) {
+            abort(403, 'Akses ditolak: Akun petugas belum ditugaskan ke unit bank sampah.');
+        }
+
         $units = Unit::aktif()->orderBy('nama')->get();
         return view('admin.nasabah.create', compact('units'));
     }
@@ -54,6 +62,10 @@ class NasabahController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
+
+        if ($user && $user->isPetugas() && empty($user->unit_id)) {
+            abort(403, 'Akses ditolak: Akun petugas belum ditugaskan ke unit bank sampah.');
+        }
 
         $rules = [
             'nama' => 'required|string|max:100',
@@ -67,7 +79,7 @@ class NasabahController extends Controller
             'status' => 'required|in:aktif,nonaktif',
         ];
 
-        if ($user && $user->isPetugas() && $user->unit_id) {
+        if ($user && $user->isPetugas()) {
             $rules['unit_id'] = 'nullable';
         } else {
             $rules['unit_id'] = 'required|exists:units,id';
@@ -81,7 +93,7 @@ class NasabahController extends Controller
 
         $validated = $request->validate($rules);
 
-        if ($user && $user->isPetugas() && $user->unit_id) {
+        if ($user && $user->isPetugas()) {
             $validated['unit_id'] = $user->unit_id;
         }
 
@@ -147,9 +159,7 @@ class NasabahController extends Controller
 
     public function show(Nasabah $nasabah)
     {
-        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id && $nasabah->unit_id !== auth()->user()->unit_id) {
-            abort(403, 'Akses ditolak: Anda hanya dapat melihat data nasabah di unit Anda.');
-        }
+        $this->authorizeUnitAccessForNasabah($nasabah);
 
         $nasabah->load(['petugasPendaftar', 'unit', 'transaksi' => function ($q) {
             $q->orderBy('id', 'desc')->limit(10);
@@ -160,9 +170,7 @@ class NasabahController extends Controller
 
     public function edit(Nasabah $nasabah)
     {
-        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id && $nasabah->unit_id !== auth()->user()->unit_id) {
-            abort(403, 'Akses ditolak: Anda hanya dapat mengedit data nasabah di unit Anda.');
-        }
+        $this->authorizeUnitAccessForNasabah($nasabah);
 
         $units = Unit::aktif()->orderBy('nama')->get();
         return view('admin.nasabah.edit', compact('nasabah', 'units'));
@@ -170,11 +178,9 @@ class NasabahController extends Controller
 
     public function update(Request $request, Nasabah $nasabah)
     {
-        $user = auth()->user();
+        $this->authorizeUnitAccessForNasabah($nasabah);
 
-        if ($user && $user->isPetugas() && $user->unit_id && $nasabah->unit_id !== $user->unit_id) {
-            abort(403, 'Akses ditolak: Anda hanya dapat memperbarui data nasabah di unit Anda.');
-        }
+        $user = auth()->user();
 
         $rules = [
             'nama' => 'required|string|max:100',
@@ -216,6 +222,8 @@ class NasabahController extends Controller
 
     public function toggleStatus(Nasabah $nasabah)
     {
+        $this->authorizeUnitAccessForNasabah($nasabah);
+
         $newStatus = $nasabah->status === 'aktif' ? 'nonaktif' : 'aktif';
         $nasabah->update(['status' => $newStatus]);
 
@@ -224,13 +232,15 @@ class NasabahController extends Controller
 
     public function resetPassword(Nasabah $nasabah)
     {
+        $this->authorizeUnitAccessForNasabah($nasabah);
+
         // Password acak 8 karakter (lebih aman dari 6 digit No HP)
         $defaultPassword = \Illuminate\Support\Str::random(8);
 
         if ($nasabah->user) {
+            // Hapus is_active => true agar nasabah nonaktif tidak aktif kembali tanpa izin
             $nasabah->user->update([
                 'password'            => Hash::make($defaultPassword),
-                'is_active'           => true,
                 'must_change_password' => true, // paksa ganti password setelah reset
             ]);
         } else {
@@ -240,7 +250,7 @@ class NasabahController extends Controller
                 'name'                => $nasabah->nama,
                 'email'               => $generatedEmail,
                 'password'            => Hash::make($defaultPassword),
-                'is_active'           => true,
+                'is_active'           => $nasabah->status === 'aktif',
                 'unit_id'             => $nasabah->unit_id,
                 'must_change_password' => true,
             ], 'nasabah');
@@ -274,13 +284,18 @@ class NasabahController extends Controller
         $catatan = !empty($validated['catatan']) ? $validated['catatan'] : 'Saldo awal migrasi pembukuan manual';
 
         DB::transaction(function () use ($nasabah, $nominal, $catatan, $validated, $user) {
-            $nasabah->increment('saldo', $nominal);
-            $nasabah->increment('saldo_awal', $nominal);
+            $lockedNasabah = Nasabah::lockForUpdate()->findOrFail($nasabah->id);
+            if ($lockedNasabah->status !== 'aktif') {
+                abort(422, 'Nasabah berstatus nonaktif tidak dapat ditambahkan saldo awal.');
+            }
+
+            $lockedNasabah->increment('saldo', $nominal);
+            $lockedNasabah->increment('saldo_awal', $nominal);
 
             Transaksi::create([
                 'kode_transaksi' => Transaksi::generateKodeTransaksi(),
-                'unit_id' => $nasabah->unit_id,
-                'nasabah_id' => $nasabah->id,
+                'unit_id' => $lockedNasabah->unit_id,
+                'nasabah_id' => $lockedNasabah->id,
                 'jenis' => 'setor',
                 'total_berat' => null,
                 'total_nilai' => $nominal,
@@ -294,8 +309,8 @@ class NasabahController extends Controller
             auditLog(
                 action: 'saldo_awal',
                 module: 'Transaksi Warga',
-                description: "Menambahkan saldo awal migrasi " . formatRupiah($nominal) . " untuk nasabah {$nasabah->nama} ({$nasabah->no_rekening})",
-                subject: $nasabah
+                description: "Menambahkan saldo awal migrasi " . formatRupiah($nominal) . " untuk nasabah {$lockedNasabah->nama} ({$lockedNasabah->no_rekening})",
+                subject: $lockedNasabah
             );
         });
 

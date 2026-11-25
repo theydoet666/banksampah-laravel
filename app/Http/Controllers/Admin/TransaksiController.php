@@ -8,11 +8,14 @@ use App\Models\Transaksi;
 use App\Models\Nasabah;
 use App\Models\JenisSampah;
 use App\Models\Unit;
+use App\Http\Controllers\Concerns\AuthorizesUnitAccess;
 use App\Services\TransaksiService;
 use Exception;
 
 class TransaksiController extends Controller
 {
+    use AuthorizesUnitAccess;
+
     protected TransaksiService $transaksiService;
 
     public function __construct(TransaksiService $transaksiService)
@@ -25,9 +28,9 @@ class TransaksiController extends Controller
         $user = auth()->user();
         $query = Transaksi::with(['nasabah', 'petugas', 'unit']);
 
-        // Scope Petugas ke Unit-nya
-        if ($user && $user->isPetugas() && $user->unit_id) {
-            $query->where('unit_id', $user->unit_id);
+        // Scope Petugas ke Unit-nya (Fail-Closed)
+        if ($user && $user->isPetugas()) {
+            $query = $this->scopeUnitQuery($query, $user);
         } elseif ($request->filled('unit_id')) {
             $query->where('unit_id', $request->unit_id);
         }
@@ -68,7 +71,10 @@ class TransaksiController extends Controller
     public function createSetor(Request $request)
     {
         $nasabahQuery = Nasabah::aktif()->orderBy('nama');
-        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id) {
+        if (auth()->user()?->isPetugas()) {
+            if (empty(auth()->user()->unit_id)) {
+                abort(403, 'Akses ditolak: Akun petugas belum ditugaskan ke unit bank sampah.');
+            }
             $nasabahQuery->where('unit_id', auth()->user()->unit_id);
         }
         $nasabahList = $nasabahQuery->get();
@@ -90,10 +96,15 @@ class TransaksiController extends Controller
             'details.*.berat' => 'required|numeric|min:0.01',
         ]);
 
+        $nasabah = Nasabah::findOrFail($validated['nasabah_id']);
+        $this->authorizeUnitAccessForNasabah($nasabah);
+
         try {
             $transaksi = $this->transaksiService->prosesSetoran($validated);
             $routePrefix = auth()->user()->isPetugas() ? 'petugas.' : 'admin.';
             return redirect()->route($routePrefix . 'transaksi.show', $transaksi)->with('success', 'Transaksi setoran sampah berhasil disimpan.');
+        } catch (\DomainException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (Exception $e) {
             return back()->withInput()->with('error', 'Gagal memproses setoran: ' . $e->getMessage());
         }
@@ -102,7 +113,10 @@ class TransaksiController extends Controller
     public function createTarik(Request $request)
     {
         $nasabahQuery = Nasabah::aktif()->orderBy('nama');
-        if (auth()->user()?->isPetugas() && auth()->user()?->unit_id) {
+        if (auth()->user()?->isPetugas()) {
+            if (empty(auth()->user()->unit_id)) {
+                abort(403, 'Akses ditolak: Akun petugas belum ditugaskan ke unit bank sampah.');
+            }
             $nasabahQuery->where('unit_id', auth()->user()->unit_id);
         }
         $nasabahList = $nasabahQuery->get();
@@ -121,6 +135,9 @@ class TransaksiController extends Controller
             'catatan' => 'nullable|string|max:500',
         ]);
 
+        $nasabah = Nasabah::findOrFail($validated['nasabah_id']);
+        $this->authorizeUnitAccessForNasabah($nasabah);
+
         try {
             $transaksi = $this->transaksiService->prosesPenarikan($validated);
             $msg = $transaksi->status === 'menunggu_persetujuan'
@@ -129,6 +146,8 @@ class TransaksiController extends Controller
 
             $routePrefix = auth()->user()->isAdmin() ? 'admin.' : 'petugas.';
             return redirect()->route($routePrefix . 'transaksi.show', $transaksi)->with('success', $msg);
+        } catch (\DomainException | \App\Exceptions\InsufficientBalanceException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -136,12 +155,16 @@ class TransaksiController extends Controller
 
     public function show(Transaksi $transaksi)
     {
+        $this->authorizeUnitAccessForTransaksi($transaksi);
+
         $transaksi->load(['nasabah.unit', 'petugas', 'unit', 'details.jenisSampah.kategori']);
         return view('admin.transaksi.show', compact('transaksi'));
     }
 
     public function struk(Transaksi $transaksi)
     {
+        $this->authorizeUnitAccessForTransaksi($transaksi);
+
         $transaksi->load(['nasabah', 'petugas', 'details.jenisSampah.kategori']);
         return view('admin.transaksi.struk', compact('transaksi'));
     }

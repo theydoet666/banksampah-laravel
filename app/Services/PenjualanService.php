@@ -7,6 +7,7 @@ use App\Models\DetailPenjualanSampah;
 use App\Models\JenisSampah;
 use App\Models\DetailTransaksi;
 use Illuminate\Support\Facades\DB;
+use DomainException;
 use Exception;
 
 class PenjualanService
@@ -100,11 +101,14 @@ class PenjualanService
                 }
 
                 $hargaJual = (float) $item['harga_jual_satuan'];
-                $subtotal = $beratJual * $hargaJual;
+                $subtotal = round($beratJual * $hargaJual, 2);
 
                 $totalBerat += $beratJual;
                 $totalPendapatan += $subtotal;
             }
+
+            $totalPendapatan = round($totalPendapatan, 2);
+            $totalBerat = round($totalBerat, 3);
 
             // Simpan header penjualan
             $penjualan = PenjualanSampah::create([
@@ -149,27 +153,31 @@ class PenjualanService
      */
     public function catatPelunasan(PenjualanSampah $penjualan, array $data, $user): PenjualanSampah
     {
-        if ($penjualan->status_pembayaran === 'lunas') {
-            throw new Exception("Transaksi penjualan [{$penjualan->kode_penjualan}] sudah berstatus Lunas.");
-        }
+        return DB::transaction(function () use ($penjualan, $data, $user) {
+            $locked = PenjualanSampah::lockForUpdate()->findOrFail($penjualan->id);
 
-        $penjualan->update([
-            'status_pembayaran' => 'lunas',
-            'tanggal_pelunasan' => $data['tanggal_pelunasan'] ?? now()->toDateString(),
-            'metode_pelunasan' => $data['metode_pelunasan'] ?? 'transfer',
-            'catatan_pelunasan' => $data['catatan_pelunasan'] ?? null,
-            'diterima_oleh' => $user->id,
-        ]);
+            if ($locked->status_pembayaran === 'lunas') {
+                throw new DomainException("Transaksi penjualan [{$locked->kode_penjualan}] sudah berstatus Lunas.");
+            }
 
-        auditLog(
-            action: 'pelunasan',
-            module: 'Gudang & Penjualan',
-            description: "Mencatat pelunasan piutang penjualan {$penjualan->kode_penjualan} dari {$penjualan->pengepul->nama_perusahaan} sebesar " . formatRupiah($penjualan->total_pendapatan) . " via {$penjualan->metode_pelunasan}",
-            subject: $penjualan,
-            user: $user
-        );
+            $locked->update([
+                'status_pembayaran' => 'lunas',
+                'tanggal_pelunasan' => $data['tanggal_pelunasan'] ?? now()->toDateString(),
+                'metode_pelunasan' => $data['metode_pelunasan'] ?? 'transfer',
+                'catatan_pelunasan' => $data['catatan_pelunasan'] ?? null,
+                'diterima_oleh' => $user->id,
+            ]);
 
-        return $penjualan;
+            auditLog(
+                action: 'pelunasan',
+                module: 'Gudang & Penjualan',
+                description: "Mencatat pelunasan piutang penjualan {$locked->kode_penjualan} dari {$locked->pengepul->nama_perusahaan} sebesar " . formatRupiah($locked->total_pendapatan) . " via {$locked->metode_pelunasan}",
+                subject: $locked,
+                user: $user
+            );
+
+            return $locked;
+        });
     }
 }
 

@@ -30,7 +30,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:100|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => 'required|in:admin,pengelola,petugas',
-            'unit_id' => 'nullable|exists:units,id',
+            'unit_id' => 'required_if:role,petugas|nullable|exists:units,id',
             'is_active' => 'boolean',
         ]);
 
@@ -60,7 +60,7 @@ class UserController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'required|string|email|max:100|unique:users,email,' . $user->id,
             'role' => 'required|in:admin,pengelola,petugas',
-            'unit_id' => 'nullable|exists:units,id',
+            'unit_id' => 'required_if:role,petugas|nullable|exists:units,id',
             'is_active' => 'boolean',
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);

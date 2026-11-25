@@ -8,6 +8,7 @@ use App\Models\Nasabah;
 use App\Models\JenisSampah;
 use App\Exceptions\InsufficientBalanceException;
 use Illuminate\Support\Facades\DB;
+use DomainException;
 use Exception;
 
 class TransaksiService
@@ -15,23 +16,29 @@ class TransaksiService
     public function prosesSetoran(array $data): Transaksi
     {
         return DB::transaction(function () use ($data) {
+            $nasabah = Nasabah::lockForUpdate()->findOrFail($data['nasabah_id']);
+            if ($nasabah->status !== 'aktif') {
+                throw new DomainException('Nasabah berstatus nonaktif tidak dapat melakukan transaksi setoran.');
+            }
+
             $totalNilai = 0;
             $totalBerat = 0;
 
-            // Hitung total dari item sampah
+            // Hitung total dari item sampah dengan pembulatan 2 desimal
             foreach ($data['details'] as $item) {
                 $jenisSampah = JenisSampah::findOrFail($item['jenis_sampah_id']);
-                $subtotal = (float) $item['berat'] * (float) $jenisSampah->harga_per_satuan;
+                $subtotal = round((float) $item['berat'] * (float) $jenisSampah->harga_per_satuan, 2);
                 $totalNilai += $subtotal;
                 $totalBerat += (float) $item['berat'];
             }
 
-            $nasabah = Nasabah::findOrFail($data['nasabah_id']);
+            $totalNilai = round($totalNilai, 2);
+            $totalBerat = round($totalBerat, 3);
             $unitId = $nasabah->unit_id ?? auth()->user()?->unit_id;
 
             $transaksi = Transaksi::create([
                 'kode_transaksi' => Transaksi::generateKodeTransaksi(),
-                'nasabah_id' => $data['nasabah_id'],
+                'nasabah_id' => $nasabah->id,
                 'unit_id' => $unitId,
                 'jenis' => 'setor',
                 'total_berat' => $totalBerat,
@@ -44,7 +51,7 @@ class TransaksiService
 
             foreach ($data['details'] as $item) {
                 $jenisSampah = JenisSampah::findOrFail($item['jenis_sampah_id']);
-                $subtotal = (float) $item['berat'] * (float) $jenisSampah->harga_per_satuan;
+                $subtotal = round((float) $item['berat'] * (float) $jenisSampah->harga_per_satuan, 2);
 
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
@@ -55,8 +62,7 @@ class TransaksiService
                 ]);
             }
 
-            // Tambah saldo nasabah
-            $nasabah = Nasabah::findOrFail($data['nasabah_id']);
+            // Tambah saldo nasabah di dalam lock
             $nasabah->increment('saldo', $totalNilai);
 
             auditLog(
@@ -76,8 +82,12 @@ class TransaksiService
     public function ajukanPenarikan(array $data, ?\App\Models\User $actor = null): Transaksi
     {
         return DB::transaction(function () use ($data, $actor) {
-            $nasabah = Nasabah::findOrFail($data['nasabah_id']);
-            $nominal = (float) $data['nominal'];
+            $nasabah = Nasabah::lockForUpdate()->findOrFail($data['nasabah_id']);
+            if ($nasabah->status !== 'aktif') {
+                throw new DomainException('Nasabah berstatus nonaktif tidak dapat mengajukan penarikan saldo.');
+            }
+
+            $nominal = round((float) $data['nominal'], 2);
 
             if ($nasabah->saldo_tersedia < $nominal) {
                 throw new InsufficientBalanceException('Saldo tersedia nasabah tidak mencukupi untuk nominal pengajuan ini (tersedia: ' . $nasabah->formatted_saldo_tersedia . ').');
@@ -118,19 +128,27 @@ class TransaksiService
     public function setujuiPenarikan(Transaksi $transaksi, \App\Models\User $admin): Transaksi
     {
         return DB::transaction(function () use ($transaksi, $admin) {
-            if ($transaksi->status !== 'menunggu_persetujuan' || $transaksi->jenis !== 'tarik') {
-                throw new Exception('Transaksi ini tidak sedang menunggu persetujuan penarikan.');
+            // Lock transaksi dan baca ulang status terkini
+            $lockedTrx = Transaksi::lockForUpdate()->findOrFail($transaksi->id);
+
+            if ($lockedTrx->status !== 'menunggu_persetujuan' || $lockedTrx->jenis !== 'tarik') {
+                throw new DomainException('Transaksi ini tidak sedang menunggu persetujuan penarikan.');
             }
 
-            $nasabah = $transaksi->nasabah;
-            if ($nasabah->saldo < $transaksi->total_nilai) {
+            // Lock nasabah dan baca ulang saldo terkini
+            $nasabah = Nasabah::lockForUpdate()->findOrFail($lockedTrx->nasabah_id);
+            if ($nasabah->status !== 'aktif') {
+                throw new DomainException('Nasabah berstatus nonaktif tidak dapat mencairkan saldo.');
+            }
+
+            if ($nasabah->saldo < $lockedTrx->total_nilai) {
                 throw new InsufficientBalanceException('Gagal menyetujui: Saldo nasabah saat ini tidak mencukupi.');
             }
 
             // Kurangi saldo nasabah secara resmi
-            $nasabah->decrement('saldo', $transaksi->total_nilai);
+            $nasabah->decrement('saldo', $lockedTrx->total_nilai);
 
-            $transaksi->update([
+            $lockedTrx->update([
                 'status' => 'disetujui',
                 'disetujui_oleh' => $admin->id,
                 'tanggal_persetujuan' => now(),
@@ -139,12 +157,12 @@ class TransaksiService
             auditLog(
                 action: 'approve',
                 module: 'Persetujuan Tarik',
-                description: "Menyetujui pencairan penarikan saldo {$transaksi->kode_transaksi} nasabah {$nasabah->nama} senilai " . formatRupiah($transaksi->total_nilai) . " dengan verifikasi PIN",
-                subject: $transaksi,
+                description: "Menyetujui pencairan penarikan saldo {$lockedTrx->kode_transaksi} nasabah {$nasabah->nama} senilai " . formatRupiah($lockedTrx->total_nilai) . " dengan verifikasi PIN",
+                subject: $lockedTrx,
                 user: $admin
             );
 
-            return $transaksi->fresh();
+            return $lockedTrx->fresh();
         });
     }
 
@@ -154,11 +172,13 @@ class TransaksiService
     public function tolakPenarikan(Transaksi $transaksi, \App\Models\User $admin, string $alasan): Transaksi
     {
         return DB::transaction(function () use ($transaksi, $admin, $alasan) {
-            if ($transaksi->status !== 'menunggu_persetujuan' || $transaksi->jenis !== 'tarik') {
-                throw new Exception('Transaksi ini tidak sedang menunggu persetujuan penarikan.');
+            $lockedTrx = Transaksi::lockForUpdate()->findOrFail($transaksi->id);
+
+            if ($lockedTrx->status !== 'menunggu_persetujuan' || $lockedTrx->jenis !== 'tarik') {
+                throw new DomainException('Transaksi ini tidak sedang menunggu persetujuan penarikan.');
             }
 
-            $transaksi->update([
+            $lockedTrx->update([
                 'status' => 'ditolak',
                 'disetujui_oleh' => $admin->id,
                 'tanggal_persetujuan' => now(),
@@ -168,12 +188,12 @@ class TransaksiService
             auditLog(
                 action: 'reject',
                 module: 'Persetujuan Tarik',
-                description: "Menolak pengajuan penarikan saldo {$transaksi->kode_transaksi} nasabah {$transaksi->nasabah->nama}. Alasan: {$alasan}",
-                subject: $transaksi,
+                description: "Menolak pengajuan penarikan saldo {$lockedTrx->kode_transaksi} nasabah {$lockedTrx->nasabah->nama}. Alasan: {$alasan}",
+                subject: $lockedTrx,
                 user: $admin
             );
 
-            return $transaksi->fresh();
+            return $lockedTrx->fresh();
         });
     }
 
@@ -188,8 +208,12 @@ class TransaksiService
 
         // Jika admin desa sendiri yang mencatat, penarikan langsung disetujui & dicairkan
         return DB::transaction(function () use ($data, $user) {
-            $nasabah = Nasabah::findOrFail($data['nasabah_id']);
-            $nominal = (float) $data['nominal'];
+            $nasabah = Nasabah::lockForUpdate()->findOrFail($data['nasabah_id']);
+            if ($nasabah->status !== 'aktif') {
+                throw new DomainException('Nasabah berstatus nonaktif tidak dapat melakukan penarikan saldo.');
+            }
+
+            $nominal = round((float) $data['nominal'], 2);
 
             if ($nasabah->saldo < $nominal) {
                 throw new InsufficientBalanceException('Saldo nasabah tidak mencukupi untuk penarikan ini.');
@@ -213,7 +237,7 @@ class TransaksiService
                 'tanggal_transaksi' => $data['tanggal_transaksi'] ?? now()->toDateString(),
             ]);
 
-            // Kurangi saldo nasabah
+            // Kurangi saldo nasabah di dalam lock
             $nasabah->decrement('saldo', $nominal);
 
             auditLog(
@@ -228,36 +252,45 @@ class TransaksiService
         });
     }
 
-    public function voidTransaksi(Transaksi $transaksi): void
+    public function voidTransaksi(Transaksi $transaksi, ?string $alasan = null): void
     {
-        DB::transaction(function () use ($transaksi) {
-            if ($transaksi->status === 'void') {
-                throw new Exception('Transaksi sudah dibatalkan sebelumnya.');
+        DB::transaction(function () use ($transaksi, $alasan) {
+            $lockedTrx = Transaksi::lockForUpdate()->findOrFail($transaksi->id);
+
+            if ($lockedTrx->status === 'void') {
+                throw new DomainException('Transaksi sudah dibatalkan sebelumnya.');
             }
 
-            $nasabah = $transaksi->nasabah;
+            $nasabah = Nasabah::lockForUpdate()->findOrFail($lockedTrx->nasabah_id);
 
-            if ($transaksi->jenis === 'setor') {
-                if ($nasabah->saldo < $transaksi->total_nilai) {
-                    throw new Exception('Gagal void: Saldo nasabah sudah berkurang dan lebih kecil dari nilai setoran ini.');
+            if ($lockedTrx->jenis === 'setor') {
+                if ($nasabah->saldo < $lockedTrx->total_nilai) {
+                    throw new DomainException('Gagal void: Saldo nasabah sudah berkurang dan lebih kecil dari nilai setoran ini.');
                 }
-                $nasabah->decrement('saldo', $transaksi->total_nilai);
+                $nasabah->decrement('saldo', $lockedTrx->total_nilai);
             } else {
                 // Tarik: hanya kembalikan saldo jika transaksi sebelumnya sudah disetujui/aktif (saldo sudah terpotong)
-                if (in_array($transaksi->status, ['aktif', 'disetujui'])) {
-                    $nasabah->increment('saldo', $transaksi->total_nilai);
+                if (in_array($lockedTrx->status, ['aktif', 'disetujui'])) {
+                    $nasabah->increment('saldo', $lockedTrx->total_nilai);
                 }
             }
 
-            $transaksi->update(['status' => 'void']);
+            $desc = "Membatalkan (void) transaksi {$lockedTrx->kode_transaksi} nasabah {$nasabah->nama} senilai " . formatRupiah($lockedTrx->total_nilai);
+            if (! empty($alasan)) {
+                $desc .= ". Alasan: {$alasan}";
+            }
+
+            $lockedTrx->update([
+                'status' => 'void',
+                'alasan_penolakan' => $alasan ?? $lockedTrx->alasan_penolakan,
+            ]);
 
             auditLog(
                 action: 'void',
                 module: 'Transaksi Warga',
-                description: "Membatalkan (void) transaksi {$transaksi->kode_transaksi} nasabah {$nasabah->nama} senilai " . formatRupiah($transaksi->total_nilai),
-                subject: $transaksi
+                description: $desc,
+                subject: $lockedTrx
             );
         });
     }
 }
-
