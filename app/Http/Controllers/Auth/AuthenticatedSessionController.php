@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
         };
 
         $intended = session()->pull('url.intended');
-        if ($intended && ! in_array($intended, [url('/'), route('login')])) {
+        if ($intended && ! in_array($intended, [url('/'), route('login')]) && str_starts_with($intended, url('/'))) {
             return redirect()->to($intended);
         }
 

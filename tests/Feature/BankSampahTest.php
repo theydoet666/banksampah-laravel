@@ -555,7 +555,8 @@ class BankSampahTest extends TestCase
         // 3. Petugas mendaftarkan nasabah baru di loket pos -> user otomatis terbuat
         $unit = \App\Models\Unit::first();
         $uniquePhone = '0898' . rand(10000000, 99999999);
-        $expectedDefaultPassword = substr($uniquePhone, -6);
+        // Password default sekarang acak (tidak lagi 6 digit No HP) — cukup verifikasi akun terbuat
+        // $expectedDefaultPassword = substr($uniquePhone, -6);
 
         $responseDaftar = $this->actingAs($this->admin)->post(route('admin.nasabah.store'), [
             'nama' => 'Warga Baru Auto Account',
@@ -573,14 +574,11 @@ class BankSampahTest extends TestCase
         $this->assertNotNull($newNasabah->user_id);
         $this->assertEquals('nasabah', $newNasabah->user->role);
 
-        // Nasabah baru langsung bisa login menggunakan No. Rekening & Password Default 6 Digit No. HP
-        $this->post('/logout');
-        $responseLoginNew = $this->post('/login', [
-            'email' => $newNasabah->no_rekening,
-            'password' => $expectedDefaultPassword,
-        ]);
-        $responseLoginNew->assertRedirect(route('nasabah.dashboard'));
-        $this->assertAuthenticatedAs($newNasabah->user);
+        // Password acak — tidak bisa ditest login langsung, skip login-with-default-password test
+        // (password disampaikan melalui UI flash message ke admin)
+
+        // Password acak — tidak bisa ditest login langsung, skip login-with-default-password test
+        // (password disampaikan melalui UI flash message ke admin)
 
         // 4. Warga melakukan registrasi mandiri via web (/register-nasabah)
         $this->post('/logout');
@@ -606,13 +604,9 @@ class BankSampahTest extends TestCase
         $responseReset->assertRedirect();
         $responseReset->assertSessionHas('success');
 
-        $expectedResetPassword = substr($selfRegisterPhone, -6);
-        $this->post('/logout');
-        $responseLoginReset = $this->post('/login', [
-            'email' => $selfNasabah->no_rekening,
-            'password' => $expectedResetPassword,
-        ]);
-        $responseLoginReset->assertRedirect(route('nasabah.dashboard'));
+        // Password setelah reset kini acak (lebih aman) — cukup verifikasi must_change_password aktif
+        $selfNasabah->refresh();
+        $this->assertTrue((bool) $selfNasabah->user->must_change_password);
     }
 
     public function test_dual_pricing_structure_beli_and_jual(): void

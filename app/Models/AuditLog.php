@@ -112,7 +112,9 @@ class AuditLog extends Model
             default => ucfirst(str_replace('_', ' ', $this->action)),
         };
 
-        return "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {$color}\">{$label}</span>";
+        $safeLabel = e($label);
+
+        return "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border {$color}\">{$safeLabel}</span>";
     }
 
     public function getRoleBadgeAttribute(): string
@@ -125,7 +127,7 @@ class AuditLog extends Model
             default => 'bg-slate-50 text-slate-600 border-slate-200',
         };
 
-        $roleLabel = ucfirst($this->user_role ?? 'Sistem');
+        $roleLabel = e(ucfirst($this->user_role ?? 'Sistem'));
 
         return "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border {$color}\">{$roleLabel}</span>";
     }

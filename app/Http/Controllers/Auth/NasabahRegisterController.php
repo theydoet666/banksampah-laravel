@@ -40,14 +40,13 @@ class NasabahRegisterController extends Controller
         $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
 
         $user = DB::transaction(function () use ($validated, $noRekening, $generatedEmail) {
-            $user = User::create([
-                'name' => $validated['nama'],
-                'email' => $generatedEmail,
+            $user = User::createWithRole([
+                'name'     => $validated['nama'],
+                'email'    => $generatedEmail,
                 'password' => Hash::make($validated['password']),
-                'role' => 'nasabah',
                 'is_active' => true,
-                'unit_id' => $validated['unit_id'],
-            ]);
+                'unit_id'  => $validated['unit_id'],
+            ], 'nasabah');
 
             Nasabah::create([
                 'user_id' => $user->id,

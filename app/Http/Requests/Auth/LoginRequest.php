@@ -52,8 +52,8 @@ class LoginRequest extends FormRequest
             ->orWhere('name', $loginInput)
             ->first();
 
-        // Shorthand username jika admin mengetik 'admin', 'pengelola', 'petugas'
-        if (! $user) {
+        // Shorthand username jika admin mengetik 'admin', 'pengelola', 'petugas' (dibatasi hanya local/testing)
+        if (! $user && app()->environment(['local', 'testing'])) {
             $normalized = strtolower($loginInput);
             if (in_array($normalized, ['admin', 'administrator', 'pengelola', 'petugas', 'nasabah'])) {
                 $roleSearch = $normalized === 'administrator' ? 'admin' : $normalized;

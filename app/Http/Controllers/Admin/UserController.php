@@ -40,7 +40,9 @@ class UserController extends Controller
             $validated['unit_id'] = null; // Admin & Pengelola adalah level desa lintas unit
         }
 
-        User::create($validated);
+        $role = $validated['role'];
+        unset($validated['role']); // hapus role dari array sebelum create (bukan fillable)
+        User::createWithRole($validated, $role);
 
         return redirect()->route('admin.users.index')->with('success', 'Petugas/Pengguna baru berhasil ditambahkan.');
     }
@@ -73,7 +75,11 @@ class UserController extends Controller
             $validated['unit_id'] = null;
         }
 
+        // role bukan fillable, update via forceFill + update sisanya
+        $role = $validated['role'];
+        unset($validated['role']);
         $user->update($validated);
+        $user->forceFill(['role' => $role])->save();
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui.');
     }
@@ -92,8 +98,12 @@ class UserController extends Controller
 
     public function resetPassword(User $user)
     {
-        $user->update(['password' => Hash::make('password123')]);
-        return back()->with('success', "Password untuk akun {$user->name} direset menjadi: password123");
+        $newPassword = \Illuminate\Support\Str::random(10);
+        $user->update([
+            'password'            => Hash::make($newPassword),
+            'must_change_password' => true,
+        ]);
+        return back()->with('success', "Password untuk akun {$user->name} direset. Password baru: <strong>{$newPassword}</strong> (catat & sampaikan ke pengguna, wajib diganti saat login).");
     }
 }
 

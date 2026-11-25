@@ -63,7 +63,7 @@ class NasabahController extends Controller
             'tanggal_lahir' => 'nullable|date|before:today',
             'alamat' => 'required|string',
             'no_hp' => 'required|string|max:20',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ];
 
@@ -103,14 +103,14 @@ class NasabahController extends Controller
         $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
 
         DB::transaction(function () use ($validated, $defaultPassword, $generatedEmail, $saldoAwal, $request, $user) {
-            $userNasabah = User::create([
-                'name' => $validated['nama'],
-                'email' => $generatedEmail,
-                'password' => Hash::make($defaultPassword),
-                'role' => 'nasabah',
-                'is_active' => true,
-                'unit_id' => $validated['unit_id'] ?? null,
-            ]);
+            $userNasabah = User::createWithRole([
+                'name'                => $validated['nama'],
+                'email'               => $generatedEmail,
+                'password'            => Hash::make($defaultPassword),
+                'is_active'           => true,
+                'unit_id'             => $validated['unit_id'] ?? null,
+                'must_change_password' => true,
+            ], 'nasabah');
 
             $validated['user_id'] = $userNasabah->id;
             $nasabah = Nasabah::create($validated);
@@ -184,7 +184,7 @@ class NasabahController extends Controller
             'tanggal_lahir' => 'nullable|date|before:today',
             'alamat' => 'required|string',
             'no_hp' => 'required|string|max:20',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ];
 
@@ -224,25 +224,26 @@ class NasabahController extends Controller
 
     public function resetPassword(Nasabah $nasabah)
     {
-        $cleanPhone = preg_replace('/[^0-9]/', '', $nasabah->no_hp);
-        $defaultPassword = strlen($cleanPhone) >= 6 ? substr($cleanPhone, -6) : '123456';
+        // Password acak 8 karakter (lebih aman dari 6 digit No HP)
+        $defaultPassword = \Illuminate\Support\Str::random(8);
 
         if ($nasabah->user) {
             $nasabah->user->update([
-                'password' => Hash::make($defaultPassword),
-                'is_active' => true,
+                'password'            => Hash::make($defaultPassword),
+                'is_active'           => true,
+                'must_change_password' => true, // paksa ganti password setelah reset
             ]);
         } else {
             // Jika belum punya akun user, buatkan seketika
             $generatedEmail = strtolower(str_replace('-', '', $nasabah->no_rekening)) . '@nasabah.banksampah.test';
-            $user = User::create([
-                'name' => $nasabah->nama,
-                'email' => $generatedEmail,
-                'password' => Hash::make($defaultPassword),
-                'role' => 'nasabah',
-                'is_active' => true,
-                'unit_id' => $nasabah->unit_id,
-            ]);
+            $user = User::createWithRole([
+                'name'                => $nasabah->nama,
+                'email'               => $generatedEmail,
+                'password'            => Hash::make($defaultPassword),
+                'is_active'           => true,
+                'unit_id'             => $nasabah->unit_id,
+                'must_change_password' => true,
+            ], 'nasabah');
             $nasabah->update(['user_id' => $user->id]);
         }
 
@@ -253,7 +254,7 @@ class NasabahController extends Controller
             subject: $nasabah
         );
 
-        return back()->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset menjadi: {$defaultPassword} (6 digit No. HP).");
+        return back()->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset. Password baru: <strong>{$defaultPassword}</strong> (catat & sampaikan ke nasabah, wajib diganti saat login).");
     }
 
     public function inputSaldoAwal(Request $request, Nasabah $nasabah)

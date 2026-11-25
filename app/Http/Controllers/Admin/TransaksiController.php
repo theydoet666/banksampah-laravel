@@ -148,6 +148,10 @@ class TransaksiController extends Controller
 
     public function void(Transaksi $transaksi)
     {
+        if (! auth()->user() || ! auth()->user()->isAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Administrator yang berwenang membatalkan transaksi.');
+        }
+
         try {
             $this->transaksiService->voidTransaksi($transaksi);
             return back()->with('warning', 'Transaksi telah dibatalkan (void). Saldo nasabah telah disesuaikan kembali.');

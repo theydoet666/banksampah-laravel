@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckActive;
+use App\Http\Middleware\ForcePasswordChange;
 use App\Exceptions\InsufficientBalanceException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -17,8 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => RoleMiddleware::class,
-            'check.active' => CheckActive::class,
+            'role'                 => RoleMiddleware::class,
+            'check.active'         => CheckActive::class,
+            'force.password.change' => ForcePasswordChange::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

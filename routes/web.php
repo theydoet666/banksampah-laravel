@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 | Admin & Pengelola (Bank Sampah Induk) Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
+Route::middleware(['auth', 'role:admin,pengelola', 'check.active', 'force.password.change'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -82,13 +82,17 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
             Route::get('/jenis-sampah/{jenisSampah}/harga-log', [AdminJenisSampahController::class, 'hargaLog'])->name('jenis-sampah.harga-log');
 
             // Void Transaksi
-            Route::post('/transaksi/{transaksi}/void', [AdminTransaksiController::class, 'void'])->name('transaksi.void');
+            Route::post('/transaksi/{transaksi}/void', [AdminTransaksiController::class, 'void'])
+                ->middleware('throttle:15,1')
+                ->name('transaksi.void');
 
             // Toggle Status Nasabah
             Route::patch('/nasabah/{nasabah}/toggle-status', [AdminNasabahController::class, 'toggleStatus'])->name('nasabah.toggle-status');
 
             // Input Saldo Awal Nasabah (Khusus Admin)
-            Route::post('/nasabah/{nasabah}/saldo-awal', [AdminNasabahController::class, 'inputSaldoAwal'])->name('nasabah.saldo-awal');
+            Route::post('/nasabah/{nasabah}/saldo-awal', [AdminNasabahController::class, 'inputSaldoAwal'])
+                ->middleware('throttle:20,1')
+                ->name('nasabah.saldo-awal');
 
             // Audit Log (Khusus Admin)
             Route::get('/audit-log', [AdminAuditLogController::class, 'index'])->name('audit-log.index');
@@ -115,7 +119,9 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
 
         // Persetujuan Penarikan Saldo (Admin & Pengelola)
         Route::get('/persetujuan-tarik', [PersetujuanPenarikanController::class, 'index'])->name('persetujuan-tarik.index');
-        Route::post('/persetujuan-tarik/{transaksi}/setujui', [PersetujuanPenarikanController::class, 'setujui'])->name('persetujuan-tarik.setujui');
+        Route::post('/persetujuan-tarik/{transaksi}/setujui', [PersetujuanPenarikanController::class, 'setujui'])
+            ->middleware('throttle:15,1')
+            ->name('persetujuan-tarik.setujui');
         Route::post('/persetujuan-tarik/{transaksi}/tolak', [PersetujuanPenarikanController::class, 'tolak'])->name('persetujuan-tarik.tolak');
 
         // Mitra Pengepul (Admin & Pengelola)
@@ -141,7 +147,7 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active'])
 | Petugas (Operator) Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:petugas,admin', 'check.active'])
+Route::middleware(['auth', 'role:petugas,admin', 'check.active', 'force.password.change'])
     ->prefix('petugas')
     ->name('petugas.')
     ->group(function () {
