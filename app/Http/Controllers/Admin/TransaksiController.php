@@ -107,7 +107,8 @@ class TransaksiController extends Controller
         } catch (\DomainException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Gagal memproses setoran: ' . $e->getMessage());
+            report($e);
+            return back()->withInput()->with('error', 'Terjadi kesalahan sistem saat memproses transaksi setoran.');
         }
     }
 
@@ -168,7 +169,8 @@ class TransaksiController extends Controller
         } catch (\DomainException | \App\Exceptions\InsufficientBalanceException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         } catch (Exception $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+            report($e);
+            return back()->withInput()->with('error', 'Terjadi kesalahan sistem saat memproses penarikan saldo.');
         }
     }
 
@@ -188,17 +190,24 @@ class TransaksiController extends Controller
         return view('admin.transaksi.struk', compact('transaksi'));
     }
 
-    public function void(Transaksi $transaksi)
+    public function void(Request $request, Transaksi $transaksi)
     {
         if (! auth()->user() || ! auth()->user()->isAdmin()) {
             abort(403, 'Akses ditolak: Hanya Administrator yang berwenang membatalkan transaksi.');
         }
 
+        $request->validate([
+            'alasan' => 'nullable|string|max:255',
+        ]);
+
         try {
-            $this->transaksiService->voidTransaksi($transaksi);
+            $this->transaksiService->voidTransaksi($transaksi, $request->input('alasan'));
             return back()->with('warning', 'Transaksi telah dibatalkan (void). Saldo nasabah telah disesuaikan kembali.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (Exception $e) {
-            return back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
+            report($e);
+            return back()->with('error', 'Terjadi kesalahan sistem saat membatalkan transaksi. Silakan hubungi tim IT.');
         }
     }
 }

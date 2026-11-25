@@ -97,7 +97,7 @@ class PenjualanService
                 $sisaStok = $this->getSisaStok($jenisSampah->id);
 
                 if ($beratJual > $sisaStok) {
-                    throw new Exception("Stok untuk '{$jenisSampah->nama}' tidak mencukupi. Sisa stok di gudang: {$sisaStok} kg, diminta: {$beratJual} kg.");
+                    throw new DomainException("Stok untuk '{$jenisSampah->nama}' tidak mencukupi. Sisa stok di gudang: {$sisaStok} kg, diminta: {$beratJual} kg.");
                 }
 
                 $hargaJual = (float) $item['harga_jual_satuan'];

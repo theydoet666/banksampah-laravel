@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckActive;
 use App\Http\Middleware\ForcePasswordChange;
+use App\Http\Middleware\SecurityHeaders;
 use App\Exceptions\InsufficientBalanceException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -17,6 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            SecurityHeaders::class,
+        ]);
+
+        $trustedProxies = env('TRUSTED_PROXIES');
+        if (! empty($trustedProxies)) {
+            $middleware->trustProxies(at: explode(',', $trustedProxies));
+        }
+
         $middleware->alias([
             'role'                 => RoleMiddleware::class,
             'check.active'         => CheckActive::class,

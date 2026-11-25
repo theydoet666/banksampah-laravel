@@ -14,7 +14,7 @@ class ResetDummyDataCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'bank-sampah:reset-data {--keep-pengepul : Tetap pertahankan master data pengepul}';
+    protected $signature = 'bank-sampah:reset-data {--keep-pengepul : Tetap pertahankan master data pengepul} {--force : Jalankan pembersihan tanpa konfirmasi interaktif}';
 
     /**
      * The console command description.
@@ -28,6 +28,18 @@ class ResetDummyDataCommand extends Command
      */
     public function handle()
     {
+        if (app()->environment('production') && ! $this->option('force')) {
+            $this->error('PERINGATAN: Perintah ini sangat destruktif dan ditolak berjalan di production tanpa opsi --force!');
+            return 1;
+        }
+
+        if (! $this->option('force')) {
+            if (! $this->confirm('Apakah Anda yakin ingin MENGHAPUS SEMUA data transaksi, nasabah, dan penjualan sampah? Tindakan ini tidak dapat dibatalkan!')) {
+                $this->info('Pembersihan data dibatalkan.');
+                return 0;
+            }
+        }
+
         $this->info('Memulai pembersihan data dummy Bank Sampah...');
 
         Schema::disableForeignKeyConstraints();

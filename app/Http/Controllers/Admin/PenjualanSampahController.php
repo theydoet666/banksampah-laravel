@@ -94,8 +94,11 @@ class PenjualanSampahController extends Controller
 
             return redirect()->route('admin.penjualan.show', $penjualan)
                 ->with('success', "Transaksi penjualan sampah [{$penjualan->kode_penjualan}] berhasil dicatat.");
-        } catch (Exception $e) {
+        } catch (\DomainException $e) {
             return back()->withInput()->with('error', $e->getMessage());
+        } catch (Exception $e) {
+            report($e);
+            return back()->withInput()->with('error', 'Terjadi kesalahan sistem saat menyimpan transaksi penjualan sampah.');
         }
     }
 
@@ -128,8 +131,11 @@ class PenjualanSampahController extends Controller
             $this->penjualanService->catatPelunasan($penjualan, $validated, auth()->user());
 
             return back()->with('success', "Pembayaran piutang transaksi [{$penjualan->kode_penjualan}] dari {$penjualan->pengepul->nama_perusahaan} sebesar " . formatRupiah($penjualan->total_pendapatan) . " berhasil dicatat dan dinyatakan Lunas.");
-        } catch (Exception $e) {
+        } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (Exception $e) {
+            report($e);
+            return back()->with('error', 'Terjadi kesalahan sistem saat mencatat pelunasan piutang.');
         }
     }
 }

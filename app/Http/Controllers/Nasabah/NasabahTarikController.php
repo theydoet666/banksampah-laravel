@@ -58,8 +58,11 @@ class NasabahTarikController extends Controller
             ], auth()->user());
 
             return back()->with('success', "Pengajuan penarikan sebesar Rp " . number_format($transaksi->total_nilai, 0, ',', '.') . " berhasil dikirim! Mohon menunggu persetujuan pengelola desa.");
-        } catch (Exception $e) {
+        } catch (\DomainException | \App\Exceptions\InsufficientBalanceException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (Exception $e) {
+            report($e);
+            return back()->with('error', 'Terjadi kesalahan sistem saat mengajukan penarikan dana.');
         }
     }
 }

@@ -55,8 +55,11 @@ class PersetujuanPenarikanController extends Controller
         try {
             $transaksiService->setujuiPenarikan($transaksi, $user);
             return back()->with('success', "Penarikan saldo sebesar Rp " . number_format($transaksi->total_nilai, 0, ',', '.') . " untuk nasabah {$transaksi->nasabah->nama} berhasil disetujui & dicairkan.");
-        } catch (Exception $e) {
+        } catch (\DomainException | \App\Exceptions\InsufficientBalanceException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (Exception $e) {
+            report($e);
+            return back()->with('error', 'Terjadi kesalahan sistem saat menyetujui penarikan saldo.');
         }
     }
 
@@ -69,8 +72,11 @@ class PersetujuanPenarikanController extends Controller
         try {
             $transaksiService->tolakPenarikan($transaksi, auth()->user(), $request->alasan_penolakan);
             return back()->with('success', "Pengajuan penarikan dana untuk nasabah {$transaksi->nasabah->nama} telah ditolak.");
-        } catch (Exception $e) {
+        } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (Exception $e) {
+            report($e);
+            return back()->with('error', 'Terjadi kesalahan sistem saat memproses penolakan penarikan.');
         }
     }
 }

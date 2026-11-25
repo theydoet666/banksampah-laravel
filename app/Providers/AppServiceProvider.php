@@ -8,6 +8,8 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\Failed;
 use App\Services\AuditLogService;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Enforce HTTPS bila FORCE_HTTPS=true
+        if (config('app.force_https') || env('FORCE_HTTPS', false)) {
+            URL::forceScheme('https');
+        }
+
+        // Password Defaults Policy
+        Password::defaults(function () {
+            if (app()->environment('production')) {
+                return Password::min(10)
+                    ->letters()
+                    ->numbers()
+                    ->uncompromised();
+            }
+
+            return Password::min(8);
+        });
+
         Event::listen(Login::class, function (Login $event) {
             $user = $event->user;
             AuditLogService::log(

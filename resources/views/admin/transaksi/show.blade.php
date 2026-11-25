@@ -108,9 +108,14 @@
                             action: '{{ route('admin.transaksi.void', $transaksi) }}',
                             method: 'POST',
                             title: 'Batalkan (Void) Transaksi',
-                            message: 'PERINGATAN: Membatalkan transaksi {{ $transaksi->kode_transaksi }} akan mengoreksi dan mengembalikan saldo nasabah terkait. Lanjutkan?',
+                            message: 'PERINGATAN: Membatalkan transaksi {{ $transaksi->kode_transaksi }} akan mengoreksi dan mengembalikan saldo nasabah terkait.',
                             confirmText: 'Ya, Void Transaksi',
-                            confirmClass: 'bg-rose-600 hover:bg-rose-700 text-white'
+                            confirmClass: 'bg-rose-600 hover:bg-rose-700 text-white',
+                            showInput: true,
+                            inputName: 'alasan',
+                            inputLabel: 'Alasan Pembatalan (Void)',
+                            inputPlaceholder: 'Tuliskan alasan pembatalan transaksi...',
+                            inputRequired: false
                         })"
                         class="px-4 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold">
                     Void Transaksi

@@ -15,7 +15,13 @@
         modalTitle: '{{ $title }}',
         modalMessage: '{{ $message }}',
         modalConfirmText: '{{ $confirmText }}',
-        modalConfirmClass: '{{ $confirmClass }}'
+        modalConfirmClass: '{{ $confirmClass }}',
+        showInput: false,
+        inputName: 'alasan',
+        inputLabel: 'Alasan / Keterangan',
+        inputPlaceholder: '',
+        inputValue: '',
+        inputRequired: false
     }"
     @open-confirm-modal.window="
         open = true;
@@ -26,6 +32,12 @@
         if ($event.detail.message) modalMessage = $event.detail.message;
         if ($event.detail.confirmText) modalConfirmText = $event.detail.confirmText;
         if ($event.detail.confirmClass) modalConfirmClass = $event.detail.confirmClass;
+        showInput = !!$event.detail.showInput;
+        inputName = $event.detail.inputName || 'alasan';
+        inputLabel = $event.detail.inputLabel || 'Alasan / Keterangan';
+        inputPlaceholder = $event.detail.inputPlaceholder || '';
+        inputValue = '';
+        inputRequired = !!$event.detail.inputRequired;
     "
     @keydown.escape.window="open = false"
     x-show="open" 
@@ -66,12 +78,18 @@
                         <div class="mt-1.5">
                             <p class="text-sm text-slate-500 leading-relaxed" x-text="modalMessage"></p>
                         </div>
+                        <template x-if="showInput">
+                            <div class="mt-3">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1" x-text="inputLabel"></label>
+                                <input type="text" :name="inputName" x-model="inputValue" :placeholder="inputPlaceholder" :required="inputRequired" maxlength="255" class="w-full rounded-lg border-slate-200 text-sm focus:border-rose-500 focus:ring-rose-500" form="confirm-modal-form">
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
 
             <div class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-3 border-t border-slate-100">
-                <form :action="actionUrl" :method="formMethod" class="inline">
+                <form :action="actionUrl" :method="formMethod" id="confirm-modal-form" class="inline">
                     @csrf
                     <template x-if="methodField">
                         <input type="hidden" name="_method" :value="methodField">
