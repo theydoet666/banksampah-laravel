@@ -36,12 +36,15 @@ class UserSeeder extends Seeder
                 ]
             );
 
+            $firstUnit = \App\Models\Unit::first();
+
             User::updateOrCreate(
                 ['email' => 'petugas@banksampah.test'],
                 [
                     'name' => 'Petugas Satu',
                     'password' => Hash::make('password'),
                     'role' => 'petugas',
+                    'unit_id' => $firstUnit?->id,
                     'is_active' => true,
                 ]
             );
