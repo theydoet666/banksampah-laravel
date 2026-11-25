@@ -6,6 +6,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use App\Support\SpreadsheetSanitizer;
 use Illuminate\Support\Collection;
 
 class TransaksiExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize
@@ -39,7 +40,7 @@ class TransaksiExport implements FromCollection, WithHeadings, WithMapping, Shou
 
     public function map($row): array
     {
-        return [
+        return SpreadsheetSanitizer::sanitizeRow([
             $row->kode_transaksi,
             $row->tanggal_transaksi->format('d/m/Y'),
             $row->nasabah->nama ?? '-',
@@ -49,7 +50,7 @@ class TransaksiExport implements FromCollection, WithHeadings, WithMapping, Shou
             $row->total_nilai,
             ucfirst($row->status),
             $row->petugas->name ?? '-',
-        ];
+        ]);
     }
 }
 

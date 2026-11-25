@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Support\SpreadsheetSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -99,7 +100,7 @@ class AuditLogController extends Controller
             ]);
 
             foreach ($logs as $log) {
-                fputcsv($handle, [
+                fputcsv($handle, SpreadsheetSanitizer::sanitizeRow([
                     $log->id,
                     $log->created_at->format('Y-m-d H:i:s'),
                     $log->user_name ?? 'Sistem',
@@ -109,7 +110,7 @@ class AuditLogController extends Controller
                     $log->description,
                     $log->ip_address ?? '-',
                     $log->user_agent ?? '-',
-                ]);
+                ]));
             }
 
             fclose($handle);

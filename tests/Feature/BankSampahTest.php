@@ -42,14 +42,13 @@ class BankSampahTest extends TestCase
             ?? User::where('role', 'nasabah')->first();
 
         if (! $this->nasabahUser) {
-            $this->nasabahUser = User::create([
+            $this->nasabahUser = User::createWithRole([
                 'name' => 'Budi Santoso',
                 'email' => 'nasabah@banksampah.test',
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'role' => 'nasabah',
                 'is_active' => true,
                 'unit_id' => $defaultUnit->id,
-            ]);
+            ], 'nasabah');
         } else {
             $this->nasabahUser->password = \Illuminate\Support\Facades\Hash::make('password');
             $this->nasabahUser->unit_id = $defaultUnit->id;
@@ -273,14 +272,13 @@ class BankSampahTest extends TestCase
         $unit = \App\Models\Unit::where('kode_unit', 'U-99')->first();
 
         // 2. Petugas yang ditugaskan ke Unit U-99
-        $petugasKhusus = User::create([
+        $petugasKhusus = User::createWithRole([
             'name' => 'Petugas Khusus U99',
             'email' => 'petugas99@banksampah.test',
             'password' => bcrypt('password'),
-            'role' => 'petugas',
             'unit_id' => $unit->id,
             'is_active' => true,
-        ]);
+        ], 'petugas');
 
         // 3. Nasabah didaftarkan di Unit U-99
         $nasabahU99 = Nasabah::create([
@@ -700,14 +698,13 @@ class BankSampahTest extends TestCase
             'status' => 'aktif',
         ]);
 
-        $testUser = User::create([
+        $testUser = User::createWithRole([
             'name' => 'Warga Unit Relasi',
             'email' => 'warga.relasi@banksampah.test',
             'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => 'nasabah',
             'is_active' => true,
             'unit_id' => $unitWithRelation->id,
-        ]);
+        ], 'nasabah');
 
         Nasabah::create([
             'user_id' => $testUser->id,
@@ -850,14 +847,13 @@ class BankSampahTest extends TestCase
         $unitA = \App\Models\Unit::create(['nama' => 'Unit Mawar', 'kode_unit' => 'UNT-MWR', 'status' => 'aktif']);
         $unitB = \App\Models\Unit::create(['nama' => 'Unit Melati', 'kode_unit' => 'UNT-MLT', 'status' => 'aktif']);
 
-        $petugasA = User::create([
+        $petugasA = User::createWithRole([
             'name' => 'Petugas Mawar',
             'email' => 'petugas.mawar@banksampah.test',
             'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => 'petugas',
             'is_active' => true,
             'unit_id' => $unitA->id,
-        ]);
+        ], 'petugas');
 
         // 1. Petugas bisa membuka form tambah nasabah
         $responseCreate = $this->actingAs($petugasA)->get(route('petugas.nasabah.create'));
@@ -943,13 +939,12 @@ class BankSampahTest extends TestCase
 
     public function test_pengelola_pin_authorization_for_penarikan_approval(): void
     {
-        $pengelola = User::where('role', 'pengelola')->first() ?? User::create([
+        $pengelola = User::where('role', 'pengelola')->first() ?? User::createWithRole([
             'name' => 'Bendahara Desa',
             'email' => 'bendahara@banksampah.test',
             'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => 'pengelola',
             'is_active' => true,
-        ]);
+        ], 'pengelola');
 
         $pengelola->pin = \Illuminate\Support\Facades\Hash::make('654321');
         $pengelola->save();
@@ -987,14 +982,13 @@ class BankSampahTest extends TestCase
         $this->assertEquals('menunggu_persetujuan', $trxMenunggu->fresh()->status);
 
         // 3. User tanpa PIN mencoba menyetujui -> Ditolak meminta setel PIN
-        $userNoPin = User::create([
+        $userNoPin = User::createWithRole([
             'name' => 'Pengelola Tanpa PIN',
             'email' => 'nopin@banksampah.test',
             'password' => \Illuminate\Support\Facades\Hash::make('password'),
-            'role' => 'pengelola',
             'is_active' => true,
             'pin' => null,
-        ]);
+        ], 'pengelola');
         $responseNoPin = $this->actingAs($userNoPin)->post(route('admin.persetujuan-tarik.setujui', $trxMenunggu), [
             'pin' => '123456',
         ]);
@@ -1091,6 +1085,7 @@ class BankSampahTest extends TestCase
             'saldo_awal' => 125000,
             'tanggal_saldo_awal' => now()->toDateString(),
             'catatan_saldo_awal' => 'Saldo awal buku tabungan manual',
+            'pin' => '123456',
         ]);
 
         $responseAdmin->assertRedirect(route('admin.nasabah.index'));
@@ -1137,6 +1132,8 @@ class BankSampahTest extends TestCase
             'nominal' => 75000,
             'tanggal_transaksi' => now()->toDateString(),
             'catatan' => 'Migrasi sisa pembukuan manual 2025',
+            'pin' => '123456',
+            'force_saldo_awal' => true,
         ]);
 
         $responseAdmin->assertRedirect();
@@ -1230,6 +1227,8 @@ class BankSampahTest extends TestCase
             'nominal' => 25000,
             'tanggal_transaksi' => now()->toDateString(),
             'catatan' => 'Uji audit log saldo awal',
+            'pin' => '123456',
+            'force_saldo_awal' => true,
         ]);
 
         $saldoAwalLog = \App\Models\AuditLog::where('action', 'saldo_awal')->latest('id')->first();

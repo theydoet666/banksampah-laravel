@@ -187,6 +187,12 @@
                         <input type="text" name="catatan" value="Saldo awal migrasi pembukuan manual" class="w-full rounded-lg border-slate-200 text-sm focus:border-sky-500 focus:ring-sky-500" placeholder="Contoh: Saldo buku tabungan fisik No. 15">
                     </div>
 
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">PIN Otorisasi Administrator *</label>
+                        <input type="password" name="pin" required maxlength="6" inputmode="numeric" pattern="[0-9]{6}" class="w-full rounded-lg border-sky-300 text-sm focus:border-sky-500 focus:ring-sky-500 font-mono tracking-widest text-center text-base" placeholder="******" autocomplete="off">
+                        <span class="text-2xs text-slate-400 mt-0.5 block">Wajib memasukkan 6 digit PIN akun Administrator untuk otorisasi dana.</span>
+                    </div>
+
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
                         <button type="button" @click="showSaldoAwalModal = false" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold">Batal</button>
                         <button type="submit" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5">

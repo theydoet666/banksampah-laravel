@@ -130,6 +130,12 @@
                         <input type="text" name="catatan_saldo_awal" value="{{ old('catatan_saldo_awal', 'Saldo awal migrasi pembukuan manual') }}" class="w-full rounded-lg border-slate-200 text-sm focus:border-sky-500 focus:ring-sky-500" placeholder="Contoh: Saldo buku tabungan manual No. 12">
                         @error('catatan_saldo_awal') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
+
+                    <div class="sm:col-span-2 p-3 bg-white border border-sky-200 rounded-lg">
+                        <label class="block text-xs font-bold text-sky-900 uppercase mb-1">PIN Otorisasi Administrator (Wajib diisi jika saldo awal > 0)</label>
+                        <input type="password" name="pin" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" class="w-full rounded-lg border-sky-300 text-sm focus:border-sky-500 focus:ring-sky-500 font-mono tracking-widest text-center text-base" placeholder="******" autocomplete="off">
+                        @error('pin') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
                 </div>
             </div>
             @endif

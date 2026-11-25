@@ -19,7 +19,6 @@ class User extends Authenticatable
         'email',
         'password',
         'pin',
-        'role',
         'unit_id',
         'is_active',
         'must_change_password',

@@ -54,7 +54,7 @@ Route::middleware(['auth', 'check.active'])->group(function () {
         ->name('password.first_login.update');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'check.active', 'force.password.change'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/pin', [ProfileController::class, 'updatePin'])->name('profile.pin.update');

@@ -86,13 +86,29 @@ class NasabahController extends Controller
             $rules['unit_id'] = 'required|exists:units,id';
         }
 
+        $maxSaldoAwal = (float) config('app.max_saldo_awal', 50000000); // batas wajar 50 juta
         if ($user && $user->isAdmin()) {
-            $rules['saldo_awal'] = 'nullable|numeric|min:0';
+            $rules['saldo_awal'] = 'nullable|numeric|min:0|max:' . $maxSaldoAwal;
             $rules['catatan_saldo_awal'] = 'nullable|string|max:255';
             $rules['tanggal_saldo_awal'] = 'nullable|date|before_or_equal:today';
+            $rules['pin'] = 'nullable|string|digits:6';
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($rules, [
+            'saldo_awal.max' => 'Saldo awal melebihi batas wajar yang diizinkan sistem (Maks. ' . formatRupiah($maxSaldoAwal) . ').',
+        ]);
+
+        $saldoAwal = ($user && $user->isAdmin()) ? (float) $request->input('saldo_awal', 0) : 0;
+        if ($saldoAwal > 0) {
+            $request->validate(['pin' => ['required', 'string', 'digits:6']], [
+                'pin.required' => 'PIN Otorisasi Administrator wajib diisi untuk mengesahkan saldo awal pendaftaran.',
+                'pin.digits' => 'PIN Otorisasi harus berupa 6 digit angka.',
+            ]);
+            $pinError = \App\Services\PinGuard::check($user, $request->pin);
+            if ($pinError) {
+                return back()->withInput()->with('error', $pinError);
+            }
+        }
 
         if ($user && $user->isPetugas()) {
             $validated['unit_id'] = $user->unit_id;
@@ -278,11 +294,23 @@ class NasabahController extends Controller
             abort(403, 'Akses ditolak: Hanya Administrator yang berwenang menambahkan saldo awal.');
         }
 
+        $maxSaldoAwal = (float) config('app.max_saldo_awal', 50000000);
+
         $validated = $request->validate([
-            'nominal' => 'required|numeric|min:1',
+            'nominal' => 'required|numeric|min:1|max:' . $maxSaldoAwal,
             'tanggal_transaksi' => 'required|date|before_or_equal:today',
             'catatan' => 'nullable|string|max:255',
+            'pin' => ['required', 'string', 'digits:6'],
+        ], [
+            'nominal.max' => 'Nominal saldo awal melebihi batas wajar (Maks. ' . formatRupiah($maxSaldoAwal) . ').',
+            'pin.required' => 'PIN Otorisasi Administrator wajib diisi untuk menambahkan saldo awal.',
+            'pin.digits' => 'PIN Otorisasi harus berupa 6 digit angka.',
         ]);
+
+        $pinError = \App\Services\PinGuard::check($user, $request->pin);
+        if ($pinError) {
+            return back()->with('error', $pinError);
+        }
 
         $nominal = (float) $validated['nominal'];
         $catatan = !empty($validated['catatan']) ? $validated['catatan'] : 'Saldo awal migrasi pembukuan manual';
@@ -291,6 +319,16 @@ class NasabahController extends Controller
             $lockedNasabah = Nasabah::lockForUpdate()->findOrFail($nasabah->id);
             if ($lockedNasabah->status !== 'aktif') {
                 abort(422, 'Nasabah berstatus nonaktif tidak dapat ditambahkan saldo awal.');
+            }
+
+            // Cegah penggandaan tak sengaja (hanya 1 saldo awal per nasabah kecuali flag force_multiple)
+            $existingSaldoAwal = Transaksi::where('nasabah_id', $lockedNasabah->id)
+                ->where('is_saldo_awal', true)
+                ->where('status', 'aktif')
+                ->exists();
+
+            if ($existingSaldoAwal && ! request()->boolean('force_saldo_awal')) {
+                abort(422, 'Nasabah ini sudah memiliki catatan saldo awal migrasi sebelumnya.');
             }
 
             $lockedNasabah->increment('saldo', $nominal);

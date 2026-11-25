@@ -48,6 +48,24 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // 1. Larang penghapusan akun Administrator terakhir
+        if ($user->isAdmin()) {
+            $activeAdminCount = \App\Models\User::where('role', 'admin')->where('is_active', true)->count();
+            if ($activeAdminCount <= 1) {
+                return back()->withErrors(['userDeletion' => 'Akun Administrator utama/terakhir tidak dapat dihapus demi kelangsungan operasional sistem.'], 'userDeletion');
+            }
+        }
+
+        // 2. Larang nasabah menghapus akun jika masih memiliki saldo aktif atau saldo tertahan
+        if ($user->isNasabah()) {
+            $nasabah = \App\Models\Nasabah::where('user_id', $user->id)->first();
+            if ($nasabah) {
+                if ($nasabah->saldo > 0 || $nasabah->saldo_tertahan > 0) {
+                    return back()->withErrors(['userDeletion' => 'Akun tidak dapat dihapus karena masih memiliki saldo aktif (' . formatRupiah($nasabah->saldo) . ') atau transaksi penarikan yang sedang berjalan.'], 'userDeletion');
+                }
+            }
+        }
+
         Auth::logout();
 
         $user->delete();
