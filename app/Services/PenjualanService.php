@@ -6,6 +6,7 @@ use App\Models\PenjualanSampah;
 use App\Models\DetailPenjualanSampah;
 use App\Models\JenisSampah;
 use App\Models\DetailTransaksi;
+use App\Support\MoneyMath;
 use Illuminate\Support\Facades\DB;
 use DomainException;
 use Exception;
@@ -88,7 +89,7 @@ class PenjualanService
     {
         return DB::transaction(function () use ($data) {
             $totalBerat = 0;
-            $totalPendapatan = 0;
+            $totalPendapatan = '0.00';
 
             // Validasi stok fisik gudang desa untuk setiap item
             foreach ($data['details'] as $item) {
@@ -101,13 +102,13 @@ class PenjualanService
                 }
 
                 $hargaJual = (float) $item['harga_jual_satuan'];
-                $subtotal = round($beratJual * $hargaJual, 2);
+                $subtotal = MoneyMath::mul($beratJual, $hargaJual);
 
                 $totalBerat += $beratJual;
-                $totalPendapatan += $subtotal;
+                $totalPendapatan = MoneyMath::add($totalPendapatan, $subtotal);
             }
 
-            $totalPendapatan = round($totalPendapatan, 2);
+            $totalPendapatan = MoneyMath::toFloat($totalPendapatan);
             $totalBerat = round($totalBerat, 3);
 
             // Simpan header penjualan
@@ -126,7 +127,7 @@ class PenjualanService
             foreach ($data['details'] as $item) {
                 $beratJual = (float) $item['berat'];
                 $hargaJual = (float) $item['harga_jual_satuan'];
-                $subtotal = $beratJual * $hargaJual;
+                $subtotal = MoneyMath::toFloat(MoneyMath::mul($beratJual, $hargaJual));
 
                 DetailPenjualanSampah::create([
                     'penjualan_id' => $penjualan->id,

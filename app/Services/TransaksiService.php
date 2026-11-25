@@ -7,6 +7,7 @@ use App\Models\DetailTransaksi;
 use App\Models\Nasabah;
 use App\Models\JenisSampah;
 use App\Exceptions\InsufficientBalanceException;
+use App\Support\MoneyMath;
 use Illuminate\Support\Facades\DB;
 use DomainException;
 use Exception;
@@ -21,18 +22,18 @@ class TransaksiService
                 throw new DomainException('Nasabah berstatus nonaktif tidak dapat melakukan transaksi setoran.');
             }
 
-            $totalNilai = 0;
+            $totalNilai = '0.00';
             $totalBerat = 0;
 
-            // Hitung total dari item sampah dengan pembulatan 2 desimal
+            // Hitung total dari item sampah menggunakan BCMath untuk presisi eksak
             foreach ($data['details'] as $item) {
                 $jenisSampah = JenisSampah::findOrFail($item['jenis_sampah_id']);
-                $subtotal = round((float) $item['berat'] * (float) $jenisSampah->harga_per_satuan, 2);
-                $totalNilai += $subtotal;
+                $subtotal = MoneyMath::mul($item['berat'], $jenisSampah->harga_per_satuan);
+                $totalNilai = MoneyMath::add($totalNilai, $subtotal);
                 $totalBerat += (float) $item['berat'];
             }
 
-            $totalNilai = round($totalNilai, 2);
+            $totalNilai = MoneyMath::toFloat($totalNilai);
             $totalBerat = round($totalBerat, 3);
             $unitId = $nasabah->unit_id ?? auth()->user()?->unit_id;
 
@@ -51,7 +52,7 @@ class TransaksiService
 
             foreach ($data['details'] as $item) {
                 $jenisSampah = JenisSampah::findOrFail($item['jenis_sampah_id']);
-                $subtotal = round((float) $item['berat'] * (float) $jenisSampah->harga_per_satuan, 2);
+                $subtotal = MoneyMath::toFloat(MoneyMath::mul($item['berat'], $jenisSampah->harga_per_satuan));
 
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
