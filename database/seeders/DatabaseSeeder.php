@@ -16,11 +16,15 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             KategoriSampahSeeder::class,
             JenisSampahSeeder::class,
-            NasabahSeeder::class,
             AppSettingSeeder::class,
-            DemoSeeder::class,
-            UnitSeeder::class,
-            PengepulSeeder::class,
         ]);
+
+        if (app()->environment(['local', 'testing'])) {
+            $this->call([
+                NasabahSeeder::class,
+                DemoSeeder::class,
+                PengepulSeeder::class,
+            ]);
+        }
     }
 }

@@ -66,18 +66,15 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $rules = [
+            'current_password' => ['required', 'current_password'],
             'pin' => ['required', 'string', 'digits:6', 'confirmed'],
         ];
-
-        if ($user->hasPin()) {
-            $rules['current_password'] = ['required', 'current_password'];
-        }
 
         $validated = $request->validate($rules, [
             'pin.required' => 'PIN otorisasi 6-digit wajib diisi.',
             'pin.digits' => 'PIN otorisasi harus tepat terdiri dari 6 digit angka.',
             'pin.confirmed' => 'Konfirmasi PIN tidak cocok dengan PIN baru.',
-            'current_password.required' => 'Password saat ini diperlukan untuk verifikasi perubahan PIN.',
+            'current_password.required' => 'Password saat ini diperlukan untuk verifikasi keamanan pembuatan/perubahan PIN.',
             'current_password.current_password' => 'Password saat ini tidak sesuai.',
         ]);
 

@@ -80,6 +80,18 @@
                 <textarea name="catatan" rows="2" placeholder="Keterangan opsional..." class="w-full rounded-lg border-slate-200 text-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
             </div>
 
+            @if(auth()->user() && !auth()->user()->isPetugas())
+                <div class="p-4 bg-sky-50 border border-sky-200 rounded-xl space-y-2">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <label class="block text-xs font-bold text-sky-900 uppercase">PIN Otorisasi Transaksi (6 Digit) *</label>
+                    </div>
+                    <p class="text-xs text-sky-700">Masukkan 6-digit PIN otorisasi transaksi akun Anda untuk mengesahkan pencairan tunai langsung ke nasabah.</p>
+                    <input type="password" name="pin" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required class="w-full rounded-lg border-sky-300 text-sm focus:border-sky-500 focus:ring-sky-500 tracking-widest font-mono text-center text-lg" placeholder="******" autocomplete="off">
+                    @error('pin') <p class="text-xs text-rose-500 mt-1 font-semibold">{{ $message }}</p> @enderror
+                </div>
+            @endif
+
             <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                 <a href="{{ route(auth()->user()?->isAdmin() ? 'admin.transaksi.index' : 'petugas.transaksi.index') }}" class="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Batal</a>
                 <button type="submit" :disabled="!selectedNasabahId || nominal <= 0 || nominal > saldoAktif || submitting" class="px-6 py-2.5 rounded-lg {{ auth()->user()?->isPetugas() ? 'bg-amber-600 hover:bg-amber-700' : 'bg-sky-600 hover:bg-sky-700' }} text-white text-sm font-semibold shadow-sm disabled:opacity-50 inline-flex items-center gap-2">

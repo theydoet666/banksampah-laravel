@@ -32,30 +32,35 @@ class BankSampahTest extends TestCase
             $this->admin->save();
         }
         $this->petugas = User::where('role', 'petugas')->first();
+        $defaultUnit = \App\Models\Unit::first() ?? \App\Models\Unit::create(['nama' => 'Unit Test', 'kode_unit' => 'UNT-01', 'status' => 'aktif']);
+        if ($this->petugas && empty($this->petugas->unit_id)) {
+            $this->petugas->unit_id = $defaultUnit->id;
+            $this->petugas->save();
+        }
+
         $this->nasabahUser = User::where('email', 'nasabah@banksampah.test')->first()
             ?? User::where('role', 'nasabah')->first();
 
         if (! $this->nasabahUser) {
-            $unit = \App\Models\Unit::first() ?? \App\Models\Unit::create(['nama' => 'Unit Test', 'kode_unit' => 'UNT-01', 'status' => 'aktif']);
             $this->nasabahUser = User::create([
                 'name' => 'Budi Santoso',
                 'email' => 'nasabah@banksampah.test',
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'role' => 'nasabah',
                 'is_active' => true,
-                'unit_id' => $unit->id,
+                'unit_id' => $defaultUnit->id,
             ]);
         } else {
             $this->nasabahUser->password = \Illuminate\Support\Facades\Hash::make('password');
+            $this->nasabahUser->unit_id = $defaultUnit->id;
             $this->nasabahUser->save();
         }
 
         $this->nasabah = Nasabah::where('user_id', $this->nasabahUser->id)->first();
         if (! $this->nasabah) {
-            $unit = \App\Models\Unit::first();
             $this->nasabah = Nasabah::create([
                 'user_id' => $this->nasabahUser->id,
-                'unit_id' => $unit?->id,
+                'unit_id' => $defaultUnit->id,
                 'no_rekening' => 'BS-2026-00001',
                 'nama' => 'Budi Santoso',
                 'no_hp' => '081234567890',
@@ -64,6 +69,9 @@ class BankSampahTest extends TestCase
                 'saldo' => 50000,
                 'status' => 'aktif',
             ]);
+        } else {
+            $this->nasabah->unit_id = $defaultUnit->id;
+            $this->nasabah->save();
         }
     }
 
@@ -194,6 +202,7 @@ class BankSampahTest extends TestCase
             'nominal' => 20000,
             'tanggal_transaksi' => now()->toDateString(),
             'catatan' => 'Test tarik sukses',
+            'pin' => '123456',
         ]);
 
         $response->assertRedirect();
@@ -903,10 +912,10 @@ class BankSampahTest extends TestCase
 
     public function test_petugas_can_access_cetak_struk_and_admin_struk_redirects(): void
     {
-        $transaksi = Transaksi::first() ?? Transaksi::create([
+        $transaksi = Transaksi::where('unit_id', $this->petugas->unit_id)->first() ?? Transaksi::create([
             'kode_transaksi' => 'TRX-TEST-STRUK',
             'nasabah_id' => $this->nasabah->id,
-            'unit_id' => $this->nasabah->unit_id,
+            'unit_id' => $this->petugas->unit_id,
             'petugas_id' => $this->petugas->id,
             'tanggal_transaksi' => now()->toDateString(),
             'jenis' => 'setor',

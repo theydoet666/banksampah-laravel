@@ -24,7 +24,7 @@ class ProfilController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:100',
-            'no_hp' => 'required|string|max:20',
+            'no_hp' => ['required', 'string', 'max:20', \Illuminate\Validation\Rule::unique('nasabah', 'no_hp')->ignore($nasabah?->id)],
             'alamat' => 'required|string',
         ]);
 

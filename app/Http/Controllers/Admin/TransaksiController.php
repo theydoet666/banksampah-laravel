@@ -10,6 +10,7 @@ use App\Models\JenisSampah;
 use App\Models\Unit;
 use App\Http\Controllers\Concerns\AuthorizesUnitAccess;
 use App\Services\TransaksiService;
+use App\Services\PinGuard;
 use Exception;
 
 class TransaksiController extends Controller
@@ -128,12 +129,30 @@ class TransaksiController extends Controller
 
     public function storeTarik(Request $request)
     {
-        $validated = $request->validate([
+        $user = auth()->user();
+        $rules = [
             'nasabah_id' => 'required|exists:nasabah,id',
             'nominal' => 'required|numeric|min:1000',
             'tanggal_transaksi' => 'required|date|before_or_equal:today',
             'catatan' => 'nullable|string|max:500',
+        ];
+
+        // Non-petugas (admin/pengelola) mencairkan dana secara instan sehingga wajib verifikasi PIN
+        if ($user && ! $user->isPetugas()) {
+            $rules['pin'] = ['required', 'string', 'digits:6'];
+        }
+
+        $validated = $request->validate($rules, [
+            'pin.required' => 'PIN Otorisasi wajib diisi untuk mencairkan saldo nasabah.',
+            'pin.digits' => 'PIN Otorisasi harus berupa 6 digit angka.',
         ]);
+
+        if ($user && ! $user->isPetugas()) {
+            $pinError = PinGuard::check($user, $request->pin);
+            if ($pinError) {
+                return back()->withInput()->with('error', $pinError);
+            }
+        }
 
         $nasabah = Nasabah::findOrFail($validated['nasabah_id']);
         $this->authorizeUnitAccessForNasabah($nasabah);

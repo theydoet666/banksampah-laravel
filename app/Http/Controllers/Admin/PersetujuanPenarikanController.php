@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Transaksi;
 use App\Services\TransaksiService;
+use App\Services\PinGuard;
 use Exception;
 
 class PersetujuanPenarikanController extends Controller
@@ -39,10 +40,6 @@ class PersetujuanPenarikanController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->hasPin()) {
-            return back()->with('error', 'Akun Anda belum memiliki PIN Otorisasi Transaksi. Silakan atur PIN 6-digit terlebih dahulu pada menu Profil.');
-        }
-
         $request->validate([
             'pin' => ['required', 'string', 'digits:6'],
         ], [
@@ -50,8 +47,9 @@ class PersetujuanPenarikanController extends Controller
             'pin.digits' => 'PIN Otorisasi harus berupa 6 digit angka.',
         ]);
 
-        if (! $user->verifyPin($request->pin)) {
-            return back()->with('error', 'PIN Otorisasi salah! Tindakan pencairan dana nasabah dibatalkan demi keamanan.');
+        $pinError = PinGuard::check($user, $request->pin);
+        if ($pinError) {
+            return back()->with('error', $pinError);
         }
 
         try {

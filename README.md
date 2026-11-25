@@ -87,6 +87,11 @@ DB_PASSWORD=
 ```
 
 ### 4. Instal Dependensi & Migrasi
+
+> [!WARNING]
+> Perintah `php artisan migrate:fresh --seed` **HANYA DIGUNAKAN UNTUK LINGKUNGAN PENGEMBANGAN LOKAL ATAU PENGUJIAN**. Jangan pernah menjalankan `migrate:fresh` di server production karena akan menghapus seluruh data yang ada.
+
+**Untuk Lingkungan Lokal / Development:**
 ```bash
 # Install package PHP
 composer install
@@ -97,8 +102,21 @@ npm install
 # Buat symbolic link ke folder storage
 php artisan storage:link
 
-# Jalankan migrasi dan seeding database lengkap
+# Jalankan migrasi dan seeding database demo (Hanya untuk lokal)
 php artisan migrate:fresh --seed
+```
+
+**Untuk Lingkungan Production:**
+```bash
+# 1. Jalankan migrasi tanpa merusak data
+php artisan migrate --force
+
+# 2. Seed data inisial sistem (hanya membuat unit & akun admin awal terisolasi)
+INITIAL_ADMIN_EMAIL=admin@banksampah.id php artisan db:seed --class=UserSeeder --force
+INITIAL_ADMIN_EMAIL=admin@banksampah.id php artisan db:seed --class=AppSettingSeeder --force
+
+# 3. Kredensial Admin Utama akan dicetak di konsol (jika INITIAL_ADMIN_PASSWORD tidak diatur)
+#    Wajib segera login dan ganti password serta atur PIN otorisasi via Profil.
 ```
 
 ### 5. Kompilasi Aset & Jalankan Server

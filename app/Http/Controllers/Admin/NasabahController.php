@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Unit;
 use App\Models\Transaksi;
 use App\Http\Controllers\Concerns\AuthorizesUnitAccess;
+use App\Support\RandomPassword;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -74,7 +75,7 @@ class NasabahController extends Controller
             'tempat_lahir' => 'nullable|string|max:100',
             'tanggal_lahir' => 'nullable|date|before:today',
             'alamat' => 'required|string',
-            'no_hp' => 'required|string|max:20',
+            'no_hp' => 'required|string|max:20|unique:nasabah,no_hp',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ];
@@ -109,9 +110,8 @@ class NasabahController extends Controller
         $validated['saldo_awal'] = $saldoAwal;
         $validated['saldo'] = $saldoAwal;
 
-        // Default password: 6 digit terakhir No HP (atau '123456' jika no HP pendek)
-        $cleanPhone = preg_replace('/[^0-9]/', '', $validated['no_hp']);
-        $defaultPassword = strlen($cleanPhone) >= 6 ? substr($cleanPhone, -6) : '123456';
+        // Password awal acak 10 karakter bebas ambigu & paksa ganti password saat login
+        $defaultPassword = RandomPassword::generate(10);
         $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
 
         DB::transaction(function () use ($validated, $defaultPassword, $generatedEmail, $saldoAwal, $request, $user) {
@@ -151,10 +151,12 @@ class NasabahController extends Controller
             );
         });
 
-        $msg = "Nasabah baru berhasil didaftarkan! No. Rekening: {$noRekening}. Akun login mandiri dibuat otomatis (Login: No. Rekening / No. HP, Password: {$defaultPassword}).";
+        $msg = "Nasabah baru berhasil didaftarkan! No. Rekening: {$noRekening}. Akun login mandiri dibuat otomatis.";
 
         $route = auth()->user()?->isPetugas() ? 'petugas.nasabah.index' : 'admin.nasabah.index';
-        return redirect()->route($route)->with('success', $msg);
+        return redirect()->route($route)
+            ->with('success', $msg)
+            ->with('generated_password', $defaultPassword);
     }
 
     public function show(Nasabah $nasabah)
@@ -189,7 +191,7 @@ class NasabahController extends Controller
             'tempat_lahir' => 'nullable|string|max:100',
             'tanggal_lahir' => 'nullable|date|before:today',
             'alamat' => 'required|string',
-            'no_hp' => 'required|string|max:20',
+            'no_hp' => 'required|string|max:20|unique:nasabah,no_hp,' . $nasabah->id,
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048',
             'status' => 'required|in:aktif,nonaktif',
         ];
@@ -234,8 +236,8 @@ class NasabahController extends Controller
     {
         $this->authorizeUnitAccessForNasabah($nasabah);
 
-        // Password acak 8 karakter (lebih aman dari 6 digit No HP)
-        $defaultPassword = \Illuminate\Support\Str::random(8);
+        // Password acak 10 karakter bebas ambigu & paksa ganti password
+        $defaultPassword = RandomPassword::generate(10);
 
         if ($nasabah->user) {
             // Hapus is_active => true agar nasabah nonaktif tidak aktif kembali tanpa izin
@@ -264,7 +266,9 @@ class NasabahController extends Controller
             subject: $nasabah
         );
 
-        return back()->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset. Password baru: <strong>{$defaultPassword}</strong> (catat & sampaikan ke nasabah, wajib diganti saat login).");
+        return back()
+            ->with('success', "Password akun nasabah {$nasabah->nama} berhasil direset.")
+            ->with('generated_password', $defaultPassword);
     }
 
     public function inputSaldoAwal(Request $request, Nasabah $nasabah)
