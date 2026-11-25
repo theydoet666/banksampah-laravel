@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Log;
 
 class AuditLogService
 {
@@ -40,7 +41,13 @@ class AuditLogService
                 'created_at' => now(),
             ]);
         } catch (\Throwable $e) {
-            // Log failure should never interrupt user transaction
+            // Log failure should never interrupt user transaction, but log error with context
+            Log::channel('single')->error('Gagal mencatat audit log: ' . $e->getMessage(), [
+                'action' => $action,
+                'module' => $module,
+                'user_id' => $currentUser?->id,
+                'exception' => $e,
+            ]);
             report($e);
             return null;
         }
