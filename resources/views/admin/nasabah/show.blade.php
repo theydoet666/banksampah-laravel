@@ -130,9 +130,7 @@
                                         {{ $trx->jenis === 'setor' ? '+' : '-' }}{{ formatRupiah($trx->total_nilai) }}
                                     </td>
                                     <td class="py-3 text-right">
-                                        <span class="text-xs {{ $trx->status === 'aktif' ? 'text-slate-600' : 'text-rose-400 line-through' }}">
-                                            {{ ucfirst($trx->status) }}
-                                        </span>
+                                        {!! $trx->status_badge !!}
                                     </td>
                                 </tr>
                             @empty
