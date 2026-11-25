@@ -8,12 +8,12 @@ use App\Models\Nasabah;
 use App\Models\Unit;
 use App\Models\Transaksi;
 use App\Models\AuditLog;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 
 class SecurityHardeningGroup5Test extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $admin;
     protected Unit $unit;

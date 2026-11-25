@@ -10,12 +10,12 @@ use App\Models\Transaksi;
 use App\Models\KategoriSampah;
 use App\Models\JenisSampah;
 use App\Services\TransaksiService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use DomainException;
 
 class SecurityHardeningGroup1Test extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected Unit $unitA;
     protected Unit $unitB;

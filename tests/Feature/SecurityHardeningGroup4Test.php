@@ -7,14 +7,14 @@ use App\Models\User;
 use App\Models\Nasabah;
 use App\Models\Unit;
 use App\Support\SpreadsheetSanitizer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 
 class SecurityHardeningGroup4Test extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected User $admin;
     protected Unit $unit;
