@@ -1227,4 +1227,68 @@ class BankSampahTest extends TestCase
         $this->assertNotNull($saldoAwalLog);
         $this->assertStringContainsString('25.000', $saldoAwalLog->description);
     }
+
+    public function test_first_login_password_change_flow(): void
+    {
+        // 1. Buat pengguna baru dengan flag must_change_password = true
+        $defaultPass = 'PasswordAwal123!';
+        $userBaru = User::createWithRole([
+            'name' => 'Petugas Baru Keamanan',
+            'email' => 'petugas_baru@banksampah.test',
+            'password' => bcrypt($defaultPass),
+            'is_active' => true,
+            'must_change_password' => true,
+        ], 'petugas');
+
+        // 2. Login dengan password bawaan -> langsung diarahkan ke form wajib ganti password
+        $responseLogin = $this->post('/login', [
+            'email' => $userBaru->email,
+            'password' => $defaultPass,
+        ]);
+        $responseLogin->assertRedirect(route('password.first_login'));
+        $this->assertAuthenticatedAs($userBaru);
+
+        // 3. Jika mencoba mengakses rute lain (seperti dashboard petugas) -> terblokir & dialihkan ke first-login
+        $responseBlocked = $this->actingAs($userBaru)->get(route('petugas.dashboard'));
+        $responseBlocked->assertRedirect(route('password.first_login'));
+
+        // 4. Form ganti password dapat dibuka
+        $responseForm = $this->actingAs($userBaru)->get(route('password.first_login'));
+        $responseForm->assertStatus(200);
+        $responseForm->assertSee('Ubah Kata Sandi Bawaan');
+
+        // 5. Submit dengan current_password salah -> gagal validasi
+        $responseWrongCurrent = $this->actingAs($userBaru)->post(route('password.first_login.update'), [
+            'current_password' => 'SandiSalah123',
+            'password' => 'PasswordBaruKuat123#',
+            'password_confirmation' => 'PasswordBaruKuat123#',
+        ]);
+        $responseWrongCurrent->assertSessionHasErrors('current_password');
+        $this->assertTrue((bool) $userBaru->fresh()->must_change_password);
+
+        // 6. Submit dengan password baru yang valid -> sukses
+        $newPass = 'PasswordBaruKuat123#';
+        $responseSuccess = $this->actingAs($userBaru)->post(route('password.first_login.update'), [
+            'current_password' => $defaultPass,
+            'password' => $newPass,
+            'password_confirmation' => $newPass,
+        ]);
+        $responseSuccess->assertRedirect(route('dashboard'));
+        $responseSuccess->assertSessionHas('success');
+
+        // Flag must_change_password kini false
+        $userBaru->refresh();
+        $this->assertFalse((bool) $userBaru->must_change_password);
+
+        // 7. Sekarang dapat mengakses dashboard tanpa terblokir
+        $responseDashboard = $this->actingAs($userBaru)->get(route('petugas.dashboard'));
+        $responseDashboard->assertStatus(200);
+
+        // 8. Tercatat di Audit Log
+        $this->assertDatabaseHas('audit_logs', [
+            'module' => 'Autentikasi',
+            'action' => 'update',
+            'user_id' => $userBaru->id,
+        ]);
+    }
 }

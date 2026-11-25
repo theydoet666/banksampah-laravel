@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Auth\FirstLoginPasswordController;
 
 // Admin Controllers
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -33,6 +34,9 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     $user = auth()->user();
+    if ($user->must_change_password) {
+        return redirect()->route('password.first_login');
+    }
     if ($user->isAdmin() || $user->isPengelola()) {
         return redirect()->route('admin.dashboard');
     }
@@ -41,6 +45,14 @@ Route::get('/dashboard', function () {
     }
     return redirect()->route('nasabah.dashboard');
 })->middleware(['auth', 'check.active'])->name('dashboard');
+
+// Rute Wajib Ganti Password Saat Pertama Login (Semua Role)
+Route::middleware(['auth', 'check.active'])->group(function () {
+    Route::get('/password/first-login', [FirstLoginPasswordController::class, 'show'])->name('password.first_login');
+    Route::post('/password/first-login', [FirstLoginPasswordController::class, 'update'])
+        ->middleware('throttle:10,1')
+        ->name('password.first_login.update');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -172,7 +184,7 @@ Route::middleware(['auth', 'role:petugas,admin', 'check.active', 'force.password
 | Nasabah Self-Service Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:nasabah', 'check.active'])
+Route::middleware(['auth', 'role:nasabah', 'check.active', 'force.password.change'])
     ->prefix('nasabah')
     ->name('nasabah.')
     ->group(function () {

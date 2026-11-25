@@ -36,6 +36,11 @@ class AuthenticatedSessionController extends Controller
             default => route('nasabah.dashboard'),
         };
 
+        // Jika akun masih wajib ganti password bawaan, prioritaskan langsung ke halaman ganti password
+        if ($user->must_change_password) {
+            return redirect()->route('password.first_login');
+        }
+
         $intended = session()->pull('url.intended');
         if ($intended && ! in_array($intended, [url('/'), route('login')]) && str_starts_with($intended, url('/'))) {
             return redirect()->to($intended);

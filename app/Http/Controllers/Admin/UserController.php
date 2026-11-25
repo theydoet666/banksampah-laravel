@@ -42,6 +42,7 @@ class UserController extends Controller
 
         $role = $validated['role'];
         unset($validated['role']); // hapus role dari array sebelum create (bukan fillable)
+        $validated['must_change_password'] = true; // Petugas/pengelola baru wajib ganti password bawaan saat login pertama
         User::createWithRole($validated, $role);
 
         return redirect()->route('admin.users.index')->with('success', 'Petugas/Pengguna baru berhasil ditambahkan.');
