@@ -70,7 +70,7 @@ class AuditLogController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
-        $logs = AuditLog::with('user')->filter($request->all())->orderByDesc('id')->get();
+        $query = AuditLog::filter($request->all())->orderByDesc('id');
         $filename = 'audit-log-' . now()->format('Ymd-His') . '.csv';
 
         $headers = [
@@ -81,7 +81,7 @@ class AuditLogController extends Controller
             'Expires' => '0',
         ];
 
-        $callback = function () use ($logs) {
+        $callback = function () use ($query) {
             $handle = fopen('php://output', 'w');
             // Write UTF-8 BOM for Excel compatibility
             fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
@@ -99,7 +99,7 @@ class AuditLogController extends Controller
                 'Perangkat / User Agent',
             ]);
 
-            foreach ($logs as $log) {
+            foreach ($query->cursor() as $log) {
                 fputcsv($handle, SpreadsheetSanitizer::sanitizeRow([
                     $log->id,
                     $log->created_at->format('Y-m-d H:i:s'),

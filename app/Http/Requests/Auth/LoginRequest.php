@@ -163,7 +163,18 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        $raw = trim((string) $this->string('email'));
+        $normalized = Str::lower($raw);
+
+        // Normalisasi format nomor HP (mis. 0812-345 vs 0812 345) agar masuk ke bucket rate-limit yang sama
+        if (! str_contains($raw, '@') && preg_match('/^[0-9\s\-\+\(\)]+$/', $raw)) {
+            $digits = preg_replace('/[^0-9]/', '', $raw);
+            if ($digits !== '') {
+                $normalized = $digits;
+            }
+        }
+
+        return Str::transliterate($normalized) . '|' . $this->ip();
     }
 
     /**

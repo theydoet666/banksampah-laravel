@@ -69,6 +69,7 @@ class Transaksi extends Model
         $date = date('Ymd');
         $lastTrx = self::whereDate('created_at', today())
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         $sequence = 1;
@@ -76,7 +77,12 @@ class Transaksi extends Model
             $sequence = (int) $matches[1] + 1;
         }
 
-        return sprintf('TRX-%s-%05d', $date, $sequence);
+        do {
+            $candidate = sprintf('TRX-%s-%05d', $date, $sequence);
+            $sequence++;
+        } while (self::where('kode_transaksi', $candidate)->exists());
+
+        return $candidate;
     }
 
     public function scopeSetor($query)

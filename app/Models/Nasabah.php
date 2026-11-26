@@ -64,6 +64,7 @@ class Nasabah extends Model
         $lastNasabah = self::withTrashed()
             ->whereYear('created_at', $year)
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         $sequence = 1;
@@ -71,7 +72,12 @@ class Nasabah extends Model
             $sequence = (int) $matches[1] + 1;
         }
 
-        return sprintf('BS-%s-%05d', $year, $sequence);
+        do {
+            $candidate = sprintf('BS-%s-%05d', $year, $sequence);
+            $sequence++;
+        } while (self::withTrashed()->where('no_rekening', $candidate)->exists());
+
+        return $candidate;
     }
 
     public function scopeAktif($query)

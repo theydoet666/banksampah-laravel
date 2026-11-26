@@ -1,10 +1,10 @@
 # PRD — Sistem Informasi Bank Sampah BAA
 
 > **Product Requirements Document (PRD)**  
-> Versi: 1.6.0  
-> Tanggal: 23 November 2026  
+> Versi: 2.0.0  
+> Tanggal: 26 November 2026  
 > Referensi Proyek Lama: https://github.com/theydoet666/banksampah  
-> Tech Stack: **Laravel 11 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js + SweetAlert2**
+> Tech Stack: **Laravel 12 (v12.74.0) + PHP 8.3 + MySQL + Blade + TailwindCSS + DaisyUI + Alpine.js + SweetAlert2**
 
 ---
 
@@ -51,18 +51,19 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 ## 3. Ruang Lingkup (Scope)
 
 ### Dalam Lingkup (In Scope)
-- Autentikasi multi-identifier (Email / No. Rekening / No. HP / Username) & toggle show/hide password.
-- Auto-account onboarding nasabah (password default 6 digit No. HP) & form registrasi mandiri warga online (`/register-nasabah`).
-- Manajemen Unit Dusun/RW (Multi-Unit scoping).
+- Autentikasi multi-identifier (Email / No. Rekening / No. HP) dengan rate limiting per-identitas (normalisasi nomor HP) dan per-IP, pencatatan login gagal, serta toggle show/hide password.
+- Auto-account onboarding nasabah dengan **kata sandi acak 10 karakter** (`RandomPassword`) & kewajiban ganti password saat login pertama (`ForcePasswordChange`), serta form registrasi mandiri warga online (`/register-nasabah` dengan throttling).
+- Manajemen Unit Dusun/RW (Multi-Unit scoping *fail-closed* via `AuthorizesUnitAccess`).
 - Master Kategori & Jenis Sampah dengan **Struktur Dua Harga** (Harga Beli & Harga Jual) serta dukungan satuan `kg`, `gram`, `unit`, `buah`, `pcs`, `liter`.
-- Transaksi setoran sampah warga di pos unit (multi-item detail).
-- Transaksi penarikan saldo dengan alur persetujuan (*approval workflow*) dan **verifikasi 6-Digit PIN Otorisasi** oleh Pengelola Desa.
-- Monitoring stok gudang induk dan transaksi penjualan ke pengepul (dengan fitur auto-fill harga jual standar).
+- Transaksi setoran sampah warga di pos unit (multi-item detail) dengan presisi `DECIMAL(15,2)` + BCMath (`MoneyMath`) dan `lockForUpdate()`.
+- Transaksi penarikan saldo dengan alur persetujuan (*approval workflow*), proteksi saldo tertahan, dan **verifikasi 6-Digit PIN Otorisasi** (`PinGuard` dengan rate limiting 5x/15 menit) oleh Admin/Pengelola Desa.
+- Monitoring stok gudang induk (dengan *row locking* & agregasi anti-overselling) dan transaksi penjualan ke pengepul.
 - Alur pelunasan piutang penjualan pengepul (pembayaran tempo) dengan konfirmasi SweetAlert2.
-- Laporan Keuangan, Operasional, Stok Gudang, dan Laba/Rugi (PDF & Excel) dengan **Kop Surat & Logo Resmi Dinamis**.
+- Laporan Keuangan, Operasional, Stok Gudang, dan Laba/Rugi (PDF & Excel tersanitasi anti-Formula Injection) dengan **Kop Surat & Logo Resmi Dinamis**.
 - Portal layanan mandiri nasabah responsif mobile dengan **Bottom Navigation Bar**.
-- Pengaturan identitas bank sampah, logo resmi, favicon kustom tab browser, dan profil desa.
-- Tool pemeliharaan data: command artisan `bank-sampah:reset-data` untuk pengujian bersih dari nol.
+- Pengaturan identitas bank sampah, logo resmi (tanpa SVG tak tersanitasi), favicon kustom tab browser, dan profil desa.
+- Penyimpanan privat foto nasabah dengan endpoint terotorisasi unit (`nasabah.foto`).
+- Tool pemeliharaan data: command artisan `bank-sampah:reset-data` (berkonfirmasi & diblokir di production tanpa `--force`).
 
 ### Di Luar Lingkup (Out of Scope)
 - Integrasi payment gateway otomatis ke rekening bank umum (penarikan saldo diserahterimakan langsung atau via transfer manual kas desa).
@@ -77,13 +78,13 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 ### 4.1 Autentikasi & Onboarding Warga
 | ID | Fitur | Prioritas | Status |
 |----|-------|-----------|--------|
-| AUTH-01 | Login multi-identifier (Email, No. Rekening `BS-YYYY-xxxxx`, No. HP/WhatsApp, atau Shorthand Username `admin`/`pengelola`/`petugas`) | P0 | Selesai |
+| AUTH-01 | Login multi-identifier (Email, No. Rekening `BS-YYYY-xxxxx`, No. HP/WhatsApp; shorthand `admin`/`pengelola`/`petugas` khusus lingkungan `local`/`testing`) dengan dual rate limiter & audit gagal login | P0 | Selesai |
 | AUTH-02 | Fitur intip kata sandi (Show/Hide Password toggle dengan ikon mata) | P0 | Selesai |
 | AUTH-03 | Desain Form Login modern split-screen 50:50 (Fintech style & responsif) | P0 | Selesai |
-| AUTH-04 | Auto user onboarding: akun login otomatis terbit saat nasabah didaftarkan petugas pos (password default 6 digit No. HP) | P0 | Selesai |
-| AUTH-05 | Registrasi mandiri nasabah online melalui portal publik (`/register-nasabah`) | P0 | Selesai |
-| AUTH-06 | Reset password nasabah ke default oleh Admin/Petugas di menu profil nasabah | P0 | Selesai |
-| AUTH-07 | Role-based access control (Admin, Pengelola, Petugas, Nasabah) | P0 | Selesai |
+| AUTH-04 | Auto user onboarding: akun login otomatis terbit saat nasabah didaftarkan petugas pos dengan **password acak 10 karakter** & `must_change_password=true` (wajib ganti saat login pertama) | P0 | Selesai |
+| AUTH-05 | Registrasi mandiri nasabah online melalui portal publik (`/register-nasabah`, `throttle:5,10`); rute `/register` bawaan Breeze dinonaktifkan (404) | P0 | Selesai |
+| AUTH-06 | Reset password nasabah & staf oleh Admin/Petugas menghasilkan password acak 10 karakter sekali tampil & memaksa ganti password saat login | P0 | Selesai |
+| AUTH-07 | Role-based access control (Admin, Pengelola, Petugas, Nasabah), proteksi admin aktif terakhir, & sinkronisasi status aktif akun nasabah | P0 | Selesai |
 
 ### 4.2 Dashboard Analitik
 | ID | Fitur | Prioritas | Status |
@@ -176,7 +177,7 @@ Bank Sampah BAA adalah sistem pengelolaan sampah terpadu berbasis tabungan digit
 | AUD-02 | **Pencatatan Otomatis Seluruh Modul**: Merekam event login, logout, failed login, transaksi setor, tarik, otorisasi PIN, penolakan, saldo awal, penjualan pengepul, pelunasan piutang, reset password, dan konfigurasi master data | P0 | Selesai |
 | AUD-03 | **Penyaringan & Pencarian Lengkap**: Filter pencarian multivariat (kata kunci deskripsi/pengguna/IP, akun pengguna, role, modul sistem, jenis aksi, dan rentang tanggal) | P0 | Selesai |
 | AUD-04 | **Modal Rincian & Forensik Data**: Tampilan detail aktivitas lengkap beserta snapshot perbandingan data lama vs data baru (*old_values* vs *new_values*), alamat IP, dan perangkat (*user agent*) | P0 | Selesai |
-| AUD-05 | **Ekspor Audit Log (CSV)**: Unduhan rekapitulasi audit log terfilter ke file format CSV (UTF-8 BOM Excel-friendly) untuk keperluan pelaporan resmi desa, BPD, maupun inspektorat | P0 | Selesai |
+| AUD-05 | **Ekspor Audit Log (CSV)**: Unduhan rekapitulasi audit log terfilter ke file format CSV (UTF-8 BOM Excel-friendly, streaming `cursor()`, & sanitasi anti-Formula Injection `SpreadsheetSanitizer`) untuk keperluan pelaporan resmi desa, BPD, maupun inspektorat | P0 | Selesai |
 | AUD-06 | **Proteksi Ketat Hak Akses**: Akses eksklusif hanya untuk role `admin`; upaya akses oleh role `pengelola`, `petugas`, dan `nasabah` otomatis diblokir (403 Forbidden) | P0 | Selesai |
 
 ---
@@ -215,6 +216,7 @@ pengepul (Off-taker)                           │       harga_sampah_log
 | pin | VARCHAR(255) NULL | Hash bcrypt PIN 6-digit untuk otorisasi transaksi kas |
 | role | VARCHAR(30) | 'admin', 'pengelola', 'petugas', 'nasabah' |
 | is_active | BOOLEAN DEFAULT 1 | |
+| must_change_password | BOOLEAN DEFAULT 0 | Paksa ganti password pada login pertama |
 
 #### `penjualan_sampah`
 | Kolom | Tipe | Keterangan |
@@ -256,8 +258,9 @@ pengepul (Off-taker)                           │       harga_sampah_log
   php artisan bank-sampah:reset-data
   ```
   Menghapus seluruh transaksi setor, tarik, penjualan pengepul, dan nasabah dummy, mengembalikan auto-increment ke nomor 1, serta mempertahankan akun master, unit dusun, kategori/jenis sampah, dan konfigurasi logo desa.
-- **Automated Feature Tests**:
-  Seluruh alur logika bisnis dilindungi oleh **47 skenario pengujian otomatis (276 assertions)** di `tests/Feature/BankSampahTest.php` berbasis `DatabaseTransactions` dengan tingkat kelulusan 100%.
+- **Automated Feature & Security Tests**:
+  * Alur logika bisnis di `tests/Feature/BankSampahTest.php` berbasis `DatabaseTransactions`.
+  * Suite keamanan & hardening (`tests/Feature/SecurityHardeningGroup1Test.php` – `Group5Test.php` dan `tests/Feature/SecurityAuditFixesTest.php`): **34 skenario pengujian (113 assertions)** lulus 100% mencakup otorisasi unit *fail-closed*, row locking saldo & stok gudang, `PinGuard`, rate limiting login, sanitasi upload & export CSV/Excel, proteksi admin aktif terakhir, dan `SecurityHeaders` (termasuk CSP).
 
 ---
 
@@ -275,3 +278,4 @@ pengepul (Off-taker)                           │       harga_sampah_log
 - [x] Seluruh dokumen cetak dan PDF (Laba/Rugi, Transaksi, Surat Jalan, Struk) otomatis memuat Logo resmi dinamis dan identitas sistem.
 - [x] Pengaturan identitas mendukung upload logo resmi dan favicon kustom browser dengan simulasi mockup interaktif.
 - [x] Antarmuka login profesional, elegan, responsif, dan dilengkapi toggle lihat kata sandi.
+- [x] Hardening keamanan menyeluruh: Laravel 12 (`v12.74.0`, 0 CVE di `composer audit` & `npm audit`), isolasi unit *fail-closed*, `lockForUpdate()` saldo & stok, `PinGuard`, CSP & `SecurityHeaders`, penyimpanan privat foto nasabah, serta sanitasi ekspor CSV/Excel.

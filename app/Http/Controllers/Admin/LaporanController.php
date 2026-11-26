@@ -59,8 +59,7 @@ class LaporanController extends Controller
 
     public function labaRugi(Request $request)
     {
-        $tanggalDari = $request->input('tanggal_dari', now()->startOfMonth()->toDateString());
-        $tanggalSampai = $request->input('tanggal_sampai', now()->endOfMonth()->toDateString());
+        [$tanggalDari, $tanggalSampai] = $this->resolveLabaRugiDateRange($request);
 
         // Pendapatan dari Penjualan ke Pengepul
         $penjualanQuery = PenjualanSampah::whereBetween('tanggal_penjualan', [$tanggalDari, $tanggalSampai]);
@@ -93,8 +92,7 @@ class LaporanController extends Controller
 
     public function exportLabaRugiPdf(Request $request)
     {
-        $tanggalDari = $request->input('tanggal_dari', now()->startOfMonth()->toDateString());
-        $tanggalSampai = $request->input('tanggal_sampai', now()->endOfMonth()->toDateString());
+        [$tanggalDari, $tanggalSampai] = $this->resolveLabaRugiDateRange($request);
 
         $penjualanQuery = PenjualanSampah::whereBetween('tanggal_penjualan', [$tanggalDari, $tanggalSampai]);
         $totalPendapatanJual = (clone $penjualanQuery)->sum('total_pendapatan');
@@ -166,6 +164,24 @@ class LaporanController extends Controller
         }
 
         return $query->orderBy('tanggal_transaksi', 'desc')->get();
+    }
+
+    /**
+     * Validasi rentang tanggal laporan laba-rugi agar input non-tanggal ditolak dengan rapi.
+     *
+     * @return array{0: string, 1: string}
+     */
+    protected function resolveLabaRugiDateRange(Request $request): array
+    {
+        $validated = $request->validate([
+            'tanggal_dari' => ['nullable', 'date'],
+            'tanggal_sampai' => ['nullable', 'date', 'after_or_equal:tanggal_dari'],
+        ]);
+
+        return [
+            $validated['tanggal_dari'] ?? now()->startOfMonth()->toDateString(),
+            $validated['tanggal_sampai'] ?? now()->endOfMonth()->toDateString(),
+        ];
     }
 }
 

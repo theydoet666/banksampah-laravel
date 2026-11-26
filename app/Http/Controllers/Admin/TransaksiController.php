@@ -164,7 +164,7 @@ class TransaksiController extends Controller
                 ? 'Pengajuan penarikan saldo berhasil dikirim dan sedang menunggu persetujuan pengelola desa.'
                 : 'Penarikan saldo tabungan berhasil diproses & dicairkan.';
 
-            $routePrefix = auth()->user()->isAdmin() ? 'admin.' : 'petugas.';
+            $routePrefix = auth()->user()->isPetugas() ? 'petugas.' : 'admin.';
             return redirect()->route($routePrefix . 'transaksi.show', $transaksi)->with('success', $msg);
         } catch (\DomainException | \App\Exceptions\InsufficientBalanceException $e) {
             return back()->withInput()->with('error', $e->getMessage());

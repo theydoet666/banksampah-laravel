@@ -265,10 +265,14 @@ class TransaksiService
             $nasabah = Nasabah::lockForUpdate()->findOrFail($lockedTrx->nasabah_id);
 
             if ($lockedTrx->jenis === 'setor') {
-                if ($nasabah->saldo < $lockedTrx->total_nilai) {
-                    throw new DomainException('Gagal void: Saldo nasabah sudah berkurang dan lebih kecil dari nilai setoran ini.');
+                if ($nasabah->saldo_tersedia < $lockedTrx->total_nilai) {
+                    throw new DomainException('Gagal void: Saldo tersedia nasabah tidak mencukupi (sebagian saldo sedang tertahan untuk pengajuan penarikan).');
                 }
                 $nasabah->decrement('saldo', $lockedTrx->total_nilai);
+                if ($lockedTrx->is_saldo_awal && (float) $nasabah->saldo_awal > 0) {
+                    $kurangSaldoAwal = min((float) $nasabah->saldo_awal, (float) $lockedTrx->total_nilai);
+                    $nasabah->decrement('saldo_awal', $kurangSaldoAwal);
+                }
             } else {
                 // Tarik: hanya kembalikan saldo jika transaksi sebelumnya sudah disetujui/aktif (saldo sudah terpotong)
                 if (in_array($lockedTrx->status, ['aktif', 'disetujui'])) {

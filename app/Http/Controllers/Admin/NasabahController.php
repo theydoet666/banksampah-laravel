@@ -115,7 +115,7 @@ class NasabahController extends Controller
         }
 
         if ($request->hasFile('foto')) {
-            $validated['foto'] = $request->file('foto')->store('nasabah', 'public');
+            $validated['foto'] = $request->file('foto')->store('nasabah', 'local');
         }
 
         $noRekening = Nasabah::generateNoRekening();
@@ -219,13 +219,20 @@ class NasabahController extends Controller
         $validated = $request->validate($rules);
 
         if ($request->hasFile('foto')) {
-            if ($nasabah->foto && Storage::disk('public')->exists($nasabah->foto)) {
+            if ($nasabah->foto) {
+                Storage::disk('local')->delete($nasabah->foto);
                 Storage::disk('public')->delete($nasabah->foto);
             }
-            $validated['foto'] = $request->file('foto')->store('nasabah', 'public');
+            $validated['foto'] = $request->file('foto')->store('nasabah', 'local');
         }
 
         $nasabah->update($validated);
+
+        if ($nasabah->user) {
+            $nasabah->user->update([
+                'is_active' => $validated['status'] === 'aktif',
+            ]);
+        }
 
         auditLog(
             action: 'update',
@@ -244,6 +251,19 @@ class NasabahController extends Controller
 
         $newStatus = $nasabah->status === 'aktif' ? 'nonaktif' : 'aktif';
         $nasabah->update(['status' => $newStatus]);
+
+        if ($nasabah->user) {
+            $nasabah->user->update([
+                'is_active' => $newStatus === 'aktif',
+            ]);
+        }
+
+        auditLog(
+            action: 'update',
+            module: 'Nasabah',
+            description: "Mengubah status nasabah {$nasabah->nama} ({$nasabah->no_rekening}) menjadi {$newStatus}",
+            subject: $nasabah
+        );
 
         return back()->with('success', "Status nasabah {$nasabah->nama} diubah menjadi {$newStatus}.");
     }
@@ -357,6 +377,28 @@ class NasabahController extends Controller
         });
 
         return back()->with('success', "Saldo awal migrasi sebesar " . formatRupiah($nominal) . " berhasil ditambahkan untuk nasabah {$nasabah->nama}.");
+    }
+
+    /**
+     * Sajikan foto nasabah dari penyimpanan privat setelah verifikasi otorisasi unit.
+     */
+    public function foto(Nasabah $nasabah)
+    {
+        $this->authorizeUnitAccessForNasabah($nasabah);
+
+        if (! $nasabah->foto) {
+            abort(404);
+        }
+
+        if (Storage::disk('local')->exists($nasabah->foto)) {
+            return Storage::disk('local')->response($nasabah->foto);
+        }
+
+        if (Storage::disk('public')->exists($nasabah->foto)) {
+            return Storage::disk('public')->response($nasabah->foto);
+        }
+
+        abort(404);
     }
 }
 

@@ -91,16 +91,31 @@ class PenjualanService
             $totalBerat = 0;
             $totalPendapatan = '0.00';
 
-            // Validasi stok fisik gudang desa untuk setiap item
+            // Kunci baris jenis_sampah dalam urutan ID konsisten untuk mencegah race condition / overselling
+            $jenisIds = collect($data['details'])->pluck('jenis_sampah_id')->unique()->sort()->values()->all();
+            $lockedJenis = JenisSampah::whereIn('id', $jenisIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+
+            // Agregasi berat per jenis_sampah_id agar duplikat baris di details tidak bisa melewati cek stok
+            $beratPerJenis = [];
             foreach ($data['details'] as $item) {
-                $jenisSampah = JenisSampah::findOrFail($item['jenis_sampah_id']);
-                $beratJual = (float) $item['berat'];
-                $sisaStok = $this->getSisaStok($jenisSampah->id);
-
-                if ($beratJual > $sisaStok) {
-                    throw new DomainException("Stok untuk '{$jenisSampah->nama}' tidak mencukupi. Sisa stok di gudang: {$sisaStok} kg, diminta: {$beratJual} kg.");
+                $jenisId = (int) $item['jenis_sampah_id'];
+                if (! isset($lockedJenis[$jenisId])) {
+                    throw new DomainException('Jenis sampah tidak ditemukan.');
                 }
+                $beratPerJenis[$jenisId] = ($beratPerJenis[$jenisId] ?? 0) + (float) $item['berat'];
+            }
 
+            foreach ($beratPerJenis as $jenisId => $totalBeratItem) {
+                $jenisSampah = $lockedJenis[$jenisId];
+                $sisaStok = $this->getSisaStok($jenisId);
+
+                if ($totalBeratItem > $sisaStok) {
+                    throw new DomainException("Stok untuk '{$jenisSampah->nama}' tidak mencukupi. Sisa stok di gudang: {$sisaStok} kg, diminta: {$totalBeratItem} kg.");
+                }
+            }
+
+            foreach ($data['details'] as $item) {
+                $beratJual = (float) $item['berat'];
                 $hargaJual = (float) $item['harga_jual_satuan'];
                 $subtotal = MoneyMath::mul($beratJual, $hargaJual);
 

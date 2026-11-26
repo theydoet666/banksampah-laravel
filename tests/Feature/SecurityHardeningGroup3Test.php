@@ -43,7 +43,7 @@ class SecurityHardeningGroup3Test extends TestCase
 
     public function test_failed_login_recorded_in_audit_log()
     {
-        AuditLog::truncate();
+        AuditLog::query()->delete();
 
         $response = $this->post('/login', [
             'email' => 'budi_sec3@banksampah.test',

@@ -79,7 +79,8 @@ class SecurityHardeningGroup4Test extends TestCase
 
     public function test_admin_terakhir_tidak_bisa_hapus_akun()
     {
-        // Hanya ada 1 admin aktif ($this->admin)
+        // Pastikan hanya ada 1 admin aktif ($this->admin) dalam transaksi test
+        User::where('role', 'admin')->where('id', '!=', $this->admin->id)->update(['is_active' => false]);
         $response = $this->actingAs($this->admin)->delete(route('profile.destroy'), [
             'password' => 'password',
         ]);
