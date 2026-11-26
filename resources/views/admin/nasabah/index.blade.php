@@ -110,7 +110,22 @@
                                                     })"
                                                     class="p-1.5 rounded-lg {{ $nasabah->status === 'aktif' ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50' }}" 
                                                     title="{{ $nasabah->status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                            </button>
+                                        @endif
+                                        @if(auth()->user()->isAdmin() || auth()->user()->isPetugas())
+                                            <button type="button"
+                                                    @click="$dispatch('open-confirm-modal', {
+                                                        action: '{{ roleRoute('nasabah.destroy', $nasabah) }}',
+                                                        method: 'DELETE',
+                                                        title: 'Hapus Nasabah',
+                                                        message: 'Apakah Anda yakin ingin menghapus nasabah {{ addslashes($nasabah->nama) }} ({{ $nasabah->no_rekening }})? Tindakan ini hanya berlaku untuk nasabah yang belum memiliki saldo atau riwayat transaksi.',
+                                                        confirmText: 'Ya, Hapus',
+                                                        confirmClass: 'bg-rose-600 hover:bg-rose-700 text-white'
+                                                    })"
+                                                    class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                                                    title="Hapus Nasabah">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                         @endif
                                     </div>

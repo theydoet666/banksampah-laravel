@@ -264,7 +264,7 @@
                 <div class="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-start gap-2.5">
                     <span class="text-sm shrink-0 mt-px">💡</span>
                     <p class="leading-relaxed">
-                        <strong class="text-slate-800">Petunjuk Nasabah:</strong> Masuk menggunakan <b>No. Rekening</b> atau <b>No. HP</b>. Password default adalah <b>6 digit terakhir No. HP</b> Anda.
+                        <strong class="text-slate-800">Petunjuk Nasabah:</strong> Masuk menggunakan <b>No. Rekening</b> atau <b>No. HP</b>. Gunakan <b>kata sandi sementara</b> yang diberikan oleh petugas saat pendaftaran atau reset (wajib diganti saat login pertama).
                     </p>
                 </div>
 

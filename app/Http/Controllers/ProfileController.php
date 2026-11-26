@@ -96,8 +96,19 @@ class ProfileController extends Controller
             'current_password.current_password' => 'Password saat ini tidak sesuai.',
         ]);
 
+        $isNew = ! $user->hasPin();
         $user->setPin($validated['pin']);
 
-        return back()->with('success', 'PIN Otorisasi Transaksi 6-digit berhasil disimpan!');
+        auditLog(
+            action: 'update',
+            module: 'Keamanan PIN',
+            description: $isNew ? 'Membuat PIN otorisasi transaksi baru.' : 'Memperbarui PIN otorisasi transaksi.',
+            subject: $user,
+            user: $user
+        );
+
+        return back()
+            ->with('status', 'pin-updated')
+            ->with('success', 'PIN Otorisasi Transaksi 6-digit berhasil disimpan!');
     }
 }

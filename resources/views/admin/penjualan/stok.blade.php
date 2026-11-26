@@ -52,7 +52,7 @@
     <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
             <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Rincian Stok & Valuasi per Jenis Sampah</h4>
-            <span class="text-xs text-slate-400">Total {{ count($stokGudang) }} jenis sampah</span>
+            <span class="text-xs text-slate-400">Total {{ $stokGudang->total() }} jenis sampah</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
@@ -112,6 +112,11 @@
                 </tbody>
             </table>
         </div>
+        @if($stokGudang->hasPages())
+            <div class="p-4 border-t border-slate-100">
+                {{ $stokGudang->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

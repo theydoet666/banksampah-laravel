@@ -20,6 +20,21 @@
             <a href="{{ roleRoute('nasabah.edit', $nasabah) }}" class="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-xs">Edit Profil</a>
             <a href="{{ roleRoute('transaksi.setor.create', ['nasabah_id' => $nasabah->id]) }}" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs">Setor Sampah</a>
             <a href="{{ roleRoute('transaksi.tarik.create', ['nasabah_id' => $nasabah->id]) }}" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs">Tarik Saldo</a>
+            @if(auth()->user()->isAdmin() || auth()->user()->isPetugas())
+                <button type="button"
+                        @click="$dispatch('open-confirm-modal', {
+                            action: '{{ roleRoute('nasabah.destroy', $nasabah) }}',
+                            method: 'DELETE',
+                            title: 'Hapus Nasabah',
+                            message: 'Apakah Anda yakin ingin menghapus nasabah {{ addslashes($nasabah->nama) }} ({{ $nasabah->no_rekening }})? Tindakan ini hanya berlaku untuk nasabah yang belum memiliki saldo atau riwayat transaksi.',
+                            confirmText: 'Ya, Hapus',
+                            confirmClass: 'bg-rose-600 hover:bg-rose-700 text-white'
+                        })"
+                        class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-1.5 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    Hapus
+                </button>
+            @endif
         </div>
     </div>
 
@@ -63,7 +78,7 @@
                     <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block">Akses Buku Tabungan Digital</span>
                     <p class="text-xs text-slate-500">Nasabah dapat login mandiri di HP menggunakan No. Rekening atau No. HP.</p>
                     
-                    <form method="POST" action="{{ roleRoute('nasabah.reset-password', $nasabah) }}" onsubmit="return confirm('Reset password akun nasabah {{ $nasabah->nama }} ke default (6 digit No. HP)?');">
+                    <form method="POST" action="{{ roleRoute('nasabah.reset-password', $nasabah) }}" onsubmit="return confirm('Buat kata sandi sementara acak baru untuk nasabah {{ $nasabah->nama }}? Nasabah wajib menggantinya saat login pertama.');">
                         @csrf
                         <button type="submit" class="w-full mt-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>

@@ -117,7 +117,7 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active', 'force.passwo
         Route::resource('/jenis-sampah', AdminJenisSampahController::class)->only(['index', 'show']);
 
         // Data Nasabah
-        Route::resource('/nasabah', AdminNasabahController::class)->except(['destroy']);
+        Route::resource('/nasabah', AdminNasabahController::class);
         Route::get('/nasabah/{nasabah}/foto', [AdminNasabahController::class, 'foto'])->name('nasabah.foto');
         Route::post('/nasabah/{nasabah}/reset-password', [AdminNasabahController::class, 'resetPassword'])->name('nasabah.reset-password');
 
@@ -167,7 +167,7 @@ Route::middleware(['auth', 'role:petugas,admin', 'check.active', 'force.password
         Route::get('/dashboard', [PetugasDashboardController::class, 'index'])->name('dashboard');
 
         // Nasabah (Manajemen Nasabah Pos Unit)
-        Route::resource('/nasabah', AdminNasabahController::class)->except(['destroy']);
+        Route::resource('/nasabah', AdminNasabahController::class);
         Route::get('/nasabah/{nasabah}/foto', [AdminNasabahController::class, 'foto'])->name('nasabah.foto');
         Route::post('/nasabah/{nasabah}/reset-password', [AdminNasabahController::class, 'resetPassword'])->name('nasabah.reset-password');
 

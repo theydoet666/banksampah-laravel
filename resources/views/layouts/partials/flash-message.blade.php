@@ -1,8 +1,10 @@
 <div class="space-y-3">
     @if(session('success'))
-        <div x-data="{ show: true }" 
+        <div x-data="{ show: true, copied: false }" 
              x-show="show" 
+             @if(!session('generated_password'))
              x-init="setTimeout(() => show = false, 8000)"
+             @endif
              x-transition:enter="transition ease-out duration-300 transform"
              x-transition:enter-start="-translate-y-4 opacity-0"
              x-transition:enter-end="translate-y-0 opacity-100"
@@ -18,10 +20,16 @@
                     <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-700">Berhasil</h5>
                     <p class="text-sm font-medium text-emerald-900">{{ session('success') }}</p>
                     @if(session('generated_password'))
-                        <div class="mt-2.5 p-2.5 bg-white border border-emerald-300 rounded-lg inline-flex items-center gap-2 shadow-xs">
+                        <div class="mt-2.5 p-2.5 bg-white border border-emerald-300 rounded-lg inline-flex flex-wrap items-center gap-2 shadow-xs">
                             <span class="text-xs text-slate-500 font-medium">Kata Sandi Sementara:</span>
-                            <code class="px-2 py-0.5 bg-emerald-100 text-emerald-900 font-mono font-bold text-sm rounded select-all">{{ session('generated_password') }}</code>
-                            <span class="text-2xs text-amber-600 font-semibold">(Wajib diganti saat login pertama)</span>
+                            <code id="generated-temp-password" class="px-2 py-0.5 bg-emerald-100 text-emerald-900 font-mono font-bold text-sm rounded select-all">{{ session('generated_password') }}</code>
+                            <button type="button"
+                                    @click="navigator.clipboard.writeText(@js(session('generated_password'))); copied = true; setTimeout(() => copied = false, 2000)"
+                                    class="px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors"
+                                    :class="copied ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'">
+                                <span x-text="copied ? 'Tersalin!' : 'Salin'"></span>
+                            </button>
+                            <span class="text-2xs text-amber-600 font-semibold">(Hanya tampil sekali ini &amp; wajib diganti saat login pertama)</span>
                         </div>
                     @endif
                 </div>

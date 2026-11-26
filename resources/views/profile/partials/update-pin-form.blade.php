@@ -28,21 +28,19 @@
         @csrf
         @method('put')
 
-        @if(auth()->user()->hasPin())
-            <div>
-                <label for="pin_current_password" class="block text-xs font-semibold text-slate-700 mb-1">
-                    Password Akun Saat Ini <span class="text-rose-500">*</span>
-                </label>
-                <input id="pin_current_password" 
-                       name="current_password" 
-                       type="password" 
-                       required 
-                       placeholder="Masukkan password akun untuk verifikasi" 
-                       class="w-full text-xs rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-xs" 
-                       autocomplete="current-password" />
-                <x-input-error :messages="$errors->get('current_password')" class="mt-1" />
-            </div>
-        @endif
+        <div>
+            <label for="pin_current_password" class="block text-xs font-semibold text-slate-700 mb-1">
+                Password Akun Saat Ini <span class="text-rose-500">*</span>
+            </label>
+            <input id="pin_current_password" 
+                   name="current_password" 
+                   type="password" 
+                   required 
+                   placeholder="Masukkan password akun untuk verifikasi" 
+                   class="w-full text-xs rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-xs" 
+                   autocomplete="current-password" />
+            <x-input-error :messages="$errors->get('current_password')" class="mt-1" />
+        </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

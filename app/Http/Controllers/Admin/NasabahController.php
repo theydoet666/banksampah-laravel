@@ -128,7 +128,7 @@ class NasabahController extends Controller
 
         // Password awal acak 10 karakter bebas ambigu & paksa ganti password saat login
         $defaultPassword = RandomPassword::generate(10);
-        $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
+        $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.belega.id';
 
         DB::transaction(function () use ($validated, $defaultPassword, $generatedEmail, $saldoAwal, $request, $user) {
             $userNasabah = User::createWithRole([
@@ -283,7 +283,7 @@ class NasabahController extends Controller
             ]);
         } else {
             // Jika belum punya akun user, buatkan seketika
-            $generatedEmail = strtolower(str_replace('-', '', $nasabah->no_rekening)) . '@nasabah.banksampah.test';
+            $generatedEmail = strtolower(str_replace('-', '', $nasabah->no_rekening)) . '@nasabah.banksampah.belega.id';
             $user = User::createWithRole([
                 'name'                => $nasabah->nama,
                 'email'               => $generatedEmail,
@@ -399,6 +399,66 @@ class NasabahController extends Controller
         }
 
         abort(404);
+    }
+
+    /**
+     * Hapus nasabah (Admin: semua unit; Petugas: hanya unit miliknya).
+     * Ditolak bila nasabah masih memiliki saldo atau riwayat transaksi.
+     */
+    public function destroy(Nasabah $nasabah)
+    {
+        $user = auth()->user();
+
+        if (! $user || (! $user->isAdmin() && ! $user->isPetugas())) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang menghapus data nasabah.');
+        }
+
+        $this->authorizeUnitAccessForNasabah($nasabah, $user);
+
+        $errorMessage = null;
+        $deletedName = $nasabah->nama;
+
+        DB::transaction(function () use ($nasabah, &$errorMessage, &$deletedName) {
+            $locked = Nasabah::lockForUpdate()->findOrFail($nasabah->id);
+            $deletedName = $locked->nama;
+
+            if ((float) $locked->saldo > 0 || $locked->saldo_tertahan > 0) {
+                $errorMessage = 'Nasabah tidak dapat dihapus karena masih memiliki saldo atau pengajuan penarikan yang berjalan.';
+                return;
+            }
+
+            if ($locked->transaksi()->exists()) {
+                $errorMessage = 'Nasabah tidak dapat dihapus karena sudah memiliki riwayat transaksi. Silakan nonaktifkan status nasabah sebagai gantinya.';
+                return;
+            }
+
+            if ($locked->foto) {
+                Storage::disk('local')->delete($locked->foto);
+                Storage::disk('public')->delete($locked->foto);
+            }
+
+            $noRekening = $locked->no_rekening;
+            $userNasabah = $locked->user;
+
+            $locked->forceDelete();
+
+            if ($userNasabah && $userNasabah->isNasabah()) {
+                $userNasabah->delete();
+            }
+
+            auditLog(
+                action: 'delete',
+                module: 'Nasabah',
+                description: "Menghapus data nasabah: {$deletedName} ({$noRekening})"
+            );
+        });
+
+        if ($errorMessage !== null) {
+            return back()->with('error', $errorMessage);
+        }
+
+        $route = $user->isPetugas() ? 'petugas.nasabah.index' : 'admin.nasabah.index';
+        return redirect()->route($route)->with('success', "Data nasabah {$deletedName} berhasil dihapus.");
     }
 }
 

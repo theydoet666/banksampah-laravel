@@ -37,7 +37,7 @@ class NasabahRegisterController extends Controller
         ]);
 
         $noRekening = Nasabah::generateNoRekening();
-        $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.test';
+        $generatedEmail = strtolower(str_replace('-', '', $noRekening)) . '@nasabah.banksampah.belega.id';
 
         $user = DB::transaction(function () use ($validated, $noRekening, $generatedEmail) {
             $user = User::createWithRole([

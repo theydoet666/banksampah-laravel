@@ -310,4 +310,170 @@ class SecurityAuditFixesTest extends TestCase
         $response->assertStatus(200);
         $this->assertNotEmpty($response->headers->get('Content-Security-Policy'));
     }
+
+    public function test_petugas_can_delete_zero_balance_nasabah_only_in_own_unit_and_admin_can_delete_any_unit(): void
+    {
+        $unitLain = Unit::create(['kode_unit' => 'U-DEL2', 'nama' => 'Unit Delete 2', 'status' => 'aktif']);
+
+        $petugasUnit1 = User::createWithRole([
+            'name' => 'Petugas Unit 1',
+            'email' => 'petugas_del1_' . uniqid() . '@banksampah.test',
+            'password' => Hash::make('password123'),
+            'unit_id' => $this->unit->id,
+            'is_active' => true,
+        ], 'petugas');
+
+        $petugasTanpaUnit = User::createWithRole([
+            'name' => 'Petugas Tanpa Unit',
+            'email' => 'petugas_del0_' . uniqid() . '@banksampah.test',
+            'password' => Hash::make('password123'),
+            'unit_id' => null,
+            'is_active' => true,
+        ], 'petugas');
+
+        $nasabahUnit1 = Nasabah::create([
+            'unit_id' => $this->unit->id,
+            'no_rekening' => 'BS-DEL-' . rand(10000, 99999),
+            'nama' => 'Nasabah Hapus 1',
+            'no_hp' => '0888' . rand(10000000, 99999999),
+            'jenis_kelamin' => 'L',
+            'alamat' => 'Jl. Test',
+            'status' => 'aktif',
+            'saldo' => 0,
+            'registered_by' => $this->admin->id,
+        ]);
+
+        $nasabahUnit2 = Nasabah::create([
+            'unit_id' => $unitLain->id,
+            'no_rekening' => 'BS-DEL-' . rand(10000, 99999),
+            'nama' => 'Nasabah Hapus 2',
+            'no_hp' => '0887' . rand(10000000, 99999999),
+            'jenis_kelamin' => 'P',
+            'alamat' => 'Jl. Test 2',
+            'status' => 'aktif',
+            'saldo' => 0,
+            'registered_by' => $this->admin->id,
+        ]);
+
+        // 1. Petugas tanpa unit -> 403
+        $this->actingAs($petugasTanpaUnit)
+            ->delete(route('petugas.nasabah.destroy', $nasabahUnit1))
+            ->assertStatus(403);
+
+        // 2. Petugas unit 1 mencoba hapus nasabah unit 2 -> 403
+        $this->actingAs($petugasUnit1)
+            ->delete(route('petugas.nasabah.destroy', $nasabahUnit2))
+            ->assertStatus(403);
+
+        // 3. Pengelola mencoba hapus nasabah -> 403
+        $this->actingAs($this->pengelola)
+            ->delete(route('admin.nasabah.destroy', $nasabahUnit1))
+            ->assertStatus(403);
+
+        // 4. Petugas unit 1 menghapus nasabah unit 1 (saldo 0, tanpa transaksi) -> sukses
+        $this->actingAs($petugasUnit1)
+            ->delete(route('petugas.nasabah.destroy', $nasabahUnit1))
+            ->assertRedirect(route('petugas.nasabah.index'))
+            ->assertSessionHas('success');
+        $this->assertDatabaseMissing('nasabah', ['id' => $nasabahUnit1->id]);
+
+        // 5. Admin menghapus nasabah dari unit mana pun (unit 2) -> sukses
+        $this->actingAs($this->admin)
+            ->delete(route('admin.nasabah.destroy', $nasabahUnit2))
+            ->assertRedirect(route('admin.nasabah.index'))
+            ->assertSessionHas('success');
+        $this->assertDatabaseMissing('nasabah', ['id' => $nasabahUnit2->id]);
+
+        // 6. Nasabah dengan saldo > 0 ditolak hapus
+        $this->actingAs($this->admin)
+            ->delete(route('admin.nasabah.destroy', $this->nasabah))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('nasabah', ['id' => $this->nasabah->id]);
+    }
+
+    public function test_new_nasabah_uses_belega_email_domain(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.nasabah.store'), [
+            'nama' => 'Nasabah Domain Baru',
+            'jenis_kelamin' => 'L',
+            'alamat' => 'Jl. Belega',
+            'no_hp' => '0855' . rand(10000000, 99999999),
+            'unit_id' => $this->unit->id,
+            'status' => 'aktif',
+        ]);
+
+        $response->assertRedirect(route('admin.nasabah.index'));
+        $created = Nasabah::where('nama', 'Nasabah Domain Baru')->firstOrFail();
+        $this->assertStringEndsWith('@nasabah.banksampah.belega.id', $created->user->email);
+    }
+
+    public function test_stok_gudang_page_paginates_jenis_sampah_with_accurate_totals(): void
+    {
+        $kategori = $this->jenisSampah->kategori;
+        for ($i = 1; $i <= 16; $i++) {
+            JenisSampah::create([
+                'kategori_id' => $kategori->id,
+                'nama' => "Sampah Paging {$i}",
+                'satuan' => 'kg',
+                'harga_beli' => 1000,
+                'harga_jual' => 1500,
+                'harga_per_satuan' => 1000,
+                'is_active' => true,
+            ]);
+        }
+
+        $response = $this->actingAs($this->admin)->get(route('admin.penjualan.stok'));
+        $response->assertStatus(200);
+        $response->assertViewHas('stokGudang', function ($paginator) {
+            return $paginator instanceof \Illuminate\Pagination\LengthAwarePaginator
+                && $paginator->perPage() === 15
+                && $paginator->total() >= 17
+                && count($paginator->items()) === 15;
+        });
+
+        $page2 = $this->actingAs($this->admin)->get(route('admin.penjualan.stok', ['page' => 2]));
+        $page2->assertStatus(200);
+    }
+
+    public function test_pengelola_without_pin_sees_current_password_field_and_can_create_and_use_pin(): void
+    {
+        $pengelolaBaru = User::createWithRole([
+            'name' => 'Pengelola Baru',
+            'email' => 'pengelola_nopin_' . uniqid() . '@banksampah.test',
+            'password' => Hash::make('password123'),
+            'pin' => null,
+            'is_active' => true,
+        ], 'pengelola');
+
+        $this->assertFalse($pengelolaBaru->hasPin());
+
+        // 1. Halaman profil tetap menampilkan field current_password meskipun belum punya PIN
+        $profileResp = $this->actingAs($pengelolaBaru)->get(route('profile.edit'));
+        $profileResp->assertStatus(200);
+        $profileResp->assertSee('pin_current_password', false);
+
+        // 2. Pengelola membuat PIN baru dengan current_password
+        $saveResp = $this->actingAs($pengelolaBaru)->put(route('profile.pin.update'), [
+            'current_password' => 'password123',
+            'pin' => '654321',
+            'pin_confirmation' => '654321',
+        ]);
+        $saveResp->assertRedirect();
+        $saveResp->assertSessionHas('status', 'pin-updated');
+
+        $pengelolaBaru->refresh();
+        $this->assertTrue($pengelolaBaru->hasPin());
+        $this->assertTrue($pengelolaBaru->verifyPin('654321'));
+
+        // 3. PIN baru langsung bisa dipakai untuk transaksi tarik
+        $tarikResp = $this->actingAs($pengelolaBaru)->post(route('admin.transaksi.tarik.store'), [
+            'nasabah_id' => $this->nasabah->id,
+            'nominal' => 10000,
+            'tanggal_transaksi' => now()->toDateString(),
+            'pin' => '654321',
+        ]);
+        $tarikResp->assertRedirect();
+        $tarikResp->assertSessionHas('success');
+    }
 }

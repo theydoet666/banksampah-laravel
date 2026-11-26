@@ -8,6 +8,7 @@ use App\Models\Pengepul;
 use App\Models\JenisSampah;
 use App\Services\PenjualanService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Exception;
 
 class PenjualanSampahController extends Controller
@@ -45,15 +46,28 @@ class PenjualanSampahController extends Controller
         return view('admin.penjualan.index', compact('penjualanList', 'pengepulList'));
     }
 
-    public function stok()
+    public function stok(Request $request)
     {
-        $stokGudang = $this->penjualanService->getStokSampahGudang();
-        $totalBeratSisa = $stokGudang->sum('sisa_stok');
-        $totalEstimasiNilai = $stokGudang->sum('estimasi_nilai');
-        $totalEstimasiJual = $stokGudang->sum('estimasi_nilai_jual');
-        $totalPotensiLaba = $stokGudang->sum('potensi_laba');
-        $totalMasuk = $stokGudang->sum('total_masuk');
-        $totalTerjual = $stokGudang->sum('total_terjual');
+        $allStok = $this->penjualanService->getStokSampahGudang();
+        $totalBeratSisa = $allStok->sum('sisa_stok');
+        $totalEstimasiNilai = $allStok->sum('estimasi_nilai');
+        $totalEstimasiJual = $allStok->sum('estimasi_nilai_jual');
+        $totalPotensiLaba = $allStok->sum('potensi_laba');
+        $totalMasuk = $allStok->sum('total_masuk');
+        $totalTerjual = $allStok->sum('total_terjual');
+
+        $perPage = 15;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $stokGudang = new LengthAwarePaginator(
+            $allStok->forPage($currentPage, $perPage)->values(),
+            $allStok->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('admin.penjualan.stok', compact(
             'stokGudang', 
