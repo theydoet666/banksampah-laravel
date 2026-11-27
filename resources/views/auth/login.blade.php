@@ -261,11 +261,18 @@
                 </form>
 
                 <!-- Box Petunjuk Nasabah (Kompak & Elegan) -->
-                <div class="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-start gap-2.5">
-                    <span class="text-sm shrink-0 mt-px">💡</span>
-                    <p class="leading-relaxed">
-                        <strong class="text-slate-800">Petunjuk Nasabah:</strong> Masuk menggunakan <b>No. Rekening</b> atau <b>No. HP</b>. Gunakan <b>kata sandi sementara</b> yang diberikan oleh petugas saat pendaftaran atau reset (wajib diganti saat login pertama).
-                    </p>
+                <div class="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1.5">
+                    <div class="flex items-start gap-2.5">
+                        <span class="text-sm shrink-0 mt-px">💡</span>
+                        <p class="leading-relaxed">
+                            <strong class="text-slate-800">Petunjuk Nasabah:</strong> Masuk menggunakan <b>No. Rekening</b> atau <b>No. HP</b>. Gunakan <b>kata sandi sementara</b> dari petugas, atau lakukan aktivasi mandiri menggunakan <b>No. Rekening &amp; NIK</b> bila baru pertama kali masuk.
+                        </p>
+                    </div>
+                    <div class="pl-6">
+                        <a href="{{ route('nasabah.activate') }}" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 underline">
+                            Aktivasi Akun Nasabah (pakai No. Rekening &amp; NIK) &rarr;
+                        </a>
+                    </div>
                 </div>
 
             </div>

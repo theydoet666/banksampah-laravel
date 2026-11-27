@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\NasabahRegisterController;
+use App\Http\Controllers\Auth\NasabahActivationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -16,6 +17,12 @@ Route::middleware('guest')->group(function () {
         ->name('nasabah.register');
     Route::post('register-nasabah', [NasabahRegisterController::class, 'store'])
         ->middleware('throttle:5,10');
+
+    Route::get('aktivasi-nasabah', [NasabahActivationController::class, 'create'])
+        ->name('nasabah.activate');
+    Route::post('aktivasi-nasabah', [NasabahActivationController::class, 'store'])
+        ->middleware('throttle:5,10')
+        ->name('nasabah.activate.store');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

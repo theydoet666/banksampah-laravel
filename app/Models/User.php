@@ -33,6 +33,7 @@ class User extends Authenticatable
         'password',
         'pin',
         'remember_token',
+        'temp_password_encrypted',
     ];
 
     /**

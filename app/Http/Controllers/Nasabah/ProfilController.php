@@ -48,10 +48,11 @@ class ProfilController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        auth()->user()->update([
+        auth()->user()->forceFill([
             'password' => Hash::make($validated['password']),
             'must_change_password' => false,
-        ]);
+            'temp_password_encrypted' => null,
+        ])->save();
 
         return back()->with('success', 'Kata sandi Anda berhasil diperbarui.');
     }

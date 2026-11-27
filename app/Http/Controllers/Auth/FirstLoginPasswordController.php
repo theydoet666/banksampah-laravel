@@ -46,10 +46,11 @@ class FirstLoginPasswordController extends Controller
             'password.different' => 'Kata sandi baru tidak boleh sama dengan kata sandi bawaan/saat ini.',
         ]);
 
-        $user->update([
+        $user->forceFill([
             'password' => Hash::make($validated['password']),
             'must_change_password' => false,
-        ]);
+            'temp_password_encrypted' => null,
+        ])->save();
 
         auditLog(
             action: 'update',

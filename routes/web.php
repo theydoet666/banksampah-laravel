@@ -106,6 +106,11 @@ Route::middleware(['auth', 'role:admin,pengelola', 'check.active', 'force.passwo
                 ->middleware('throttle:20,1')
                 ->name('nasabah.saldo-awal');
 
+            // Export Rekap Akun & Kata Sandi Sementara Nasabah (Khusus Admin + PIN)
+            Route::post('/nasabah/export-credentials', [AdminNasabahController::class, 'exportCredentials'])
+                ->middleware('throttle:10,1')
+                ->name('nasabah.export-credentials');
+
             // Audit Log (Khusus Admin)
             Route::get('/audit-log', [AdminAuditLogController::class, 'index'])->name('audit-log.index');
             Route::get('/audit-log/export', [AdminAuditLogController::class, 'export'])->name('audit-log.export');

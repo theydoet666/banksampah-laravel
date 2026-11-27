@@ -476,4 +476,140 @@ class SecurityAuditFixesTest extends TestCase
         $tarikResp->assertRedirect();
         $tarikResp->assertSessionHas('success');
     }
+
+    public function test_opsi1_temp_password_encrypted_auto_wiped_and_admin_export_requires_pin(): void
+    {
+        $petugas = User::createWithRole([
+            'name' => 'Petugas Export Test',
+            'email' => 'petugas_exp_' . uniqid() . '@banksampah.test',
+            'password' => Hash::make('password123'),
+            'unit_id' => $this->unit->id,
+            'is_active' => true,
+        ], 'petugas');
+
+        // 1. Buat nasabah baru -> temp_password_encrypted tersimpan & hidden dari JSON
+        $noHp = '0856' . rand(10000000, 99999999);
+        $createResp = $this->actingAs($this->admin)->post(route('admin.nasabah.store'), [
+            'nama' => 'Nasabah Opsi1',
+            'jenis_kelamin' => 'P',
+            'alamat' => 'Jl. Opsi 1',
+            'no_hp' => $noHp,
+            'unit_id' => $this->unit->id,
+            'status' => 'aktif',
+        ]);
+        $createResp->assertSessionHas('generated_password');
+        $plainPass = session('generated_password');
+
+        $nasabahBaru = Nasabah::where('no_hp', $noHp)->firstOrFail();
+        $userBaru = $nasabahBaru->user;
+        $this->assertNotEmpty($userBaru->temp_password_encrypted);
+        $this->assertEquals($plainPass, \Illuminate\Support\Facades\Crypt::decryptString($userBaru->temp_password_encrypted));
+        $this->assertArrayNotHasKey('temp_password_encrypted', $userBaru->toArray());
+
+        // 2. Non-admin ditolak export (403)
+        $this->actingAs($petugas)
+            ->post(route('admin.nasabah.export-credentials'), ['pin' => '123456'])
+            ->assertStatus(403);
+
+        // 3. Admin dengan PIN salah ditolak
+        $this->actingAs($this->admin)
+            ->post(route('admin.nasabah.export-credentials'), ['pin' => '000000'])
+            ->assertSessionHas('error');
+
+        // 4. Admin dengan PIN benar berhasil export .xlsx
+        $exportResp = $this->actingAs($this->admin)
+            ->post(route('admin.nasabah.export-credentials'), [
+                'pin' => '123456',
+                'unit_id' => $this->unit->id,
+                'only_pending' => '1',
+            ]);
+        $exportResp->assertStatus(200);
+        $this->assertStringContainsString('.xlsx', (string) $exportResp->headers->get('Content-Disposition'));
+
+        // 5. Setelah nasabah ganti password saat login pertama, temp_password_encrypted otomatis terhapus (NULL)
+        $this->actingAs($userBaru)
+            ->post(route('password.first_login.update'), [
+                'current_password' => $plainPass,
+                'password' => 'PasswordBaru123!',
+                'password_confirmation' => 'PasswordBaru123!',
+            ])
+            ->assertRedirect(route('dashboard'));
+
+        $userBaru->refresh();
+        $this->assertFalse((bool) $userBaru->must_change_password);
+        $this->assertNull($userBaru->temp_password_encrypted);
+
+        $mapped = (new \App\Exports\NasabahCredentialsExport(collect([$nasabahBaru->fresh(['user', 'unit'])])))->map($nasabahBaru->fresh(['user', 'unit']));
+        $this->assertEquals('Sudah diganti oleh nasabah', $mapped[6]);
+    }
+
+    public function test_opsi3_nasabah_self_activation_with_nik_works_once_and_rejects_invalid_or_already_active(): void
+    {
+        $nik = '510401' . rand(1000000000, 9999999999);
+        $noHp = '0877' . rand(10000000, 99999999);
+
+        $userPending = User::createWithRole([
+            'name' => 'Nasabah Aktivasi',
+            'email' => 'aktivasi_' . uniqid() . '@nasabah.banksampah.belega.id',
+            'password' => Hash::make('TempPass99'),
+            'unit_id' => $this->unit->id,
+            'is_active' => true,
+            'must_change_password' => true,
+        ], 'nasabah');
+        $userPending->forceFill(['temp_password_encrypted' => \Illuminate\Support\Facades\Crypt::encryptString('TempPass99')])->save();
+
+        $nasabahPending = Nasabah::create([
+            'user_id' => $userPending->id,
+            'unit_id' => $this->unit->id,
+            'no_rekening' => 'BS-ACT-' . rand(10000, 99999),
+            'nama' => 'Nasabah Aktivasi',
+            'nik' => $nik,
+            'no_hp' => $noHp,
+            'jenis_kelamin' => 'L',
+            'alamat' => 'Jl. Aktivasi',
+            'status' => 'aktif',
+            'saldo' => 0,
+            'registered_by' => $this->admin->id,
+        ]);
+
+        // 1. Halaman aktivasi bisa diakses tamu
+        $this->get(route('nasabah.activate'))->assertStatus(200);
+
+        // 2. NIK salah ditolak
+        $this->post(route('nasabah.activate.store'), [
+            'no_rekening' => $nasabahPending->no_rekening,
+            'nik' => '9999999999999999',
+            'no_hp' => $noHp,
+            'password' => 'SandiPribadi99',
+            'password_confirmation' => 'SandiPribadi99',
+        ])->assertSessionHasErrors('no_rekening');
+        $this->assertGuest();
+
+        // 3. No. Rekening + NIK + No. HP cocok -> berhasil aktivasi & login
+        $okResp = $this->post(route('nasabah.activate.store'), [
+            'no_rekening' => $nasabahPending->no_rekening,
+            'nik' => $nik,
+            'no_hp' => $noHp,
+            'password' => 'SandiPribadi99',
+            'password_confirmation' => 'SandiPribadi99',
+        ]);
+        $okResp->assertRedirect(route('nasabah.dashboard'));
+        $this->assertAuthenticatedAs($userPending);
+
+        $userPending->refresh();
+        $this->assertFalse((bool) $userPending->must_change_password);
+        $this->assertNull($userPending->temp_password_encrypted);
+        $this->assertTrue(Hash::check('SandiPribadi99', $userPending->password));
+
+        // 4. Logout dan coba aktivasi ulang akun yang sudah aktif -> ditolak (sekali pakai)
+        $this->post('/logout');
+        $this->post(route('nasabah.activate.store'), [
+            'no_rekening' => $nasabahPending->no_rekening,
+            'nik' => $nik,
+            'no_hp' => $noHp,
+            'password' => 'AmbilAlih99',
+            'password_confirmation' => 'AmbilAlih99',
+        ])->assertSessionHasErrors('no_rekening');
+        $this->assertGuest();
+    }
 }

@@ -9,10 +9,14 @@ use App\Models\User;
 use App\Models\Unit;
 use App\Models\Transaksi;
 use App\Http\Controllers\Concerns\AuthorizesUnitAccess;
+use App\Exports\NasabahCredentialsExport;
+use App\Services\PinGuard;
 use App\Support\RandomPassword;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class NasabahController extends Controller
 {
@@ -139,6 +143,9 @@ class NasabahController extends Controller
                 'unit_id'             => $validated['unit_id'] ?? null,
                 'must_change_password' => true,
             ], 'nasabah');
+            $userNasabah->forceFill([
+                'temp_password_encrypted' => Crypt::encryptString($defaultPassword),
+            ])->save();
 
             $validated['user_id'] = $userNasabah->id;
             $nasabah = Nasabah::create($validated);
@@ -277,10 +284,11 @@ class NasabahController extends Controller
 
         if ($nasabah->user) {
             // Hapus is_active => true agar nasabah nonaktif tidak aktif kembali tanpa izin
-            $nasabah->user->update([
-                'password'            => Hash::make($defaultPassword),
-                'must_change_password' => true, // paksa ganti password setelah reset
-            ]);
+            $nasabah->user->forceFill([
+                'password'                => Hash::make($defaultPassword),
+                'must_change_password'    => true, // paksa ganti password setelah reset
+                'temp_password_encrypted' => Crypt::encryptString($defaultPassword),
+            ])->save();
         } else {
             // Jika belum punya akun user, buatkan seketika
             $generatedEmail = strtolower(str_replace('-', '', $nasabah->no_rekening)) . '@nasabah.banksampah.belega.id';
@@ -292,6 +300,9 @@ class NasabahController extends Controller
                 'unit_id'             => $nasabah->unit_id,
                 'must_change_password' => true,
             ], 'nasabah');
+            $user->forceFill([
+                'temp_password_encrypted' => Crypt::encryptString($defaultPassword),
+            ])->save();
             $nasabah->update(['user_id' => $user->id]);
         }
 
@@ -459,6 +470,79 @@ class NasabahController extends Controller
 
         $route = $user->isPetugas() ? 'petugas.nasabah.index' : 'admin.nasabah.index';
         return redirect()->route($route)->with('success', "Data nasabah {$deletedName} berhasil dihapus.");
+    }
+
+    /**
+     * Export rekap akun dan kata sandi sementara nasabah ke Excel (Khusus Admin + PIN).
+     */
+    public function exportCredentials(Request $request)
+    {
+        $user = auth()->user();
+        if (! $user || ! $user->isAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Administrator yang berwenang mengekspor kredensial nasabah.');
+        }
+
+        $validated = $request->validate([
+            'pin' => ['required', 'string', 'digits:6'],
+            'unit_id' => ['nullable', 'exists:units,id'],
+            'only_pending' => ['nullable', 'boolean'],
+            'regenerate_missing' => ['nullable', 'boolean'],
+        ], [
+            'pin.required' => 'PIN Otorisasi Administrator wajib diisi untuk mengunduh rekap kredensial.',
+            'pin.digits' => 'PIN Otorisasi harus berupa 6 digit angka.',
+        ]);
+
+        $pinError = PinGuard::check($user, $request->pin);
+        if ($pinError) {
+            return back()->with('error', $pinError);
+        }
+
+        $onlyPending = $request->boolean('only_pending', true);
+        $regenerateMissing = $request->boolean('regenerate_missing', false);
+
+        $rows = DB::transaction(function () use ($validated, $onlyPending, $regenerateMissing) {
+            $query = Nasabah::with(['user', 'unit'])->orderBy('no_rekening');
+
+            if (! empty($validated['unit_id'])) {
+                $query->where('unit_id', $validated['unit_id']);
+            }
+
+            if ($onlyPending) {
+                $query->whereHas('user', function ($q) {
+                    $q->where('must_change_password', true);
+                });
+            }
+
+            $list = $query->get();
+
+            if ($regenerateMissing) {
+                foreach ($list as $nasabah) {
+                    $u = $nasabah->user;
+                    if ($u && $u->must_change_password && empty($u->temp_password_encrypted)) {
+                        $newPass = RandomPassword::generate(10);
+                        $u->forceFill([
+                            'password' => Hash::make($newPass),
+                            'temp_password_encrypted' => Crypt::encryptString($newPass),
+                        ])->save();
+                    }
+                }
+            }
+
+            return $list;
+        });
+
+        $unitLabel = ! empty($validated['unit_id'])
+            ? (Unit::find($validated['unit_id'])?->nama ?? 'Unit #' . $validated['unit_id'])
+            : 'Semua Unit';
+
+        auditLog(
+            action: 'export',
+            module: 'Nasabah',
+            description: "Mengekspor rekap akun & kata sandi sementara nasabah ({$unitLabel}, {$rows->count()} akun)"
+        );
+
+        $filename = 'rekap-akun-nasabah-' . now()->format('Ymd-His') . '.xlsx';
+        return Excel::download(new NasabahCredentialsExport($rows), $filename);
     }
 }
 
