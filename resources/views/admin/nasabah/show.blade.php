@@ -78,7 +78,7 @@
                     <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block">Akses Buku Tabungan Digital</span>
                     <p class="text-xs text-slate-500">Nasabah dapat login mandiri di HP menggunakan No. Rekening atau No. HP.</p>
                     
-                    <form method="POST" action="{{ roleRoute('nasabah.reset-password', $nasabah) }}" onsubmit="return confirm('Buat kata sandi sementara acak baru untuk nasabah {{ $nasabah->nama }}? Nasabah wajib menggantinya saat login pertama.');">
+                    <form method="POST" action="{{ roleRoute('nasabah.reset-password', $nasabah) }}" onsubmit="event.preventDefault(); confirmResetPasswordNasabah(this);">
                         @csrf
                         <button type="submit" class="w-full mt-1 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
@@ -222,4 +222,26 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function confirmResetPasswordNasabah(form) {
+    Swal.fire({
+        title: 'Reset Password Nasabah?',
+        text: 'Buat kata sandi sementara acak baru untuk nasabah ' + @js($nasabah->nama) + '? Nasabah wajib menggantinya saat login pertama.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d97706',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Reset Password',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+</script>
+@endpush
 
